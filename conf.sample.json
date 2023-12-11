@@ -1,0 +1,38 @@
+{
+    "listenAddress" : "127.0.0.1",
+    "listenPort": 8080,
+    "serverReadTimeoutSecs": 120,
+    "serverWriteTimeoutSecs": 60,
+    "corpora": {
+        "registryDir": "/path/to/corpora/registry",
+        "resources": {
+            "syn2020": {
+                "syntaxParentAttr": {
+                    "name": "someParent"
+                }
+            }
+        }
+    },
+    "redis": {
+        "host": "10.0.3.130",
+        "port": 6379,
+        "db": 7,
+        "password": "secret",
+        "channelQuery": "channel",
+        "channelResultPrefix": "res",
+        "queryAnswerTimeoutSecs": 600
+    },
+    "db" : {
+        "host": "host",
+        "name": "name",
+        "user": "user",
+        "password": "pwd",
+        "port": 3306,
+        "poolSize": 5,
+        "corpusTable": "kontext_corpus"
+    },
+    "logFile": "",
+    "logLevel": "debug",
+    "language": "en",
+    "timeZone": "UTC"
+}
