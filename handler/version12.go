@@ -31,65 +31,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type Actions struct {
+type FCSSubHandlerV12 struct {
 	conf     *corpus.CorporaSetup
 	radapter *rdb.Adapter
 	tmpl     *template.Template
 
 	supportedRecordPackings []string
 	supportedOperations     []string
-	supportedVersions       []string
 
 	queryGeneral        []string
 	queryExplain        []string
 	querySearchRetrieve []string
 }
 
-type FCSResourceInfo struct {
-	PID         string
-	Title       string
-	Description string
-	URI         string
-	Languages   []string
-}
-
-type FCSSearchRow struct {
-	Position int
-	PID      string
-	Left     string
-	KWIC     string
-	Right    string
-	Web      string
-	Ref      string
-}
-
-type FCSExplain struct {
-	ServerName          string
-	ServerPort          string
-	Database            string
-	DatabaseTitle       string
-	DatabaseDescription string
-}
-
-type FCSSearchRetrieve struct {
-	Results []FCSSearchRow
-}
-
-type FCSResponse struct {
-	Version       string
-	RecordPacking string
-	Operation     string
-
-	MaximumRecords int
-	MaximumTerms   int
-
-	Explain        FCSExplain
-	Resources      []FCSResourceInfo
-	SearchRetrieve FCSSearchRetrieve
-	Error          *FCSError
-}
-
-func (a *Actions) explain(ctx *gin.Context, fcsResponse *FCSResponse) int {
+func (a *FCSSubHandlerV12) explain(ctx *gin.Context, fcsResponse *FCSResponse) int {
 	// check if all parameters are supported
 	for key, _ := range ctx.Request.URL.Query() {
 		if !collections.SliceContains(a.queryGeneral, key) && !collections.SliceContains(a.queryExplain, key) {
@@ -127,7 +82,7 @@ func (a *Actions) explain(ctx *gin.Context, fcsResponse *FCSResponse) int {
 	return http.StatusOK
 }
 
-func (a *Actions) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResponse) int {
+func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResponse) int {
 	// check if all parameters are supported
 	for key, _ := range ctx.Request.URL.Query() {
 		if !collections.SliceContains(a.queryGeneral, key) && !collections.SliceContains(a.querySearchRetrieve, key) {
@@ -275,15 +230,7 @@ func (a *Actions) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResponse) int
 	return http.StatusOK
 }
 
-func (a *Actions) FCSHandler(ctx *gin.Context) {
-	fcsResponse := FCSResponse{
-		Version:        "1.2",
-		RecordPacking:  "xml",
-		Operation:      "explain",
-		MaximumRecords: 250,
-		MaximumTerms:   100,
-	}
-
+func (a *FCSSubHandlerV12) Handle(ctx *gin.Context, fcsResponse *FCSResponse) {
 	recordPacking := ctx.DefaultQuery("recordPacking", fcsResponse.RecordPacking)
 	if !collections.SliceContains(a.supportedRecordPackings, recordPacking) {
 		fcsResponse.Error = &FCSError{
@@ -305,22 +252,6 @@ func (a *Actions) FCSHandler(ctx *gin.Context) {
 	}
 	fcsResponse.RecordPacking = recordPacking
 
-	version := ctx.DefaultQuery("version", fcsResponse.Version)
-	if !collections.SliceContains(a.supportedVersions, version) {
-		fcsResponse.Error = &FCSError{
-			Code:    CodeUnsupportedVersion,
-			Ident:   "1.2",
-			Message: "Unsupported version " + version,
-		}
-		if err := a.tmpl.ExecuteTemplate(ctx.Writer, "fcs-1.2.xml", fcsResponse); err != nil {
-			ctx.AbortWithError(http.StatusInternalServerError, err)
-			return
-		}
-		ctx.Writer.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	fcsResponse.Version = version
-
 	operation := ctx.DefaultQuery("operation", fcsResponse.Operation)
 	if !collections.SliceContains(a.supportedOperations, operation) {
 		fcsResponse.Error = &FCSError{
@@ -340,9 +271,9 @@ func (a *Actions) FCSHandler(ctx *gin.Context) {
 	code := http.StatusOK
 	switch fcsResponse.Operation {
 	case "explain":
-		code = a.explain(ctx, &fcsResponse)
+		code = a.explain(ctx, fcsResponse)
 	case "searchRetrieve":
-		code = a.searchRetrieve(ctx, &fcsResponse)
+		code = a.searchRetrieve(ctx, fcsResponse)
 	}
 
 	if err := a.tmpl.ExecuteTemplate(ctx.Writer, "fcs-1.2.xml", fcsResponse); err != nil {
@@ -352,18 +283,18 @@ func (a *Actions) FCSHandler(ctx *gin.Context) {
 	ctx.Writer.WriteHeader(code)
 }
 
-func NewActions(
+func NewFCSSubHandlerV12(
 	conf *corpus.CorporaSetup,
 	radapter *rdb.Adapter,
-) *Actions {
-	return &Actions{
+	tmpl *template.Template,
+) FCSSubHandler {
+	return &FCSSubHandlerV12{
 		conf:                    conf,
 		radapter:                radapter,
-		tmpl:                    template.Must(template.ParseGlob("templates/*")),
+		tmpl:                    tmpl,
 		supportedOperations:     []string{"explain", "scan", "searchRetrieve"},
-		supportedVersions:       []string{"1.2", "2.0"},
 		supportedRecordPackings: []string{"xml", "string"},
-		queryGeneral:            []string{"operation", "version", "recordPacking"},
+		queryGeneral:            []string{"version", "recordPacking", "operation"},
 		queryExplain:            []string{"x-fcs-endpoint-description"},
 		querySearchRetrieve:     []string{"query", "x-fcs-context", "x-fcs-dataviews"},
 	}
