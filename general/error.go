@@ -16,7 +16,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with MQUERY.  If not, see <https://www.gnu.org/licenses/>.
 
-package handler
+package general
 
 // https://www.loc.gov/standards/sru/diagnostics/diagnosticsList.html
 const (
@@ -31,7 +31,9 @@ const (
 	CodeUnsupportedParameter          = 8
 	CodeDatabaseDoesNotExist          = 235
 	// CQL related diagnostics
-	CodeQuerySyntaxError = 10
+	CodeQuerySyntaxError        = 10
+	CodeQueryCannotProcess      = 47
+	CodeQueryFeatureUnsupported = 48
 	// Records related diagnostics
 	CodeUnsupportedRecordPacking = 71
 )

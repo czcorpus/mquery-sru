@@ -19,11 +19,12 @@
 package basic
 
 import (
+	"fcs/general"
 	"fmt"
 )
 
 type node interface {
-	transform(attr string) (string, error)
+	transform(attr string) (string, *general.FCSError)
 	isLeaf() bool
 }
 
@@ -33,7 +34,7 @@ type rootNode struct {
 	Child node
 }
 
-func (r *rootNode) transform(attr string) (string, error) {
+func (r *rootNode) transform(attr string) (string, *general.FCSError) {
 	return r.Child.transform(attr)
 }
 
@@ -47,7 +48,7 @@ type termNode struct {
 	Value string
 }
 
-func (t *termNode) transform(attr string) (string, error) {
+func (t *termNode) transform(attr string) (string, *general.FCSError) {
 	return fmt.Sprintf("[%s=\"%s\"]", attr, t.Value), nil
 }
 
@@ -62,7 +63,7 @@ type unaryNode struct {
 	Child node
 }
 
-func (u *unaryNode) transform(attr string) (string, error) {
+func (u *unaryNode) transform(attr string) (string, *general.FCSError) {
 	child, err := u.Child.transform(attr)
 	if err != nil {
 		return "", err
@@ -72,7 +73,11 @@ func (u *unaryNode) transform(attr string) (string, error) {
 	case "NOT":
 		return fmt.Sprintf("!%s", child), nil
 	}
-	return "", fmt.Errorf("%s operator not implemented", u.Op)
+	return "", &general.FCSError{
+		Code:    general.CodeQueryFeatureUnsupported,
+		Ident:   u.Op,
+		Message: "Query feature unsupported",
+	}
 }
 
 func (u *unaryNode) isLeaf() bool {
@@ -87,7 +92,7 @@ type binaryNode struct {
 	Right node
 }
 
-func (b *binaryNode) transform(attr string) (string, error) {
+func (b *binaryNode) transform(attr string) (string, *general.FCSError) {
 	left, err := b.Left.transform(attr)
 	if err != nil {
 		return "", err
@@ -110,7 +115,11 @@ func (b *binaryNode) transform(attr string) (string, error) {
 	case "OR":
 		return fmt.Sprintf("%s|%s", left, right), nil
 	}
-	return "", fmt.Errorf("%s operator not implemented", b.Op)
+	return "", &general.FCSError{
+		Code:    general.CodeQueryFeatureUnsupported,
+		Ident:   b.Op,
+		Message: "Query feature unsupported",
+	}
 }
 
 func (b *binaryNode) isLeaf() bool {
@@ -123,7 +132,7 @@ type parenNode struct {
 	Child node
 }
 
-func (p *parenNode) transform(attr string) (string, error) {
+func (p *parenNode) transform(attr string) (string, *general.FCSError) {
 	child, err := p.Child.transform(attr)
 	if err != nil {
 		return "", err

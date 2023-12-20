@@ -21,6 +21,7 @@ package handler
 import (
 	"encoding/json"
 	"fcs/corpus"
+	"fcs/general"
 	"fcs/rdb"
 	"fcs/results"
 	"fcs/transformers/basic"
@@ -49,8 +50,8 @@ func (a *FCSSubHandlerV12) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 	// check if all parameters are supported
 	for key, _ := range ctx.Request.URL.Query() {
 		if !collections.SliceContains(a.queryGeneral, key) && !collections.SliceContains(a.queryExplain, key) {
-			fcsResponse.Error = &FCSError{
-				Code:    CodeUnsupportedParameter,
+			fcsResponse.Error = &general.FCSError{
+				Code:    general.CodeUnsupportedParameter,
 				Ident:   key,
 				Message: "Unsupported parameter",
 			}
@@ -87,8 +88,8 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	// check if all parameters are supported
 	for key, _ := range ctx.Request.URL.Query() {
 		if !collections.SliceContains(a.queryGeneral, key) && !collections.SliceContains(a.querySearchRetrieve, key) {
-			fcsResponse.Error = &FCSError{
-				Code:    CodeUnsupportedParameter,
+			fcsResponse.Error = &general.FCSError{
+				Code:    general.CodeUnsupportedParameter,
 				Ident:   key,
 				Message: "Unsupported parameter",
 			}
@@ -99,8 +100,8 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	// prepare query
 	fcsQuery := ctx.Query("query")
 	if len(fcsQuery) == 0 {
-		fcsResponse.Error = &FCSError{
-			Code:    CodeMandatoryParameterNotSupplied,
+		fcsResponse.Error = &general.FCSError{
+			Code:    general.CodeMandatoryParameterNotSupplied,
 			Ident:   "fcs_query",
 			Message: "Mandatory parameter not supplied",
 		}
@@ -108,11 +109,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	}
 	query, err := basic.TransformQuery(fcsQuery, "lemma")
 	if err != nil {
-		fcsResponse.Error = &FCSError{
-			Code:    CodeGeneralSystemError,
-			Ident:   err.Error(),
-			Message: "General system error",
-		}
+		fcsResponse.Error = err
 		return http.StatusInternalServerError
 	}
 
@@ -125,8 +122,8 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		fcsContext := strings.Split(ctx.Query("x-fcs-context"), ",")
 		for _, v := range fcsContext {
 			if !collections.SliceContains(corpora, v) {
-				fcsResponse.Error = &FCSError{
-					Code:    CodeUnsupportedParameterValue,
+				fcsResponse.Error = &general.FCSError{
+					Code:    general.CodeUnsupportedParameterValue,
 					Ident:   "x-fcs-context",
 					Message: "Unknown context " + v,
 				}
@@ -148,8 +145,8 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			ParentIdxAttr: a.conf.Resources[corpusName].SyntaxParentAttr.Name,
 		})
 		if err != nil {
-			fcsResponse.Error = &FCSError{
-				Code:    CodeGeneralSystemError,
+			fcsResponse.Error = &general.FCSError{
+				Code:    general.CodeGeneralSystemError,
 				Ident:   err.Error(),
 				Message: "General system error",
 			}
@@ -160,8 +157,8 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			Args: args,
 		})
 		if err != nil {
-			fcsResponse.Error = &FCSError{
-				Code:    CodeGeneralSystemError,
+			fcsResponse.Error = &general.FCSError{
+				Code:    general.CodeGeneralSystemError,
 				Ident:   err.Error(),
 				Message: "General system error",
 			}
@@ -176,16 +173,16 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		rawResult := <-wait
 		result, err := rdb.DeserializeConcExampleResult(rawResult)
 		if err != nil {
-			fcsResponse.Error = &FCSError{
-				Code:    CodeGeneralSystemError,
+			fcsResponse.Error = &general.FCSError{
+				Code:    general.CodeGeneralSystemError,
 				Ident:   err.Error(),
 				Message: "General system error",
 			}
 			return http.StatusInternalServerError
 		}
 		if err := result.Err(); err != nil {
-			fcsResponse.Error = &FCSError{
-				Code:    CodeGeneralSystemError,
+			fcsResponse.Error = &general.FCSError{
+				Code:    general.CodeGeneralSystemError,
 				Ident:   err.Error(),
 				Message: "General system error",
 			}
@@ -234,8 +231,8 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 func (a *FCSSubHandlerV12) Handle(ctx *gin.Context, fcsResponse *FCSResponse) {
 	recordPacking := ctx.DefaultQuery("recordPacking", fcsResponse.RecordPacking)
 	if !collections.SliceContains(a.supportedRecordPackings, recordPacking) {
-		fcsResponse.Error = &FCSError{
-			Code:    CodeUnsupportedRecordPacking,
+		fcsResponse.Error = &general.FCSError{
+			Code:    general.CodeUnsupportedRecordPacking,
 			Ident:   "recordPacking",
 			Message: "Unsupported record packing",
 		}
@@ -255,8 +252,8 @@ func (a *FCSSubHandlerV12) Handle(ctx *gin.Context, fcsResponse *FCSResponse) {
 
 	operation := ctx.DefaultQuery("operation", fcsResponse.Operation)
 	if !collections.SliceContains(a.supportedOperations, operation) {
-		fcsResponse.Error = &FCSError{
-			Code:    CodeUnsupportedOperation,
+		fcsResponse.Error = &general.FCSError{
+			Code:    general.CodeUnsupportedOperation,
 			Ident:   "",
 			Message: "Unsupported operation",
 		}

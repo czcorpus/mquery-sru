@@ -20,6 +20,7 @@ package handler
 
 import (
 	"fcs/corpus"
+	"fcs/general"
 	"fcs/rdb"
 	"fmt"
 	"net/http"
@@ -90,7 +91,7 @@ type FCSResponse struct {
 	Explain        FCSExplain
 	Resources      []FCSResourceInfo
 	SearchRetrieve FCSSearchRetrieve
-	Error          *FCSError
+	Error          *general.FCSError
 }
 
 func (a *FCSHandler) FCSHandler(ctx *gin.Context) {
@@ -105,8 +106,8 @@ func (a *FCSHandler) FCSHandler(ctx *gin.Context) {
 	version := ctx.DefaultQuery("version", DefaultVersion)
 	handler, ok := a.versions[version]
 	if !ok {
-		fcsResponse.Error = &FCSError{
-			Code:    CodeUnsupportedVersion,
+		fcsResponse.Error = &general.FCSError{
+			Code:    general.CodeUnsupportedVersion,
 			Ident:   DefaultVersion,
 			Message: "Unsupported version " + version,
 		}

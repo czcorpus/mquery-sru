@@ -19,7 +19,7 @@
 package basic
 
 import (
-	"fmt"
+	"fcs/general"
 	"regexp"
 	"strings"
 )
@@ -30,11 +30,15 @@ type basicTransformer struct {
 	attr        string
 	input       string
 	parseResult node
-	err         error
+	fcsError    *general.FCSError
 }
 
 func (t *basicTransformer) Error(e string) {
-	t.err = fmt.Errorf(e)
+	t.fcsError = &general.FCSError{
+		Code:    general.CodeQueryCannotProcess,
+		Ident:   e,
+		Message: "Cannot process query",
+	}
 }
 
 type tokenDef struct {
@@ -105,15 +109,15 @@ func (t *basicTransformer) Lex(lval *yySymType) int {
 	return ret
 }
 
-func (t *basicTransformer) Run() (string, error) {
+func (t *basicTransformer) Run() (string, *general.FCSError) {
 	yyParse(t)
-	if t.err != nil {
-		return "", t.err
+	if t.fcsError != nil {
+		return "", t.fcsError
 	}
 	return t.parseResult.transform(t.attr)
 }
 
-func TransformQuery(input, attr string) (string, error) {
+func TransformQuery(input, attr string) (string, *general.FCSError) {
 	t := basicTransformer{input: input, attr: attr}
 	return t.Run()
 }
