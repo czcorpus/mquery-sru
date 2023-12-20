@@ -23,6 +23,7 @@ import (
 	"fcs/corpus"
 	"fcs/rdb"
 	"fcs/results"
+	"fcs/transformers/basic"
 	"net/http"
 	"strings"
 	"text/template"
@@ -105,7 +106,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		}
 		return http.StatusBadRequest
 	}
-	query, err := transformFCSQuery(fcsQuery)
+	query, err := basic.TransformQuery(fcsQuery, "lemma")
 	if err != nil {
 		fcsResponse.Error = &FCSError{
 			Code:    CodeGeneralSystemError,
