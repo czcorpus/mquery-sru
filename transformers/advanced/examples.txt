@@ -1,0 +1,11 @@
+"walking"
+[token = "walking"]
+"Dog" /c
+[word = "Dog" /c]
+[pos = "NOUN"]
+[pos != "NOUN"]
+[lemma = "walk"]
+"blaue|grüne" [pos = "NOUN"]
+"dogs" []{3,} "cats" within s
+[z:pos = "ADJ"]
+[z:pos = "ADJ" & q:pos = "ADJ"]
