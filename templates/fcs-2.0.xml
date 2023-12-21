@@ -1,0 +1,134 @@
+<?xml version='1.0' encoding='utf-8'?>
+{{ if eq .Operation "explain" }}
+<sruResponse:explainResponse xmlns:sru="http://www.loc.gov/zing/srw/">
+  <sruResponse:version>2.0</sruResponse:version>
+  {{ if .Error }}
+    {{ template "diagnostics20" .Error }}
+  {{ else }}
+    <sruResponse:record>
+      <sruResponse:recordSchema>http://explain.z3950.org/dtd/2.0/</sruResponse:recordSchema>
+      <sruResponse:recordXMLEscaping>xml</sruResponse:recordXMLEscaping>
+      <sruResponse:recordData>
+        {{ template "explain20" .Explain }}
+      </sruResponse:recordData>
+    </sruResponse:record>
+    <sruResponse:extraResponseData>
+      {{ template "description20" .Resources }}
+    </sruResponse:extraResponseData>
+  {{ end }}
+</sruResponse:explainResponse>
+{{ else }}{{ if eq .Operation "searchRetrieve" }}
+<sruResponse:searchRetrieveResponse xmlns:sru="http://www.loc.gov/zing/srw/">
+  <sruResponse:version>2.0</sruResponse:version>
+  <sruResponse:numberOfRecords>{{ .SearchRetrieve.Results | len }}</sruResponse:numberOfRecords>
+  {{ if .Error }}
+    {{ template "diagnostics20" .Error }}
+  {{ else }}
+    {{ template "searchRetrieve20" .SearchRetrieve }}
+  {{ end }}
+  <sruResponse:resultCountPrecision>info:srw/vocabulary/resultCountPrecision/1/exact</sruResponse:resultCountPrecision>
+</sruResponse:searchRetrieveResponse>
+{{ end }}{{ end }}
+
+{{ define "diagnostics20" }}
+<sruResponse:diagnostics xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/">
+  <diag:diagnostic>
+      <diag:uri>info:srw/diagnostic/1/{{ .Code }}</diag:uri>
+      <diag:details>{{ .Ident }}</diag:details>
+      <diag:message>{{ .Message }}</diag:message>
+  </diag:diagnostic>
+</sruResponse:diagnostics>
+{{ end }}
+
+{{ define "explain20" }}
+<zr:explain xmlns:zr="http://explain.z3950.org/dtd/2.0/">
+  <zr:serverInfo protocol="SRU" version="2.0" transport="http">
+    <zr:host>{{ .ServerName }}</zr:host>
+    <zr:port>{{ .ServerPort }}</zr:port>
+    <zr:database>{{ .Database }}</zr:database>
+  </zr:serverInfo>
+  <zr:databaseInfo>
+    <zr:title lang="en" primary="true">{{ .DatabaseTitle }}</zr:title>
+    <zr:description lang="en" primary="true">{{ .DatabaseDescription }}</zr:description>
+  </zr:databaseInfo>
+  <zr:indexInfo>
+    <zr:set identifier="http://clarin.eu/fcs/resource" name="fcs">
+      <zr:title lang="se">Clarins innehållssökning</zr:title>
+      <zr:title lang="en" primary="true">CLARIN Content Search</zr:title>
+    </zr:set>
+    <zr:index search="true" scan="false" sort="false">
+      <zr:title lang="en" primary="true">Words</zr:title>
+      <zr:map primary="true">
+        <zr:name set="fcs">words</zr:name>
+      </zr:map>
+    </zr:index>
+  </zr:indexInfo>
+  <zr:schemaInfo>
+    <zr:schema identifier="http://clarin.eu/fcs/resource" name="fcs">
+      <zr:title lang="en" primary="true">CLARIN Federated Content Search</zr:title>
+    </zr:schema>
+  </zr:schemaInfo>
+  <zr:configInfo>
+    <zr:default type="numberOfRecords">250</zr:default>
+    <zr:setting type="maximumRecords">1000</zr:setting>
+  </zr:configInfo>
+</zr:explain>
+{{ end }}
+
+{{ define "description20" }}
+<ed:EndpointDescription xmlns:ed="http://clarin.eu/fcs/endpoint-description" version="1">
+  <ed:Capabilities>
+    <ed:Capability>http://clarin.eu/fcs/capability/basic-search</ed:Capability>
+    <ed:Capability>http://clarin.eu/fcs/capability/advanced-search</ed:Capability>
+  </ed:Capabilities>
+  <ed:SupportedDataViews>
+    <ed:SupportedDataView id="hits" delivery-policy="send-by-default">application/x-clarin-fcs-hits+xml</ed:SupportedDataView>
+    <ed:SupportedDataView id="adv" delivery-policy="send-by-default">application/x-clarin-fcs-adv+xml</ed:SupportedDataView>
+  </ed:SupportedDataViews>
+  <ed:SupportedLayers>
+    <ed:SupportedLayer id="word" result-id="http://spraakbanken.gu.se/ns/fcs/layer/word">text</ed:SupportedLayer>
+    <ed:SupportedLayer id="lemma" result-id="http://spraakbanken.gu.se/ns/fcs/layer/lemma">lemma</ed:SupportedLayer>
+    <ed:SupportedLayer id="pos" result-id="http://spraakbanken.gu.se/ns/fcs/layer/pos">pos</ed:SupportedLayer>
+  </ed:SupportedLayers>
+  <ed:Resources>
+    {{ range . }}
+      <ed:Resource pid="{{ .PID }}">
+        <ed:Title xml:lang="en">{{ .Title }}</ed:Title>
+        <ed:Description xml:lang="en">{{ .Description }}</ed:Description>
+        <ed:LandingPageURI>{{ .URI }}</ed:LandingPageURI>
+        <ed:Languages>
+          {{ range .Languages }}
+            <ed:Language>{{ . }}</ed:Language>
+          {{ end }}
+        </ed:Languages>
+        <ed:AvailableDataViews ref="hits adv"/>
+        <ed:AvailableLayers ref="word lemma pos"/>
+      </ed:Resource>
+    {{ end }}
+  </ed:Resources>
+</ed:EndpointDescription>
+{{ end }}
+
+{{ define "searchRetrieve20" }}
+<sruResponse:records>
+  {{ range .Results }}
+    <sruResponse:record>
+      <sruResponse:recordSchema>http://clarin.eu/fcs/resource</sruResponse:recordSchema>
+      <sruResponse:recordXMLEscaping>xml</sruResponse:recordXMLEscaping>
+      <sruResponse:recordData>
+        <fcs:Resource xmlns:fcs="http://clarin.eu/fcs/resource" pid="{{ .PID }}"{{ if .Web }} ref="{{ .Web }}"{{ end }}>
+          <fcs:ResourceFragment>
+            <fcs:DataView type="application/x-clarin-fcs-hits+xml">
+              <hits:Result xmlns:hits="http://clarin.eu/fcs/dataview/hits">
+                {{ .Left }} <hits:Hit>{{ .KWIC }}</hits:Hit> {{ .Right }}
+              </hits:Result>
+            </fcs:DataView>
+          </fcs:ResourceFragment>
+        </fcs:Resource>
+      </sruResponse:recordData>
+      <sruResponse:recordPosition>{{ .Position }}</sruResponse:recordPosition>
+    </sruResponse:record>
+  {{ end }}
+</sruResponse:records>
+<sruResponse:nextRecordPosition>251</sruResponse:nextRecordPosition>
+{{ end }}

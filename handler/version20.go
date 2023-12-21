@@ -24,6 +24,8 @@ import (
 	"fcs/general"
 	"fcs/rdb"
 	"fcs/results"
+	"fcs/transformers"
+	"fcs/transformers/advanced"
 	"fcs/transformers/basic"
 	"net/http"
 	"strings"
@@ -33,20 +35,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type FCSSubHandlerV12 struct {
+type FCSSubHandlerV20 struct {
 	conf     *corpus.CorporaSetup
 	radapter *rdb.Adapter
 	tmpl     *template.Template
 
 	supportedRecordPackings []string
 	supportedOperations     []string
+	supportedQueryTypes     []string
 
 	queryGeneral        []string
 	queryExplain        []string
 	querySearchRetrieve []string
 }
 
-func (a *FCSSubHandlerV12) explain(ctx *gin.Context, fcsResponse *FCSResponse) int {
+func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSResponse) int {
 	// check if all parameters are supported
 	for key, _ := range ctx.Request.URL.Query() {
 		if !collections.SliceContains(a.queryGeneral, key) && !collections.SliceContains(a.queryExplain, key) {
@@ -84,7 +87,7 @@ func (a *FCSSubHandlerV12) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 	return http.StatusOK
 }
 
-func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResponse) int {
+func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResponse) int {
 	// check if all parameters are supported
 	for key, _ := range ctx.Request.URL.Query() {
 		if !collections.SliceContains(a.queryGeneral, key) && !collections.SliceContains(a.querySearchRetrieve, key) {
@@ -108,7 +111,21 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return http.StatusBadRequest
 	}
 
-	transformer, fcsErr := basic.NewBasicTransformer(fcsQuery)
+	var transformer transformers.Transformer
+	var fcsErr *general.FCSError
+	queryType := ctx.DefaultQuery("query", "cql")
+	switch queryType {
+	case "cql":
+		transformer, fcsErr = basic.NewBasicTransformer(fcsQuery)
+	case "fcs":
+		transformer, fcsErr = advanced.NewAdvancedTransformer(fcsQuery)
+	default:
+		fcsErr = &general.FCSError{
+			Code:    general.CodeUnsupportedParameterValue,
+			Ident:   queryType,
+			Message: "Unsupported queryType value",
+		}
+	}
 	if fcsErr != nil {
 		fcsResponse.Error = fcsErr
 		return http.StatusInternalServerError
@@ -237,7 +254,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	return http.StatusOK
 }
 
-func (a *FCSSubHandlerV12) Handle(ctx *gin.Context, fcsResponse *FCSResponse) {
+func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsResponse *FCSResponse) {
 	recordPacking := ctx.DefaultQuery("recordPacking", fcsResponse.RecordPacking)
 	if !collections.SliceContains(a.supportedRecordPackings, recordPacking) {
 		fcsResponse.Error = &general.FCSError{
@@ -245,7 +262,7 @@ func (a *FCSSubHandlerV12) Handle(ctx *gin.Context, fcsResponse *FCSResponse) {
 			Ident:   "recordPacking",
 			Message: "Unsupported record packing",
 		}
-		if err := a.tmpl.ExecuteTemplate(ctx.Writer, "fcs-1.2.xml", fcsResponse); err != nil {
+		if err := a.tmpl.ExecuteTemplate(ctx.Writer, "fcs-2.0.xml", fcsResponse); err != nil {
 			ctx.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
@@ -266,7 +283,7 @@ func (a *FCSSubHandlerV12) Handle(ctx *gin.Context, fcsResponse *FCSResponse) {
 			Ident:   "",
 			Message: "Unsupported operation",
 		}
-		if err := a.tmpl.ExecuteTemplate(ctx.Writer, "fcs-1.2.xml", fcsResponse); err != nil {
+		if err := a.tmpl.ExecuteTemplate(ctx.Writer, "fcs-2.0.xml", fcsResponse); err != nil {
 			ctx.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
@@ -283,26 +300,27 @@ func (a *FCSSubHandlerV12) Handle(ctx *gin.Context, fcsResponse *FCSResponse) {
 		code = a.searchRetrieve(ctx, fcsResponse)
 	}
 
-	if err := a.tmpl.ExecuteTemplate(ctx.Writer, "fcs-1.2.xml", fcsResponse); err != nil {
+	if err := a.tmpl.ExecuteTemplate(ctx.Writer, "fcs-2.0.xml", fcsResponse); err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 	ctx.Writer.WriteHeader(code)
 }
 
-func NewFCSSubHandlerV12(
+func NewFCSSubHandlerV20(
 	conf *corpus.CorporaSetup,
 	radapter *rdb.Adapter,
 	tmpl *template.Template,
 ) FCSSubHandler {
-	return &FCSSubHandlerV12{
+	return &FCSSubHandlerV20{
 		conf:                    conf,
 		radapter:                radapter,
 		tmpl:                    tmpl,
 		supportedOperations:     []string{"explain", "scan", "searchRetrieve"},
+		supportedQueryTypes:     []string{"cql", "fcs"},
 		supportedRecordPackings: []string{"xml", "string"},
 		queryGeneral:            []string{"version", "recordPacking", "operation"},
 		queryExplain:            []string{"x-fcs-endpoint-description"},
-		querySearchRetrieve:     []string{"query", "x-fcs-context", "x-fcs-dataviews"},
+		querySearchRetrieve:     []string{"query", "queryType", "x-fcs-context", "x-fcs-dataviews", "x-fcs-rewrites-allowed"},
 	}
 }

@@ -29,7 +29,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const DefaultVersion = "1.2"
+const DefaultVersion = "2.0"
 
 type FCSSubHandler interface {
 	Handle(ctx *gin.Context, fcsResponse *FCSResponse)
@@ -133,6 +133,7 @@ func NewFCSHandler(
 		tmpl:     tmpl,
 		versions: map[string]FCSSubHandler{
 			"1.2": NewFCSSubHandlerV12(conf, radapter, tmpl),
+			"2.0": NewFCSSubHandlerV20(conf, radapter, tmpl),
 		},
 	}
 }

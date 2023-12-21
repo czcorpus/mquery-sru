@@ -112,7 +112,7 @@ func (t *basicTransformer) CreateCQL(attr string) (string, *general.FCSError) {
 	return t.parseResult.transform(attr)
 }
 
-func ParseQuery(input string) (*basicTransformer, *general.FCSError) {
+func NewBasicTransformer(input string) (*basicTransformer, *general.FCSError) {
 	t := &basicTransformer{input: input}
 	yyParse(t)
 	if t.fcsError != nil {

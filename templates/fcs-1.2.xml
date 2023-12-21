@@ -9,11 +9,11 @@
       <sru:recordSchema>http://explain.z3950.org/dtd/2.0/</sru:recordSchema>
       <sru:recordPacking>xml</sru:recordPacking>
       <sru:recordData>
-        {{ template "explain" .Explain }}
+        {{ template "explain12" .Explain }}
       </sru:recordData>
     </sru:record>
     <sru:extraResponseData>
-      {{ template "description" .Resources }}
+      {{ template "description12" .Resources }}
     </sru:extraResponseData>
   {{ end }}
 </sru:explainResponse>
@@ -24,7 +24,89 @@
   {{ if .Error }}
     {{ template "diagnostics" .Error }}
   {{ else }}
-    {{ template "searchRetrieve" .SearchRetrieve }}
+    {{ template "searchRetrieve12" .SearchRetrieve }}
   {{ end }}
 </sru:searchRetrieveResponse>
 {{ end }}{{ end }}
+
+{{ define "diagnostics12" }}
+<sru:diagnostics xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/">
+  <diag:diagnostic>
+      <diag:uri>info:srw/diagnostic/1/{{ .Code }}</diag:uri>
+      <diag:details>{{ .Ident }}</diag:details>
+      <diag:message>{{ .Message }}</diag:message>
+  </diag:diagnostic>
+</sru:diagnostics>
+{{ end }}
+
+{{ define "explain12" }}
+<zr:explain xmlns:zr="http://explain.z3950.org/dtd/2.0/">
+  <zr:serverInfo protocol="SRU" version="1.2" transport="http">
+    <zr:host>{{ .ServerName }}</zr:host>
+    <zr:port>{{ .ServerPort }}</zr:port>
+    <zr:database>{{ .Database }}</zr:database>
+  </zr:serverInfo>
+  <zr:databaseInfo>
+    <zr:title lang="en" primary="true">{{ .DatabaseTitle }}</zr:title>
+    <zr:description lang="en" primary="true">{{ .DatabaseDescription }}</zr:description>
+  </zr:databaseInfo>
+  <zr:schemaInfo>
+    <zr:schema identifier="http://clarin.eu/fcs/resource" name="fcs">
+      <zr:title lang="en" primary="true">CLARIN Federated Content Search</zr:title>
+    </zr:schema>
+  </zr:schemaInfo>
+  <zr:configInfo>
+    <zr:default type="numberOfRecords">250</zr:default>
+    <zr:setting type="maximumRecords">1000</zr:setting>
+  </zr:configInfo>
+</zr:explain>
+{{ end }}
+
+{{ define "description12" }}
+<ed:EndpointDescription xmlns:ed="http://clarin.eu/fcs/endpoint-description" version="1">
+  <ed:Capabilities>
+    <ed:Capability>http://clarin.eu/fcs/capability/basic-search</ed:Capability>
+  </ed:Capabilities>
+  <ed:SupportedDataViews>
+    <ed:SupportedDataView id="hits" delivery-policy="send-by-default">application/x-clarin-fcs-hits+xml</ed:SupportedDataView>
+  </ed:SupportedDataViews>
+  <ed:Resources>
+    {{ range . }}
+      <ed:Resource pid="{{ .PID }}">
+        <ed:Title xml:lang="en">{{ .Title }}</ed:Title>
+        <ed:Description xml:lang="en">{{ .Description }}</ed:Description>
+        <ed:LandingPageURI>{{ .URI }}</ed:LandingPageURI>
+        <ed:Languages>
+          {{ range .Languages }}
+            <ed:Language>{{ . }}</ed:Language>
+          {{ end }}
+        </ed:Languages>
+        <ed:AvailableDataViews ref="hits"/>
+      </ed:Resource>
+    {{ end }}
+  </ed:Resources>
+</ed:EndpointDescription>
+{{ end }}
+
+{{ define "searchRetrieve12" }}
+<sru:records>
+  {{ range .Results }}
+    <sru:record>
+      <sru:recordSchema>http://clarin.eu/fcs/resource</sru:recordSchema>
+      <sru:recordPacking>xml</sru:recordPacking>
+      <sru:recordData>
+        <fcs:Resource xmlns:fcs="http://clarin.eu/fcs/resource" pid="{{ .PID }}"{{ if .Web }} ref="{{ .Web }}"{{ end }}>
+          <fcs:ResourceFragment>
+            <fcs:DataView type="application/x-clarin-fcs-hits+xml">
+              <hits:Result xmlns:hits="http://clarin.eu/fcs/dataview/hits">
+                {{ .Left }} <hits:Hit>{{ .KWIC }}</hits:Hit> {{ .Right }}
+              </hits:Result>
+            </fcs:DataView>
+          </fcs:ResourceFragment>
+        </fcs:Resource>
+      </sru:recordData>
+      <sru:recordPosition>{{ .Position }}</sru:recordPosition>
+    </sru:record>
+  {{ end }}
+</sru:records>
+{{ end }}
