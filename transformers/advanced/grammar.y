@@ -14,7 +14,7 @@ Node node
 %left AND OR PROX NOT
 
 %%
-start: node {yylex.(*basicTransformer).parseResult = &rootNode{$1}} ;
+start: node {yylex.(*advancedTransformer).parseResult = &rootNode{$1}} ;
 
 node:
       TERM {$$ = &termNode{$1} }

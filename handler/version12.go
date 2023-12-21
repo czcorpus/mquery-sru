@@ -107,21 +107,19 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		}
 		return http.StatusBadRequest
 	}
-	query, err := basic.TransformQuery(fcsQuery, "lemma")
-	if err != nil {
-		fcsResponse.Error = err
+
+	parsedQuery, fcsErr := basic.ParseQuery(fcsQuery)
+	if fcsErr != nil {
+		fcsResponse.Error = fcsErr
 		return http.StatusInternalServerError
 	}
 
-	// get searchable corpora
-	corpora := make([]string, 0, len(a.conf.Resources))
-	for corpusName, _ := range a.conf.Resources {
-		corpora = append(corpora, corpusName)
-	}
+	// get searchable corpora and attrs
+	var corpora, attrs []string
 	if ctx.Request.URL.Query().Has("x-fcs-context") {
-		fcsContext := strings.Split(ctx.Query("x-fcs-context"), ",")
-		for _, v := range fcsContext {
-			if !collections.SliceContains(corpora, v) {
+		for _, v := range strings.Split(ctx.Query("x-fcs-context"), ",") {
+			resource, ok := a.conf.Resources[v]
+			if !ok {
 				fcsResponse.Error = &general.FCSError{
 					Code:    general.CodeUnsupportedParameterValue,
 					Ident:   "x-fcs-context",
@@ -129,13 +127,24 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 				}
 				return http.StatusBadRequest
 			}
+			corpora = append(corpora, v)
+			attrs = append(attrs, resource.DefaultAttr)
 		}
-		corpora = fcsContext
+	} else {
+		for corpusName, resource := range a.conf.Resources {
+			corpora = append(corpora, corpusName)
+			attrs = append(attrs, resource.DefaultAttr)
+		}
 	}
 
 	// make searches
 	waits := make([]<-chan *rdb.WorkerResult, len(corpora))
 	for i, corpusName := range corpora {
+		query, fcsErr := parsedQuery.CreateCQL(attrs[i])
+		if fcsErr != nil {
+			fcsResponse.Error = fcsErr
+			return http.StatusInternalServerError
+		}
 		args, err := json.Marshal(rdb.ConcExampleArgs{
 			CorpusPath:    a.conf.GetRegistryPath(corpusName),
 			QueryLemma:    "",

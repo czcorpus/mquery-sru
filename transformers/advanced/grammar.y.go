@@ -330,7 +330,7 @@ yynewstate:
 	switch r {
 	case 1:
 		{
-			yylex.(*basicTransformer).parseResult = &rootNode{yyS[yypt-0].Node}
+			yylex.(*advancedTransformer).parseResult = &rootNode{yyS[yypt-0].Node}
 		}
 	case 2:
 		{

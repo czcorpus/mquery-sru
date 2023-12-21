@@ -7,6 +7,7 @@
         "registryDir": "/path/to/corpora/registry",
         "resources": {
             "syn2020": {
+                "defaultAttr": "lemma",
                 "syntaxParentAttr": {
                     "name": "someParent"
                 }

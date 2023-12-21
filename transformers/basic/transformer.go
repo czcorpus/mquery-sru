@@ -27,7 +27,6 @@ import (
 const EOF = 0
 
 type basicTransformer struct {
-	attr        string
 	input       string
 	parseResult node
 	fcsError    *general.FCSError
@@ -109,15 +108,15 @@ func (t *basicTransformer) Lex(lval *yySymType) int {
 	return ret
 }
 
-func (t *basicTransformer) Run() (string, *general.FCSError) {
-	yyParse(t)
-	if t.fcsError != nil {
-		return "", t.fcsError
-	}
-	return t.parseResult.transform(t.attr)
+func (t *basicTransformer) CreateCQL(attr string) (string, *general.FCSError) {
+	return t.parseResult.transform(attr)
 }
 
-func TransformQuery(input, attr string) (string, *general.FCSError) {
-	t := basicTransformer{input: input, attr: attr}
-	return t.Run()
+func ParseQuery(input string) (*basicTransformer, *general.FCSError) {
+	t := &basicTransformer{input: input}
+	yyParse(t)
+	if t.fcsError != nil {
+		return nil, t.fcsError
+	}
+	return t, nil
 }
