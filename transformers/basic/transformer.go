@@ -67,7 +67,7 @@ var tokens = []tokenDef{
 		token: TERM,
 	},
 	{
-		regex: regexp.MustCompile(`^[\w\d]*`),
+		regex: regexp.MustCompile(`^[\S]*`),
 		token: TERM,
 	},
 }

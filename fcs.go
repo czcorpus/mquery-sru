@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"database/sql"
 	"flag"
@@ -24,6 +25,9 @@ import (
 	"fcs/handler"
 	"fcs/monitoring"
 	"fcs/rdb"
+	"fcs/transformers"
+	"fcs/transformers/advanced"
+	"fcs/transformers/basic"
 	"fcs/worker"
 )
 
@@ -124,14 +128,41 @@ func main() {
 		fmt.Fprintf(os.Stderr, "CNC-FCS - A specialized corpus querying server\n\n")
 		fmt.Fprintf(os.Stderr, "Usage:\n\t%s [options] server [config.json]\n\t", filepath.Base(os.Args[0]))
 		fmt.Fprintf(os.Stderr, "Usage:\n\t%s [options] worker [config.json]\n\t", filepath.Base(os.Args[0]))
+		fmt.Fprintf(os.Stderr, "Usage:\n\t%s transform [basic/advanced]\n\t", filepath.Base(os.Args[0]))
 		fmt.Fprintf(os.Stderr, "%s [options] version\n", filepath.Base(os.Args[0]))
 		flag.PrintDefaults()
 	}
 	flag.Parse()
 	action := flag.Arg(0)
-	if action == "version" {
+	switch action {
+	case "version":
 		fmt.Printf("cnc-fcs %s\nbuild date: %s\nlast commit: %s\n", version.Version, version.BuildDate, version.GitCommit)
 		return
+	case "transform":
+		reader := bufio.NewReader(os.Stdin)
+		for {
+			fmt.Print("> ")
+			input, err := reader.ReadString('\n')
+			if err != nil {
+				fmt.Println("Bye.")
+				return
+			}
+
+			var t transformers.Transformer
+			var fcsErr *general.FCSError
+			switch flag.Arg(1) {
+			case "basic":
+				t, fcsErr = basic.NewBasicTransformer(input)
+			case "advanced":
+				t, fcsErr = advanced.NewAdvancedTransformer(input)
+			}
+
+			if fcsErr != nil {
+				println(fcsErr.Message, ":", fcsErr.Ident)
+			} else {
+				println(t.CreateCQL("<attr>"))
+			}
+		}
 	}
 	conf := cnf.LoadConfig(flag.Arg(1))
 
