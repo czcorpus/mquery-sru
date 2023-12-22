@@ -22,7 +22,6 @@ import (
 	"fcs/corpus"
 	"fcs/general"
 	"fcs/rdb"
-	"fmt"
 	"net/http"
 	"text/template"
 
@@ -33,12 +32,12 @@ const DefaultVersion = "2.0"
 
 type FCSSubHandler interface {
 	Handle(ctx *gin.Context, fcsResponse *FCSResponse)
+	ProduceResponse(ctx *gin.Context, fcsResponse *FCSResponse, code int)
 }
 
 type FCSHandler struct {
 	conf     *corpus.CorporaSetup
 	radapter *rdb.Adapter
-	tmpl     *template.Template
 
 	supportedRecordPackings []string
 	supportedOperations     []string
@@ -111,11 +110,7 @@ func (a *FCSHandler) FCSHandler(ctx *gin.Context) {
 			Ident:   DefaultVersion,
 			Message: "Unsupported version " + version,
 		}
-		if err := a.tmpl.ExecuteTemplate(ctx.Writer, fmt.Sprintf("fcs-%s.xml", DefaultVersion), fcsResponse); err != nil {
-			ctx.AbortWithError(http.StatusInternalServerError, err)
-			return
-		}
-		ctx.Writer.WriteHeader(http.StatusBadRequest)
+		a.versions[DefaultVersion].ProduceResponse(ctx, fcsResponse, http.StatusBadRequest)
 		return
 	}
 	fcsResponse.Version = version
@@ -130,7 +125,6 @@ func NewFCSHandler(
 	return &FCSHandler{
 		conf:     conf,
 		radapter: radapter,
-		tmpl:     tmpl,
 		versions: map[string]FCSSubHandler{
 			"1.2": NewFCSSubHandlerV12(conf, radapter, tmpl),
 			"2.0": NewFCSSubHandlerV20(conf, radapter, tmpl),

@@ -113,7 +113,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 
 	var transformer transformers.Transformer
 	var fcsErr *general.FCSError
-	queryType := ctx.DefaultQuery("query", "cql")
+	queryType := ctx.DefaultQuery("queryType", "cql")
 	switch queryType {
 	case "cql":
 		transformer, fcsErr = basic.NewBasicTransformer(fcsQuery)
@@ -262,11 +262,7 @@ func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsResponse *FCSResponse) {
 			Ident:   "recordPacking",
 			Message: "Unsupported record packing",
 		}
-		if err := a.tmpl.ExecuteTemplate(ctx.Writer, "fcs-2.0.xml", fcsResponse); err != nil {
-			ctx.AbortWithError(http.StatusInternalServerError, err)
-			return
-		}
-		ctx.Writer.WriteHeader(http.StatusBadRequest)
+		a.ProduceResponse(ctx, fcsResponse, http.StatusBadRequest)
 		return
 	}
 	if recordPacking == "xml" {
@@ -283,11 +279,7 @@ func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsResponse *FCSResponse) {
 			Ident:   "",
 			Message: "Unsupported operation",
 		}
-		if err := a.tmpl.ExecuteTemplate(ctx.Writer, "fcs-2.0.xml", fcsResponse); err != nil {
-			ctx.AbortWithError(http.StatusInternalServerError, err)
-			return
-		}
-		ctx.Writer.WriteHeader(http.StatusBadRequest)
+		a.ProduceResponse(ctx, fcsResponse, http.StatusBadRequest)
 		return
 	}
 	fcsResponse.Operation = operation
@@ -299,7 +291,10 @@ func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsResponse *FCSResponse) {
 	case "searchRetrieve":
 		code = a.searchRetrieve(ctx, fcsResponse)
 	}
+	a.ProduceResponse(ctx, fcsResponse, code)
+}
 
+func (a *FCSSubHandlerV20) ProduceResponse(ctx *gin.Context, fcsResponse *FCSResponse, code int) {
 	if err := a.tmpl.ExecuteTemplate(ctx.Writer, "fcs-2.0.xml", fcsResponse); err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return

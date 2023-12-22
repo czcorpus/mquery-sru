@@ -3,7 +3,7 @@
 <sru:explainResponse xmlns:sru="http://www.loc.gov/zing/srw/">
   <sru:version>1.2</sru:version>
   {{ if .Error }}
-    {{ template "diagnostics" .Error }}
+    {{ template "diagnostics12" .Error }}
   {{ else }}
     <sru:record>
       <sru:recordSchema>http://explain.z3950.org/dtd/2.0/</sru:recordSchema>
@@ -22,7 +22,7 @@
   <sru:version>1.2</sru:version>
   <sru:numberOfRecords>{{ .SearchRetrieve.Results | len }}</sru:numberOfRecords>
   {{ if .Error }}
-    {{ template "diagnostics" .Error }}
+    {{ template "diagnostics12" .Error }}
   {{ else }}
     {{ template "searchRetrieve12" .SearchRetrieve }}
   {{ end }}
