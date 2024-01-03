@@ -16,7 +16,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with MQUERY.  If not, see <https://www.gnu.org/licenses/>.
 
-package handler
+package v20
 
 import (
 	"encoding/json"
@@ -24,7 +24,10 @@ import (
 	"fcs/general"
 	"fcs/rdb"
 	"fcs/results"
+	"fcs/transformers"
+	"fcs/transformers/advanced"
 	"fcs/transformers/basic"
+	"fmt"
 	"net/http"
 	"strings"
 	"text/template"
@@ -33,24 +36,25 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type FCSSubHandlerV12 struct {
+type FCSSubHandlerV20 struct {
 	conf     *corpus.CorporaSetup
 	radapter *rdb.Adapter
 	tmpl     *template.Template
 
 	supportedRecordPackings []string
 	supportedOperations     []string
+	supportedQueryTypes     []string
 
 	queryGeneral        []string
 	queryExplain        []string
 	querySearchRetrieve []string
 }
 
-func (a *FCSSubHandlerV12) explain(ctx *gin.Context, fcsResponse *FCSResponse) int {
+func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSResponse) int {
 	// check if all parameters are supported
 	for key, _ := range ctx.Request.URL.Query() {
 		if !collections.SliceContains(a.queryGeneral, key) && !collections.SliceContains(a.queryExplain, key) {
-			fcsResponse.Error = &general.FCSError{
+			fcsResponse.General.Error = &general.FCSError{
 				Code:    general.CodeUnsupportedParameter,
 				Ident:   key,
 				Message: "Unsupported parameter",
@@ -66,17 +70,19 @@ func (a *FCSSubHandlerV12) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 		Database:            ctx.Request.URL.Path,   // TODO
 		DatabaseTitle:       "TODO",
 		DatabaseDescription: "TODO",
+		Layers:              a.conf.Layers,
 	}
 	if ctx.Query("x-fcs-endpoint-description") == "true" {
 		for corpusName, _ := range a.conf.Resources {
 			fcsResponse.Resources = append(
 				fcsResponse.Resources,
 				FCSResourceInfo{
-					PID:         corpusName,
-					Title:       corpusName,
-					Description: "TODO",
-					URI:         "TODO",
-					Languages:   []string{"cs", "TODO"},
+					PID:             corpusName,
+					Title:           corpusName,
+					Description:     "TODO",
+					URI:             "TODO",
+					Languages:       []string{"cs", "TODO"},
+					AvailableLayers: "text TODO",
 				},
 			)
 		}
@@ -84,11 +90,11 @@ func (a *FCSSubHandlerV12) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 	return http.StatusOK
 }
 
-func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResponse) int {
+func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResponse) int {
 	// check if all parameters are supported
 	for key, _ := range ctx.Request.URL.Query() {
 		if !collections.SliceContains(a.queryGeneral, key) && !collections.SliceContains(a.querySearchRetrieve, key) {
-			fcsResponse.Error = &general.FCSError{
+			fcsResponse.General.Error = &general.FCSError{
 				Code:    general.CodeUnsupportedParameter,
 				Ident:   key,
 				Message: "Unsupported parameter",
@@ -100,7 +106,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	// prepare query
 	fcsQuery := ctx.Query("query")
 	if len(fcsQuery) == 0 {
-		fcsResponse.Error = &general.FCSError{
+		fcsResponse.General.Error = &general.FCSError{
 			Code:    general.CodeMandatoryParameterNotSupplied,
 			Ident:   "fcs_query",
 			Message: "Mandatory parameter not supplied",
@@ -108,19 +114,34 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return http.StatusBadRequest
 	}
 
-	transformer, fcsErr := basic.NewBasicTransformer(fcsQuery)
+	var transformer transformers.Transformer
+	var fcsErr *general.FCSError
+	queryType := ctx.DefaultQuery("queryType", "cql")
+	switch queryType {
+	case "cql":
+		transformer, fcsErr = basic.NewBasicTransformer(fcsQuery)
+	case "fcs":
+		transformer, fcsErr = advanced.NewAdvancedTransformer(fcsQuery)
+	default:
+		fcsErr = &general.FCSError{
+			Code:    general.CodeUnsupportedParameterValue,
+			Ident:   queryType,
+			Message: "Unsupported queryType value",
+		}
+	}
 	if fcsErr != nil {
-		fcsResponse.Error = fcsErr
+		fcsResponse.General.Error = fcsErr
 		return http.StatusInternalServerError
 	}
+	fcsResponse.SearchRetrieve.QueryType = queryType
 
 	// get searchable corpora and attrs
-	var corpora, attrs []string
+	var corpora, searchAttrs []string
 	if ctx.Request.URL.Query().Has("x-fcs-context") {
 		for _, v := range strings.Split(ctx.Query("x-fcs-context"), ",") {
 			resource, ok := a.conf.Resources[v]
 			if !ok {
-				fcsResponse.Error = &general.FCSError{
+				fcsResponse.General.Error = &general.FCSError{
 					Code:    general.CodeUnsupportedParameterValue,
 					Ident:   "x-fcs-context",
 					Message: "Unknown context " + v,
@@ -128,33 +149,37 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 				return http.StatusBadRequest
 			}
 			corpora = append(corpora, v)
-			attrs = append(attrs, resource.DefaultAttr)
+			searchAttrs = append(searchAttrs, resource.DefaultAttr)
 		}
 	} else {
 		for corpusName, resource := range a.conf.Resources {
 			corpora = append(corpora, corpusName)
-			attrs = append(attrs, resource.DefaultAttr)
+			searchAttrs = append(searchAttrs, resource.DefaultAttr)
 		}
 	}
 
 	// make searches
 	waits := make([]<-chan *rdb.WorkerResult, len(corpora))
+	layerAttrs := []string{}
+	for _, attr := range a.conf.Layers {
+		layerAttrs = append(layerAttrs, attr)
+	}
 	for i, corpusName := range corpora {
-		query, fcsErr := transformer.CreateCQL(attrs[i])
+		query, fcsErr := transformer.CreateCQL(searchAttrs[i])
 		if fcsErr != nil {
-			fcsResponse.Error = fcsErr
+			fcsResponse.General.Error = fcsErr
 			return http.StatusInternalServerError
 		}
 		args, err := json.Marshal(rdb.ConcExampleArgs{
 			CorpusPath:    a.conf.GetRegistryPath(corpusName),
 			QueryLemma:    "",
 			Query:         query,
-			Attrs:         []string{"word", "lemma"}, // TODO configurable
+			Attrs:         append([]string{a.conf.Layers["text"]}, layerAttrs...),
 			MaxItems:      10,
 			ParentIdxAttr: a.conf.Resources[corpusName].SyntaxParentAttr.Name,
 		})
 		if err != nil {
-			fcsResponse.Error = &general.FCSError{
+			fcsResponse.General.Error = &general.FCSError{
 				Code:    general.CodeGeneralSystemError,
 				Ident:   err.Error(),
 				Message: "General system error",
@@ -166,7 +191,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			Args: args,
 		})
 		if err != nil {
-			fcsResponse.Error = &general.FCSError{
+			fcsResponse.General.Error = &general.FCSError{
 				Code:    general.CodeGeneralSystemError,
 				Ident:   err.Error(),
 				Message: "General system error",
@@ -182,7 +207,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		rawResult := <-wait
 		result, err := rdb.DeserializeConcExampleResult(rawResult)
 		if err != nil {
-			fcsResponse.Error = &general.FCSError{
+			fcsResponse.General.Error = &general.FCSError{
 				Code:    general.CodeGeneralSystemError,
 				Ident:   err.Error(),
 				Message: "General system error",
@@ -190,7 +215,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			return http.StatusInternalServerError
 		}
 		if err := result.Err(); err != nil {
-			fcsResponse.Error = &general.FCSError{
+			fcsResponse.General.Error = &general.FCSError{
 				Code:    general.CodeGeneralSystemError,
 				Ident:   err.Error(),
 				Message: "General system error",
@@ -204,48 +229,64 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	fcsResponse.SearchRetrieve.Results = make([]FCSSearchRow, 0, 100)
 	for i, r := range results {
 		for _, l := range r.Lines {
-			var left, kwic, right string
-			hit := false
-			for _, token := range l.Text {
-				if token.Strong {
-					hit = true
-				}
-				if hit {
-					if token.Strong {
-						kwic += token.Word + " "
-					} else {
-						right += token.Word + " "
-					}
-				} else {
-					left += token.Word + " "
-				}
+			segmentPos := 1
+			row := FCSSearchRow{
+				LayerAttrs: layerAttrs,
+				Position:   len(fcsResponse.SearchRetrieve.Results) + 1,
+				PID:        corpora[i],
+				Web:        "TODO",
+				Ref:        "TODO",
 			}
-			fcsResponse.SearchRetrieve.Results = append(
-				fcsResponse.SearchRetrieve.Results,
-				FCSSearchRow{
-					Position: len(fcsResponse.SearchRetrieve.Results) + 1,
-					PID:      corpora[i],
-					Left:     strings.TrimSpace(left),
-					KWIC:     strings.TrimSpace(kwic),
-					Right:    strings.TrimSpace(right),
-					Web:      "TODO",
-					Ref:      "TODO",
-				},
-			)
+			for j, t := range l.Text {
+				token := Token{
+					Text: t.Word,
+					Hit:  t.Strong,
+					Segment: Segment{
+						ID:    fmt.Sprintf("s%d", j),
+						Start: segmentPos,
+						End:   segmentPos + len(t.Word) - 1,
+					},
+					Layers: t.Attrs,
+				}
+				segmentPos += len(t.Word) + 1 // with space between words
+				row.Tokens = append(row.Tokens, token)
+
+			}
+			fcsResponse.SearchRetrieve.Results = append(fcsResponse.SearchRetrieve.Results, row)
 		}
 	}
 	return http.StatusOK
 }
 
-func (a *FCSSubHandlerV12) Handle(ctx *gin.Context, fcsResponse *FCSResponse) {
+func (a *FCSSubHandlerV20) produceResponse(ctx *gin.Context, fcsResponse *FCSResponse, code int) {
+	if err := a.tmpl.ExecuteTemplate(ctx.Writer, "fcs-2.0.xml", fcsResponse); err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	ctx.Writer.WriteHeader(code)
+}
+
+func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.FCSGeneralResponse) {
+	fcsResponse := &FCSResponse{
+		General:        fcsGeneralResponse,
+		RecordPacking:  "xml",
+		Operation:      "explain",
+		MaximumRecords: 250,
+		MaximumTerms:   100,
+	}
+	if fcsResponse.General.Error != nil {
+		a.produceResponse(ctx, fcsResponse, http.StatusBadRequest)
+		return
+	}
+
 	recordPacking := ctx.DefaultQuery("recordPacking", fcsResponse.RecordPacking)
 	if !collections.SliceContains(a.supportedRecordPackings, recordPacking) {
-		fcsResponse.Error = &general.FCSError{
+		fcsResponse.General.Error = &general.FCSError{
 			Code:    general.CodeUnsupportedRecordPacking,
 			Ident:   "recordPacking",
 			Message: "Unsupported record packing",
 		}
-		a.ProduceResponse(ctx, fcsResponse, http.StatusBadRequest)
+		a.produceResponse(ctx, fcsResponse, http.StatusBadRequest)
 		return
 	}
 	if recordPacking == "xml" {
@@ -257,12 +298,12 @@ func (a *FCSSubHandlerV12) Handle(ctx *gin.Context, fcsResponse *FCSResponse) {
 
 	operation := ctx.DefaultQuery("operation", fcsResponse.Operation)
 	if !collections.SliceContains(a.supportedOperations, operation) {
-		fcsResponse.Error = &general.FCSError{
+		fcsResponse.General.Error = &general.FCSError{
 			Code:    general.CodeUnsupportedOperation,
 			Ident:   "",
 			Message: "Unsupported operation",
 		}
-		a.ProduceResponse(ctx, fcsResponse, http.StatusBadRequest)
+		a.produceResponse(ctx, fcsResponse, http.StatusBadRequest)
 		return
 	}
 	fcsResponse.Operation = operation
@@ -274,30 +315,23 @@ func (a *FCSSubHandlerV12) Handle(ctx *gin.Context, fcsResponse *FCSResponse) {
 	case "searchRetrieve":
 		code = a.searchRetrieve(ctx, fcsResponse)
 	}
-	a.ProduceResponse(ctx, fcsResponse, code)
+	a.produceResponse(ctx, fcsResponse, code)
 }
 
-func (a *FCSSubHandlerV12) ProduceResponse(ctx *gin.Context, fcsResponse *FCSResponse, code int) {
-	if err := a.tmpl.ExecuteTemplate(ctx.Writer, "fcs-1.2.xml", fcsResponse); err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-	ctx.Writer.WriteHeader(code)
-}
-
-func NewFCSSubHandlerV12(
+func NewFCSSubHandlerV20(
 	conf *corpus.CorporaSetup,
 	radapter *rdb.Adapter,
 	tmpl *template.Template,
-) FCSSubHandler {
-	return &FCSSubHandlerV12{
+) *FCSSubHandlerV20 {
+	return &FCSSubHandlerV20{
 		conf:                    conf,
 		radapter:                radapter,
 		tmpl:                    tmpl,
 		supportedOperations:     []string{"explain", "scan", "searchRetrieve"},
+		supportedQueryTypes:     []string{"cql", "fcs"},
 		supportedRecordPackings: []string{"xml", "string"},
 		queryGeneral:            []string{"version", "recordPacking", "operation"},
 		queryExplain:            []string{"x-fcs-endpoint-description"},
-		querySearchRetrieve:     []string{"query", "x-fcs-context", "x-fcs-dataviews"},
+		querySearchRetrieve:     []string{"query", "queryType", "x-fcs-context", "x-fcs-dataviews", "x-fcs-rewrites-allowed"},
 	}
 }

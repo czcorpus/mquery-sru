@@ -5,6 +5,14 @@
     "serverWriteTimeoutSecs": 60,
     "corpora": {
         "registryDir": "/path/to/corpora/registry",
+        "layers": {
+            "text": "word",
+            "lemma": "lemma",
+            "pos": "tag",
+            "orth": "orth",
+            "norm": "norm",
+            "phonetic": "phonetic"
+        },
         "resources": {
             "syn2020": {
                 "defaultAttr": "lemma",

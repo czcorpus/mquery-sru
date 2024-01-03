@@ -37,9 +37,9 @@ type CorpusSetup struct {
 // CorporaSetup defines mquery application configuration related
 // to a corpus
 type CorporaSetup struct {
-	RegistryDir string `json:"registryDir"`
-
-	Resources map[string]*CorpusSetup `json:"resources"`
+	RegistryDir string                  `json:"registryDir"`
+	Layers      map[string]string       `json:"layers"`
+	Resources   map[string]*CorpusSetup `json:"resources"`
 }
 
 func (cs *CorporaSetup) GetRegistryPath(corpusID string) string {

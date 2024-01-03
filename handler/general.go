@@ -21,8 +21,9 @@ package handler
 import (
 	"fcs/corpus"
 	"fcs/general"
+	v12 "fcs/handler/v12"
+	v20 "fcs/handler/v20"
 	"fcs/rdb"
-	"net/http"
 	"text/template"
 
 	"github.com/gin-gonic/gin"
@@ -31,8 +32,7 @@ import (
 const DefaultVersion = "2.0"
 
 type FCSSubHandler interface {
-	Handle(ctx *gin.Context, fcsResponse *FCSResponse)
-	ProduceResponse(ctx *gin.Context, fcsResponse *FCSResponse, code int)
+	Handle(ctx *gin.Context, fcsResponse general.FCSGeneralResponse)
 }
 
 type FCSHandler struct {
@@ -49,72 +49,21 @@ type FCSHandler struct {
 	versions map[string]FCSSubHandler
 }
 
-type FCSResourceInfo struct {
-	PID         string
-	Title       string
-	Description string
-	URI         string
-	Languages   []string
-}
-
-type FCSSearchRow struct {
-	Position int
-	PID      string
-	Left     string
-	KWIC     string
-	Right    string
-	Web      string
-	Ref      string
-}
-
-type FCSExplain struct {
-	ServerName          string
-	ServerPort          string
-	Database            string
-	DatabaseTitle       string
-	DatabaseDescription string
-}
-
-type FCSSearchRetrieve struct {
-	Results []FCSSearchRow
-}
-
-type FCSResponse struct {
-	Version       string
-	RecordPacking string
-	Operation     string
-
-	MaximumRecords int
-	MaximumTerms   int
-
-	Explain        FCSExplain
-	Resources      []FCSResourceInfo
-	SearchRetrieve FCSSearchRetrieve
-	Error          *general.FCSError
-}
-
 func (a *FCSHandler) FCSHandler(ctx *gin.Context) {
-	fcsResponse := &FCSResponse{
-		Version:        DefaultVersion,
-		RecordPacking:  "xml",
-		Operation:      "explain",
-		MaximumRecords: 250,
-		MaximumTerms:   100,
+	fcsGeneralResponse := general.FCSGeneralResponse{
+		Version: ctx.DefaultQuery("version", DefaultVersion),
 	}
 
-	version := ctx.DefaultQuery("version", DefaultVersion)
-	handler, ok := a.versions[version]
+	handler, ok := a.versions[fcsGeneralResponse.Version]
 	if !ok {
-		fcsResponse.Error = &general.FCSError{
+		fcsGeneralResponse.Error = &general.FCSError{
 			Code:    general.CodeUnsupportedVersion,
 			Ident:   DefaultVersion,
-			Message: "Unsupported version " + version,
+			Message: "Unsupported version " + fcsGeneralResponse.Version,
 		}
-		a.versions[DefaultVersion].ProduceResponse(ctx, fcsResponse, http.StatusBadRequest)
-		return
+		fcsGeneralResponse.Version = DefaultVersion
 	}
-	fcsResponse.Version = version
-	handler.Handle(ctx, fcsResponse)
+	handler.Handle(ctx, fcsGeneralResponse)
 }
 
 func NewFCSHandler(
@@ -126,8 +75,8 @@ func NewFCSHandler(
 		conf:     conf,
 		radapter: radapter,
 		versions: map[string]FCSSubHandler{
-			"1.2": NewFCSSubHandlerV12(conf, radapter, tmpl),
-			"2.0": NewFCSSubHandlerV20(conf, radapter, tmpl),
+			"1.2": v12.NewFCSSubHandlerV12(conf, radapter, tmpl),
+			"2.0": v20.NewFCSSubHandlerV20(conf, radapter, tmpl),
 		},
 	}
 }
