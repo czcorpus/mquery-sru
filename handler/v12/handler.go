@@ -308,7 +308,7 @@ func NewFCSSubHandlerV12(
 		generalConf:             generalConf,
 		corporaConf:             corporaConf,
 		radapter:                radapter,
-		tmpl:                    template.Must(template.ParseGlob("handler/v12/templates/*")),
+		tmpl:                    template.Must(template.New("").Funcs(general.GetTemplateFuncMap()).ParseGlob("handler/v12/templates/*")),
 		supportedOperations:     []string{"explain", "scan", "searchRetrieve"},
 		supportedRecordPackings: []string{"xml", "string"},
 		queryGeneral:            []string{"version", "recordPacking", "operation"},

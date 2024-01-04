@@ -78,6 +78,7 @@
 {{ end }}
 
 {{ define "searchRetrieve" }}
+{{ $lastPosition := 0 }}
 <sruResponse:records>
   {{ $queryType := .QueryType }}
   {{ range .Results }}
@@ -92,22 +93,25 @@
           </fcs:ResourceFragment>
         </fcs:Resource>
       </sruResponse:recordData>
-      <sruResponse:recordPosition>{{ .Position }}</sruResponse:recordPosition>
+      <sruResponse:recordPosition>{{ $lastPosition = .Position }}{{ .Position }}</sruResponse:recordPosition>
     </sruResponse:record>
   {{ end }}
 </sruResponse:records>
-<sruResponse:nextRecordPosition>251</sruResponse:nextRecordPosition>
+<sruResponse:nextRecordPosition>{{ add $lastPosition 1 }}</sruResponse:nextRecordPosition>
 {{ end }}
 
 {{ define "basicDataView" }}
   <fcs:DataView type="application/x-clarin-fcs-hits+xml">
     <hits:Result xmlns:hits="http://clarin.eu/fcs/dataview/hits">
+      {{ $lastHit := false -}}
       {{ range $i, $t := .Tokens -}}
+        {{ if and $lastHit (not $t.Hit) }}</hits:Hit>{{ end -}}
         {{ if gt $i 0 }}{{ " " }}{{ end -}}
-        {{ if $t.Hit }}<hits:Hit>{{ end -}}
+        {{ if and (not $lastHit) $t.Hit }}<hits:Hit>{{ end -}}
         {{ $t.Text -}}
-        {{ if $t.Hit }}</hits:Hit>{{ end -}}
+        {{ $lastHit = $t.Hit -}}
       {{ end -}}
+      {{ if $lastHit }}</hits:Hit>{{ end -}}
     </hits:Result>
   </fcs:DataView>
 {{ end }}
