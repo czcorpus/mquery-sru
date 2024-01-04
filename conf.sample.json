@@ -3,6 +3,13 @@
     "listenPort": 8080,
     "serverReadTimeoutSecs": 120,
     "serverWriteTimeoutSecs": 60,
+    "generalInfo": {
+        "serverName": "kdesi",
+        "serverPort": "80",
+        "database": "fcs",
+        "databaseTitle": "CNC FCS",
+        "databaseDescription": "CNC API for FCS"
+    },
     "corpora": {
         "registryDir": "/path/to/corpora/registry",
         "layers": {

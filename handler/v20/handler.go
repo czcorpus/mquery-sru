@@ -20,6 +20,7 @@ package v20
 
 import (
 	"encoding/json"
+	"fcs/cnf"
 	"fcs/corpus"
 	"fcs/general"
 	"fcs/rdb"
@@ -37,9 +38,10 @@ import (
 )
 
 type FCSSubHandlerV20 struct {
-	conf     *corpus.CorporaSetup
-	radapter *rdb.Adapter
-	tmpl     *template.Template
+	generalConf *cnf.GeneralInfo
+	corporaConf *corpus.CorporaSetup
+	radapter    *rdb.Adapter
+	tmpl        *template.Template
 
 	supportedRecordPackings []string
 	supportedOperations     []string
@@ -65,15 +67,15 @@ func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 
 	// prepare response data
 	fcsResponse.Explain = FCSExplain{
-		ServerName:          ctx.Request.URL.Host,   // TODO
-		ServerPort:          ctx.Request.URL.Port(), // TODO
-		Database:            ctx.Request.URL.Path,   // TODO
-		DatabaseTitle:       "TODO",
-		DatabaseDescription: "TODO",
-		Layers:              a.conf.Layers.ToDict(),
+		ServerName:          a.generalConf.ServerName,
+		ServerPort:          a.generalConf.ServerPort,
+		Database:            a.generalConf.Database,
+		DatabaseTitle:       a.generalConf.DatabaseTitle,
+		DatabaseDescription: a.generalConf.DatabaseDescription,
+		Layers:              a.corporaConf.Layers.ToDict(),
 	}
 	if ctx.Query("x-fcs-endpoint-description") == "true" {
-		for corpusName, corpusConf := range a.conf.Resources {
+		for corpusName, corpusConf := range a.corporaConf.Resources {
 			fcsResponse.Resources = append(
 				fcsResponse.Resources,
 				FCSResourceInfo{
@@ -139,7 +141,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	var corpora, searchAttrs []string
 	if ctx.Request.URL.Query().Has("x-fcs-context") {
 		for _, v := range strings.Split(ctx.Query("x-fcs-context"), ",") {
-			resource, ok := a.conf.Resources[v]
+			resource, ok := a.corporaConf.Resources[v]
 			if !ok {
 				fcsResponse.General.Error = &general.FCSError{
 					Code:    general.CodeUnsupportedParameterValue,
@@ -152,7 +154,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			searchAttrs = append(searchAttrs, resource.DefaultSearchAttr)
 		}
 	} else {
-		for corpusName, resource := range a.conf.Resources {
+		for corpusName, resource := range a.corporaConf.Resources {
 			corpora = append(corpora, corpusName)
 			searchAttrs = append(searchAttrs, resource.DefaultSearchAttr)
 		}
@@ -167,12 +169,12 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			return http.StatusInternalServerError
 		}
 		args, err := json.Marshal(rdb.ConcExampleArgs{
-			CorpusPath:    a.conf.GetRegistryPath(corpusName),
+			CorpusPath:    a.corporaConf.GetRegistryPath(corpusName),
 			QueryLemma:    "",
 			Query:         query,
-			Attrs:         append([]string{a.conf.Layers.Text}, a.conf.Resources[corpusName].AvailableLayers...),
+			Attrs:         append([]string{a.corporaConf.Layers.Text}, a.corporaConf.Resources[corpusName].AvailableLayers...),
 			MaxItems:      10,
-			ParentIdxAttr: a.conf.Resources[corpusName].SyntaxParentAttr.Name,
+			ParentIdxAttr: a.corporaConf.Resources[corpusName].SyntaxParentAttr.Name,
 		})
 		if err != nil {
 			fcsResponse.General.Error = &general.FCSError{
@@ -227,7 +229,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		for _, l := range r.Lines {
 			segmentPos := 1
 			row := FCSSearchRow{
-				LayerAttrs: a.conf.Resources[corpora[i]].AvailableLayers,
+				LayerAttrs: a.corporaConf.Resources[corpora[i]].AvailableLayers,
 				Position:   len(fcsResponse.SearchRetrieve.Results) + 1,
 				PID:        corpora[i],
 				Web:        "TODO",
@@ -315,12 +317,14 @@ func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 }
 
 func NewFCSSubHandlerV20(
-	conf *corpus.CorporaSetup,
+	generalConf *cnf.GeneralInfo,
+	corporaConf *corpus.CorporaSetup,
 	radapter *rdb.Adapter,
 	tmpl *template.Template,
 ) *FCSSubHandlerV20 {
 	return &FCSSubHandlerV20{
-		conf:                    conf,
+		generalConf:             generalConf,
+		corporaConf:             corporaConf,
 		radapter:                radapter,
 		tmpl:                    tmpl,
 		supportedOperations:     []string{"explain", "scan", "searchRetrieve"},

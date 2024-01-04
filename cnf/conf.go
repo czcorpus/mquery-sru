@@ -39,6 +39,14 @@ const (
 	dfltTimeZone               = "Europe/Prague"
 )
 
+type GeneralInfo struct {
+	ServerName          string `json:"serverName"`
+	ServerPort          string `json:"serverPort"`
+	Database            string `json:"database"`
+	DatabaseTitle       string `json:"databaseTitle"`
+	DatabaseDescription string `json:"databaseDescription"`
+}
+
 // Conf is a global configuration of the app
 type Conf struct {
 	ListenAddress          string               `json:"listenAddress"`
@@ -46,6 +54,7 @@ type Conf struct {
 	ServerReadTimeoutSecs  int                  `json:"serverReadTimeoutSecs"`
 	ServerWriteTimeoutSecs int                  `json:"serverWriteTimeoutSecs"`
 	CorsAllowedOrigins     []string             `json:"corsAllowedOrigins"`
+	GeneralInfo            *GeneralInfo         `json:"generalInfo"`
 	CorporaSetup           *corpus.CorporaSetup `json:"corpora"`
 	Redis                  *rdb.Conf            `json:"redis"`
 	DB                     *engine.DBConf       `json:"db"`
