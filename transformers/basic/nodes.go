@@ -21,6 +21,7 @@ package basic
 import (
 	"fcs/general"
 	"fmt"
+	"strings"
 )
 
 type node interface {
@@ -49,7 +50,12 @@ type termNode struct {
 }
 
 func (t *termNode) transform(attr string) (string, *general.FCSError) {
-	return fmt.Sprintf("[%s=\"%s\"]", attr, t.Value), nil
+	terms := strings.Split(t.Value, " ")
+	result := ""
+	for _, term := range terms {
+		result += fmt.Sprintf("[%s=\"%s\"]", attr, term)
+	}
+	return result, nil
 }
 
 func (t *termNode) isLeaf() bool {
