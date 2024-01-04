@@ -15,7 +15,8 @@
         },
         "resources": {
             "syn2020": {
-                "defaultAttr": "lemma",
+                "defaultSearchAttr": "lemma",
+                "availableLayers": ["word", "lemma", "tag"],
                 "syntaxParentAttr": {
                     "name": "someParent"
                 }

@@ -73,7 +73,7 @@ func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 		Layers:              a.conf.Layers.ToDict(),
 	}
 	if ctx.Query("x-fcs-endpoint-description") == "true" {
-		for corpusName, _ := range a.conf.Resources {
+		for corpusName, corpusConf := range a.conf.Resources {
 			fcsResponse.Resources = append(
 				fcsResponse.Resources,
 				FCSResourceInfo{
@@ -82,7 +82,7 @@ func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 					Description:     "TODO",
 					URI:             "TODO",
 					Languages:       []string{"cs", "TODO"},
-					AvailableLayers: "text TODO",
+					AvailableLayers: strings.Join(corpusConf.AvailableLayers, " "),
 				},
 			)
 		}
@@ -149,21 +149,17 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 				return http.StatusBadRequest
 			}
 			corpora = append(corpora, v)
-			searchAttrs = append(searchAttrs, resource.DefaultAttr)
+			searchAttrs = append(searchAttrs, resource.DefaultSearchAttr)
 		}
 	} else {
 		for corpusName, resource := range a.conf.Resources {
 			corpora = append(corpora, corpusName)
-			searchAttrs = append(searchAttrs, resource.DefaultAttr)
+			searchAttrs = append(searchAttrs, resource.DefaultSearchAttr)
 		}
 	}
 
 	// make searches
 	waits := make([]<-chan *rdb.WorkerResult, len(corpora))
-	layerAttrs := []string{}
-	for _, attr := range a.conf.Layers.ToDict() {
-		layerAttrs = append(layerAttrs, attr)
-	}
 	for i, corpusName := range corpora {
 		query, fcsErr := transformer.CreateCQL(searchAttrs[i])
 		if fcsErr != nil {
@@ -174,7 +170,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			CorpusPath:    a.conf.GetRegistryPath(corpusName),
 			QueryLemma:    "",
 			Query:         query,
-			Attrs:         append([]string{a.conf.Layers.Text}, layerAttrs...),
+			Attrs:         append([]string{a.conf.Layers.Text}, a.conf.Resources[corpusName].AvailableLayers...),
 			MaxItems:      10,
 			ParentIdxAttr: a.conf.Resources[corpusName].SyntaxParentAttr.Name,
 		})
@@ -231,7 +227,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		for _, l := range r.Lines {
 			segmentPos := 1
 			row := FCSSearchRow{
-				LayerAttrs: layerAttrs,
+				LayerAttrs: a.conf.Resources[corpora[i]].AvailableLayers,
 				Position:   len(fcsResponse.SearchRetrieve.Results) + 1,
 				PID:        corpora[i],
 				Web:        "TODO",

@@ -30,8 +30,9 @@ type PosAttrProps struct {
 }
 
 type CorpusSetup struct {
-	DefaultAttr      string       `json:"defaultAttr"`
-	SyntaxParentAttr PosAttrProps `json:"syntaxParentAttr"`
+	DefaultSearchAttr string       `json:"defaultSearchAttr"`
+	AvailableLayers   []string     `json:"availableLayers"`
+	SyntaxParentAttr  PosAttrProps `json:"syntaxParentAttr"`
 }
 
 type LayersSetup struct {

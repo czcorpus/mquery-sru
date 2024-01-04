@@ -128,12 +128,12 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 				return http.StatusBadRequest
 			}
 			corpora = append(corpora, v)
-			searchAttrs = append(searchAttrs, resource.DefaultAttr)
+			searchAttrs = append(searchAttrs, resource.DefaultSearchAttr)
 		}
 	} else {
 		for corpusName, resource := range a.conf.Resources {
 			corpora = append(corpora, corpusName)
-			searchAttrs = append(searchAttrs, resource.DefaultAttr)
+			searchAttrs = append(searchAttrs, resource.DefaultSearchAttr)
 		}
 	}
 
