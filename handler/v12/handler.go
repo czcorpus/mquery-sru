@@ -149,7 +149,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			CorpusPath:    a.conf.GetRegistryPath(corpusName),
 			QueryLemma:    "",
 			Query:         query,
-			Attrs:         []string{a.conf.Layers["text"], a.conf.Layers["text"]}, // twice, so the line parser works TODO
+			Attrs:         []string{a.conf.Layers.Text, a.conf.Layers.Text}, // twice, so the line parser works TODO
 			MaxItems:      10,
 			ParentIdxAttr: a.conf.Resources[corpusName].SyntaxParentAttr.Name,
 		})

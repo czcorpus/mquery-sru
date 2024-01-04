@@ -34,11 +34,51 @@ type CorpusSetup struct {
 	SyntaxParentAttr PosAttrProps `json:"syntaxParentAttr"`
 }
 
+type LayersSetup struct {
+	Text     string `json:"text"`
+	Lemma    string `json:"lemma"`
+	POS      string `json:"pos"`
+	Orth     string `json:"orth"`
+	Norm     string `json:"norm"`
+	Phonetic string `json:"phonetic"`
+}
+
+func (ls *LayersSetup) ToDict() map[string]string {
+	layers := make(map[string]string)
+	layers["text"] = ls.Text
+	if ls.Lemma != "" {
+		layers["lemma"] = ls.Lemma
+	}
+	if ls.POS != "" {
+		layers["pos"] = ls.POS
+	}
+	if ls.Orth != "" {
+		layers["orth"] = ls.Orth
+	}
+	if ls.Norm != "" {
+		layers["norm"] = ls.Norm
+	}
+	if ls.Phonetic != "" {
+		layers["phonetic"] = ls.Phonetic
+	}
+	return layers
+}
+
+func (ls *LayersSetup) Validate(confContext string) error {
+	if ls == nil {
+		return fmt.Errorf("missing configuration section `%s.layers`", confContext)
+	}
+	if ls.Text == "" {
+		return fmt.Errorf("missing `%s.layers.text`", confContext)
+	}
+	return nil
+}
+
 // CorporaSetup defines mquery application configuration related
 // to a corpus
 type CorporaSetup struct {
 	RegistryDir string                  `json:"registryDir"`
-	Layers      map[string]string       `json:"layers"`
+	Layers      *LayersSetup            `json:"layers"`
 	Resources   map[string]*CorpusSetup `json:"resources"`
 }
 
@@ -60,6 +100,5 @@ func (cs *CorporaSetup) ValidateAndDefaults(confContext string) error {
 	if !isDir {
 		return fmt.Errorf("`%s.registryDir` is not a directory", confContext)
 	}
-
-	return nil
+	return cs.Layers.Validate(confContext)
 }

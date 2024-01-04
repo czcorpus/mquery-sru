@@ -70,7 +70,7 @@ func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 		Database:            ctx.Request.URL.Path,   // TODO
 		DatabaseTitle:       "TODO",
 		DatabaseDescription: "TODO",
-		Layers:              a.conf.Layers,
+		Layers:              a.conf.Layers.ToDict(),
 	}
 	if ctx.Query("x-fcs-endpoint-description") == "true" {
 		for corpusName, _ := range a.conf.Resources {
@@ -161,7 +161,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	// make searches
 	waits := make([]<-chan *rdb.WorkerResult, len(corpora))
 	layerAttrs := []string{}
-	for _, attr := range a.conf.Layers {
+	for _, attr := range a.conf.Layers.ToDict() {
 		layerAttrs = append(layerAttrs, attr)
 	}
 	for i, corpusName := range corpora {
@@ -174,7 +174,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			CorpusPath:    a.conf.GetRegistryPath(corpusName),
 			QueryLemma:    "",
 			Query:         query,
-			Attrs:         append([]string{a.conf.Layers["text"]}, layerAttrs...),
+			Attrs:         append([]string{a.conf.Layers.Text}, layerAttrs...),
 			MaxItems:      10,
 			ParentIdxAttr: a.conf.Resources[corpusName].SyntaxParentAttr.Name,
 		})
