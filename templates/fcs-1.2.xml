@@ -3,17 +3,17 @@
 <sru:explainResponse xmlns:sru="http://www.loc.gov/zing/srw/">
   <sru:version>1.2</sru:version>
   {{ if .General.Error }}
-    {{ template "diagnostics12" .General.Error }}
+    {{ template "diagnostics-1.2" .General.Error }}
   {{ else }}
     <sru:record>
       <sru:recordSchema>http://explain.z3950.org/dtd/2.0/</sru:recordSchema>
       <sru:recordPacking>xml</sru:recordPacking>
       <sru:recordData>
-        {{ template "explain12" .Explain }}
+        {{ template "explain-1.2" .Explain }}
       </sru:recordData>
     </sru:record>
     <sru:extraResponseData>
-      {{ template "description12" .Resources }}
+      {{ template "description-1.2" .Resources }}
     </sru:extraResponseData>
   {{ end }}
 </sru:explainResponse>
@@ -22,14 +22,14 @@
   <sru:version>1.2</sru:version>
   <sru:numberOfRecords>{{ .SearchRetrieve.Results | len }}</sru:numberOfRecords>
   {{ if .General.Error }}
-    {{ template "diagnostics12" .General.Error }}
+    {{ template "diagnostics-1.2" .General.Error }}
   {{ else }}
-    {{ template "searchRetrieve12" .SearchRetrieve }}
+    {{ template "searchRetrieve-1.2" .SearchRetrieve }}
   {{ end }}
 </sru:searchRetrieveResponse>
 {{ end }}{{ end }}
 
-{{ define "diagnostics12" }}
+{{ define "diagnostics-1.2" }}
 <sru:diagnostics xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/">
   <diag:diagnostic>
       <diag:uri>info:srw/diagnostic/1/{{ .Code }}</diag:uri>
@@ -39,7 +39,7 @@
 </sru:diagnostics>
 {{ end }}
 
-{{ define "explain12" }}
+{{ define "explain-1.2" }}
 <zr:explain xmlns:zr="http://explain.z3950.org/dtd/2.0/">
   <zr:serverInfo protocol="SRU" version="1.2" transport="http">
     <zr:host>{{ .ServerName }}</zr:host>
@@ -62,7 +62,7 @@
 </zr:explain>
 {{ end }}
 
-{{ define "description12" }}
+{{ define "description-1.2" }}
 <ed:EndpointDescription xmlns:ed="http://clarin.eu/fcs/endpoint-description" version="1">
   <ed:Capabilities>
     <ed:Capability>http://clarin.eu/fcs/capability/basic-search</ed:Capability>
@@ -88,7 +88,7 @@
 </ed:EndpointDescription>
 {{ end }}
 
-{{ define "searchRetrieve12" }}
+{{ define "searchRetrieve-1.2" }}
 <sru:records>
   {{ range .Results }}
     <sru:record>
