@@ -26,8 +26,8 @@
     </zr:schema>
   </zr:schemaInfo>
   <zr:configInfo>
-    <zr:default type="numberOfRecords">250</zr:default>
-    <zr:setting type="maximumRecords">1000</zr:setting>
+    <zr:default type="numberOfRecords">TODO</zr:default>
+    <zr:setting type="maximumRecords">TODO</zr:setting>
   </zr:configInfo>
 </zr:explain>
 {{ end }}

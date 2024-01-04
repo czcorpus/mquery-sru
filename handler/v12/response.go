@@ -55,9 +55,6 @@ type FCSResponse struct {
 	RecordPacking string
 	Operation     string
 
-	MaximumRecords int
-	MaximumTerms   int
-
 	Explain        FCSExplain
 	Resources      []FCSResourceInfo
 	SearchRetrieve FCSSearchRetrieve

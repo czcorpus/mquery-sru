@@ -266,11 +266,9 @@ func (a *FCSSubHandlerV20) produceResponse(ctx *gin.Context, fcsResponse *FCSRes
 
 func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.FCSGeneralResponse) {
 	fcsResponse := &FCSResponse{
-		General:        fcsGeneralResponse,
-		RecordPacking:  "xml",
-		Operation:      "explain",
-		MaximumRecords: 250,
-		MaximumTerms:   100,
+		General:       fcsGeneralResponse,
+		RecordPacking: "xml",
+		Operation:     "explain",
 	}
 	if fcsResponse.General.Error != nil {
 		a.produceResponse(ctx, fcsResponse, http.StatusBadRequest)

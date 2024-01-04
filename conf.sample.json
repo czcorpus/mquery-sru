@@ -15,7 +15,7 @@
         "layers": {
             "text": "word",
             "lemma": "lemma",
-            "pos": "tag",
+            "pos": "pos",
             "orth": "orth",
             "norm": "norm",
             "phonetic": "phonetic"
@@ -23,7 +23,7 @@
         "resources": {
             "syn2020": {
                 "defaultSearchAttr": "lemma",
-                "availableLayers": ["word", "lemma", "tag"],
+                "availableLayers": ["word", "lemma", "pos"],
                 "syntaxParentAttr": {
                     "name": "someParent"
                 }
