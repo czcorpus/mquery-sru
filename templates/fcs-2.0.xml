@@ -134,7 +134,12 @@
 {{ define "basicDataView-2.0" }}
   <fcs:DataView type="application/x-clarin-fcs-hits+xml">
     <hits:Result xmlns:hits="http://clarin.eu/fcs/dataview/hits">
-      {{ range .Tokens }}{{ if .Hit }}<hits:Hit>{{ .Text }}</hits:Hit> {{ else }}{{ .Text }} {{ end }}{{ end }}
+      {{ range $i, $t := .Tokens -}}
+        {{ if gt $i 0 }}{{ " " }}{{ end -}}
+        {{ if $t.Hit }}<hits:Hit>{{ end -}}
+        {{ $t.Text -}}
+        {{ if $t.Hit }}</hits:Hit>{{ end -}}
+      {{ end -}}
     </hits:Result>
   </fcs:DataView>
 {{ end }}
