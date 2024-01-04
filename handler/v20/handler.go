@@ -320,13 +320,12 @@ func NewFCSSubHandlerV20(
 	generalConf *cnf.GeneralInfo,
 	corporaConf *corpus.CorporaSetup,
 	radapter *rdb.Adapter,
-	tmpl *template.Template,
 ) *FCSSubHandlerV20 {
 	return &FCSSubHandlerV20{
 		generalConf:             generalConf,
 		corporaConf:             corporaConf,
 		radapter:                radapter,
-		tmpl:                    tmpl,
+		tmpl:                    template.Must(template.ParseGlob("handler/v20/templates/*")),
 		supportedOperations:     []string{"explain", "scan", "searchRetrieve"},
 		supportedQueryTypes:     []string{"cql", "fcs"},
 		supportedRecordPackings: []string{"xml", "string"},

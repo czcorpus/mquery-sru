@@ -25,7 +25,6 @@ import (
 	v12 "fcs/handler/v12"
 	v20 "fcs/handler/v20"
 	"fcs/rdb"
-	"text/template"
 
 	"github.com/gin-gonic/gin"
 )
@@ -72,13 +71,12 @@ func NewFCSHandler(
 	corporaConf *corpus.CorporaSetup,
 	radapter *rdb.Adapter,
 ) *FCSHandler {
-	tmpl := template.Must(template.ParseGlob("templates/*"))
 	return &FCSHandler{
 		conf:     corporaConf,
 		radapter: radapter,
 		versions: map[string]FCSSubHandler{
-			"1.2": v12.NewFCSSubHandlerV12(generalConf, corporaConf, radapter, tmpl),
-			"2.0": v20.NewFCSSubHandlerV20(generalConf, corporaConf, radapter, tmpl),
+			"1.2": v12.NewFCSSubHandlerV12(generalConf, corporaConf, radapter),
+			"2.0": v20.NewFCSSubHandlerV20(generalConf, corporaConf, radapter),
 		},
 	}
 }

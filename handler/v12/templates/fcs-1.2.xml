@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='utf-8'?>
+{{ if eq .Operation "explain" }}
+<sru:explainResponse xmlns:sru="http://www.loc.gov/zing/srw/">
+  <sru:version>1.2</sru:version>
+  {{ if .General.Error }}
+    {{ template "diagnostics" .General.Error }}
+  {{ else }}
+    <sru:record>
+      <sru:recordSchema>http://explain.z3950.org/dtd/2.0/</sru:recordSchema>
+      <sru:recordPacking>xml</sru:recordPacking>
+      <sru:recordData>
+        {{ template "explain" .Explain }}
+      </sru:recordData>
+    </sru:record>
+    <sru:extraResponseData>
+      {{ template "description" .Resources }}
+    </sru:extraResponseData>
+  {{ end }}
+</sru:explainResponse>
+{{ else }}{{ if eq .Operation "searchRetrieve" }}
+<sru:searchRetrieveResponse xmlns:sru="http://www.loc.gov/zing/srw/">
+  <sru:version>1.2</sru:version>
+  <sru:numberOfRecords>{{ .SearchRetrieve.Results | len }}</sru:numberOfRecords>
+  {{ if .General.Error }}
+    {{ template "diagnostics" .General.Error }}
+  {{ else }}
+    {{ template "searchRetrieve" .SearchRetrieve }}
+  {{ end }}
+</sru:searchRetrieveResponse>
+{{ end }}{{ end }}

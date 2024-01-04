@@ -303,13 +303,12 @@ func NewFCSSubHandlerV12(
 	generalConf *cnf.GeneralInfo,
 	corporaConf *corpus.CorporaSetup,
 	radapter *rdb.Adapter,
-	tmpl *template.Template,
 ) *FCSSubHandlerV12 {
 	return &FCSSubHandlerV12{
 		generalConf:             generalConf,
 		corporaConf:             corporaConf,
 		radapter:                radapter,
-		tmpl:                    tmpl,
+		tmpl:                    template.Must(template.ParseGlob("handler/v12/templates/*")),
 		supportedOperations:     []string{"explain", "scan", "searchRetrieve"},
 		supportedRecordPackings: []string{"xml", "string"},
 		queryGeneral:            []string{"version", "recordPacking", "operation"},
