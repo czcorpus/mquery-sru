@@ -16,46 +16,14 @@
 //  You should have received a copy of the GNU General Public License
 //  along with MQUERY.  If not, see <https://www.gnu.org/licenses/>.
 
-package v12
+package general
 
-import "fcs/general"
+import "text/template"
 
-type FCSResourceInfo struct {
-	PID         string
-	Title       string
-	Description string
-	URI         string
-	Languages   []string
-}
-
-type FCSSearchRow struct {
-	Position int
-	PID      string
-	Left     string
-	KWIC     string
-	Right    string
-	Web      string
-	Ref      string
-}
-
-type FCSExplain struct {
-	ServerName          string
-	ServerPort          string
-	Database            string
-	DatabaseTitle       string
-	DatabaseDescription string
-}
-
-type FCSSearchRetrieve struct {
-	Results []FCSSearchRow
-}
-
-type FCSResponse struct {
-	General       general.FCSGeneralResponse
-	RecordPacking string
-	Operation     string
-
-	Explain        FCSExplain
-	Resources      []FCSResourceInfo
-	SearchRetrieve FCSSearchRetrieve
+func GetTemplateFuncMap() template.FuncMap {
+	return template.FuncMap{
+		"add": func(i, j int) int {
+			return i + j
+		},
+	}
 }

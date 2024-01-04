@@ -1,36 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
-{{ if eq .Operation "explain" }}
-<sruResponse:explainResponse xmlns:sru="http://www.loc.gov/zing/srw/">
-  <sruResponse:version>2.0</sruResponse:version>
-  {{ if .General.Error }}
-    {{ template "diagnostics-2.0" .General.Error }}
-  {{ else }}
-    <sruResponse:record>
-      <sruResponse:recordSchema>http://explain.z3950.org/dtd/2.0/</sruResponse:recordSchema>
-      <sruResponse:recordXMLEscaping>xml</sruResponse:recordXMLEscaping>
-      <sruResponse:recordData>
-        {{ template "explain-2.0" .Explain }}
-      </sruResponse:recordData>
-    </sruResponse:record>
-    <sruResponse:extraResponseData>
-      {{ template "description-2.0" . }}
-    </sruResponse:extraResponseData>
-  {{ end }}
-</sruResponse:explainResponse>
-{{ else }}{{ if eq .Operation "searchRetrieve" }}
-<sruResponse:searchRetrieveResponse xmlns:sru="http://www.loc.gov/zing/srw/">
-  <sruResponse:version>2.0</sruResponse:version>
-  <sruResponse:numberOfRecords>{{ .SearchRetrieve.Results | len }}</sruResponse:numberOfRecords>
-  {{ if .General.Error }}
-    {{ template "diagnostics-2.0" .General.Error }}
-  {{ else }}
-    {{ template "searchRetrieve-2.0" .SearchRetrieve }}
-  {{ end }}
-  <sruResponse:resultCountPrecision>info:srw/vocabulary/resultCountPrecision/1/exact</sruResponse:resultCountPrecision>
-</sruResponse:searchRetrieveResponse>
-{{ end }}{{ end }}
-
-{{ define "diagnostics-2.0" }}
+{{ define "diagnostics" }}
 <sruResponse:diagnostics xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/">
   <diag:diagnostic>
       <diag:uri>info:srw/diagnostic/1/{{ .Code }}</diag:uri>
@@ -40,7 +8,7 @@
 </sruResponse:diagnostics>
 {{ end }}
 
-{{ define "explain-2.0" }}
+{{ define "explain" }}
 <zr:explain xmlns:zr="http://explain.z3950.org/dtd/2.0/">
   <zr:serverInfo protocol="SRU" version="2.0" transport="http">
     <zr:host>{{ .ServerName }}</zr:host>
@@ -69,13 +37,13 @@
     </zr:schema>
   </zr:schemaInfo>
   <zr:configInfo>
-    <zr:default type="numberOfRecords">250</zr:default>
-    <zr:setting type="maximumRecords">1000</zr:setting>
+    <zr:default type="numberOfRecords">TODO</zr:default>
+    <zr:setting type="maximumRecords">TODO</zr:setting>
   </zr:configInfo>
 </zr:explain>
 {{ end }}
 
-{{ define "description-2.0" }}
+{{ define "description" }}
 <ed:EndpointDescription version="2">
   <ed:Capabilities>
     <ed:Capability>http://clarin.eu/fcs/capability/basic-search</ed:Capability>
@@ -109,7 +77,8 @@
 </ed:EndpointDescription>
 {{ end }}
 
-{{ define "searchRetrieve-2.0" }}
+{{ define "searchRetrieve" }}
+{{ $lastPosition := 0 }}
 <sruResponse:records>
   {{ $queryType := .QueryType }}
   {{ range .Results }}
@@ -119,27 +88,35 @@
       <sruResponse:recordData>
         <fcs:Resource xmlns:fcs="http://clarin.eu/fcs/resource" pid="{{ .PID }}"{{ if .Web }} ref="{{ .Web }}"{{ end }}>
           <fcs:ResourceFragment>
-            {{ template "basicDataView-2.0" . }}
-            {{ template "advancedDataView-2.0" . }}
+            {{ template "basicDataView" . }}
+            {{ if eq $queryType "fcs" }}{{ template "advancedDataView" . }}{{ end }}
           </fcs:ResourceFragment>
         </fcs:Resource>
       </sruResponse:recordData>
-      <sruResponse:recordPosition>{{ .Position }}</sruResponse:recordPosition>
+      <sruResponse:recordPosition>{{ $lastPosition = .Position }}{{ .Position }}</sruResponse:recordPosition>
     </sruResponse:record>
   {{ end }}
 </sruResponse:records>
-<sruResponse:nextRecordPosition>251</sruResponse:nextRecordPosition>
+<sruResponse:nextRecordPosition>{{ add $lastPosition 1 }}</sruResponse:nextRecordPosition>
 {{ end }}
 
-{{ define "basicDataView-2.0" }}
+{{ define "basicDataView" }}
   <fcs:DataView type="application/x-clarin-fcs-hits+xml">
     <hits:Result xmlns:hits="http://clarin.eu/fcs/dataview/hits">
-      {{ range .Tokens }}{{ if .Hit }}<hits:Hit>{{ .Text }}</hits:Hit> {{ else }}{{ .Text }} {{ end }}{{ end }}
+      {{ $lastHit := false -}}
+      {{ range $i, $t := .Tokens -}}
+        {{ if and $lastHit (not $t.Hit) }}</hits:Hit>{{ end -}}
+        {{ if gt $i 0 }}{{ " " }}{{ end -}}
+        {{ if and (not $lastHit) $t.Hit }}<hits:Hit>{{ end -}}
+        {{ $t.Text -}}
+        {{ $lastHit = $t.Hit -}}
+      {{ end -}}
+      {{ if $lastHit }}</hits:Hit>{{ end -}}
     </hits:Result>
   </fcs:DataView>
 {{ end }}
 
-{{ define "advancedDataView-2.0" }}
+{{ define "advancedDataView" }}
   <fcs:DataView type="application/x-clarin-fcs-adv+xml">
     <adv:Advanced unit="item">
       <adv:Segments>

@@ -66,13 +66,9 @@ type FCSSearchRetrieve struct {
 }
 
 type FCSResponse struct {
-	General general.FCSGeneralResponse
-
+	General       general.FCSGeneralResponse
 	RecordPacking string
 	Operation     string
-
-	MaximumRecords int
-	MaximumTerms   int
 
 	Explain        FCSExplain
 	Resources      []FCSResourceInfo

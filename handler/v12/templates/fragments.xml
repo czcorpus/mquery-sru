@@ -1,35 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-{{ if eq .Operation "explain" }}
-<sru:explainResponse xmlns:sru="http://www.loc.gov/zing/srw/">
-  <sru:version>1.2</sru:version>
-  {{ if .General.Error }}
-    {{ template "diagnostics-1.2" .General.Error }}
-  {{ else }}
-    <sru:record>
-      <sru:recordSchema>http://explain.z3950.org/dtd/2.0/</sru:recordSchema>
-      <sru:recordPacking>xml</sru:recordPacking>
-      <sru:recordData>
-        {{ template "explain-1.2" .Explain }}
-      </sru:recordData>
-    </sru:record>
-    <sru:extraResponseData>
-      {{ template "description-1.2" .Resources }}
-    </sru:extraResponseData>
-  {{ end }}
-</sru:explainResponse>
-{{ else }}{{ if eq .Operation "searchRetrieve" }}
-<sru:searchRetrieveResponse xmlns:sru="http://www.loc.gov/zing/srw/">
-  <sru:version>1.2</sru:version>
-  <sru:numberOfRecords>{{ .SearchRetrieve.Results | len }}</sru:numberOfRecords>
-  {{ if .General.Error }}
-    {{ template "diagnostics-1.2" .General.Error }}
-  {{ else }}
-    {{ template "searchRetrieve-1.2" .SearchRetrieve }}
-  {{ end }}
-</sru:searchRetrieveResponse>
-{{ end }}{{ end }}
-
-{{ define "diagnostics-1.2" }}
+{{ define "diagnostics" }}
 <sru:diagnostics xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/">
   <diag:diagnostic>
       <diag:uri>info:srw/diagnostic/1/{{ .Code }}</diag:uri>
@@ -39,7 +9,7 @@
 </sru:diagnostics>
 {{ end }}
 
-{{ define "explain-1.2" }}
+{{ define "explain" }}
 <zr:explain xmlns:zr="http://explain.z3950.org/dtd/2.0/">
   <zr:serverInfo protocol="SRU" version="1.2" transport="http">
     <zr:host>{{ .ServerName }}</zr:host>
@@ -56,13 +26,13 @@
     </zr:schema>
   </zr:schemaInfo>
   <zr:configInfo>
-    <zr:default type="numberOfRecords">250</zr:default>
-    <zr:setting type="maximumRecords">1000</zr:setting>
+    <zr:default type="numberOfRecords">TODO</zr:default>
+    <zr:setting type="maximumRecords">TODO</zr:setting>
   </zr:configInfo>
 </zr:explain>
 {{ end }}
 
-{{ define "description-1.2" }}
+{{ define "description" }}
 <ed:EndpointDescription xmlns:ed="http://clarin.eu/fcs/endpoint-description" version="1">
   <ed:Capabilities>
     <ed:Capability>http://clarin.eu/fcs/capability/basic-search</ed:Capability>
@@ -88,7 +58,7 @@
 </ed:EndpointDescription>
 {{ end }}
 
-{{ define "searchRetrieve-1.2" }}
+{{ define "searchRetrieve" }}
 <sru:records>
   {{ range .Results }}
     <sru:record>

@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='utf-8'?>
+{{ if eq .Operation "explain" }}
+<sruResponse:explainResponse xmlns:sru="http://www.loc.gov/zing/srw/">
+  <sruResponse:version>2.0</sruResponse:version>
+  {{ if .General.Error }}
+    {{ template "diagnostics" .General.Error }}
+  {{ else }}
+    <sruResponse:record>
+      <sruResponse:recordSchema>http://explain.z3950.org/dtd/2.0/</sruResponse:recordSchema>
+      <sruResponse:recordXMLEscaping>xml</sruResponse:recordXMLEscaping>
+      <sruResponse:recordData>
+        {{ template "explain" .Explain }}
+      </sruResponse:recordData>
+    </sruResponse:record>
+    <sruResponse:extraResponseData>
+      {{ template "description" . }}
+    </sruResponse:extraResponseData>
+  {{ end }}
+</sruResponse:explainResponse>
+{{ else }}{{ if eq .Operation "searchRetrieve" }}
+<sruResponse:searchRetrieveResponse xmlns:sru="http://www.loc.gov/zing/srw/">
+  <sruResponse:version>2.0</sruResponse:version>
+  <sruResponse:numberOfRecords>{{ .SearchRetrieve.Results | len }}</sruResponse:numberOfRecords>
+  {{ if .General.Error }}
+    {{ template "diagnostics" .General.Error }}
+  {{ else }}
+    {{ template "searchRetrieve" .SearchRetrieve }}
+  {{ end }}
+  <sruResponse:resultCountPrecision>info:srw/vocabulary/resultCountPrecision/1/exact</sruResponse:resultCountPrecision>
+</sruResponse:searchRetrieveResponse>
+{{ end }}{{ end }}

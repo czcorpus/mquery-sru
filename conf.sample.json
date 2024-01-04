@@ -3,19 +3,27 @@
     "listenPort": 8080,
     "serverReadTimeoutSecs": 120,
     "serverWriteTimeoutSecs": 60,
+    "generalInfo": {
+        "serverName": "kdesi",
+        "serverPort": "80",
+        "database": "fcs",
+        "databaseTitle": "CNC FCS",
+        "databaseDescription": "CNC API for FCS"
+    },
     "corpora": {
         "registryDir": "/path/to/corpora/registry",
         "layers": {
             "text": "word",
             "lemma": "lemma",
-            "pos": "tag",
+            "pos": "pos",
             "orth": "orth",
             "norm": "norm",
             "phonetic": "phonetic"
         },
         "resources": {
             "syn2020": {
-                "defaultAttr": "lemma",
+                "defaultSearchAttr": "lemma",
+                "availableLayers": ["word", "lemma", "pos"],
                 "syntaxParentAttr": {
                     "name": "someParent"
                 }
