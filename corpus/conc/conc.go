@@ -21,7 +21,6 @@ package conc
 import (
 	"fcs/mango"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/rs/zerolog/log"
@@ -40,7 +39,6 @@ type TokenSlice []*Token
 type Token struct {
 	Word   string            `json:"word"`
 	Strong bool              `json:"strong"`
-	Parent int               `json:"parent"`
 	Attrs  map[string]string `json:"attrs"`
 }
 
@@ -53,8 +51,7 @@ type ConcExamples struct {
 }
 
 type LineParser struct {
-	attrs         []string
-	parentIdxAttr string
+	attrs []string
 }
 
 func (lp *LineParser) parseTokenQuadruple(s []string) *Token {
@@ -63,14 +60,9 @@ func (lp *LineParser) parseTokenQuadruple(s []string) *Token {
 	for i, attr := range lp.attrs[1:] {
 		mAttrs[attr] = rawAttrs[i]
 	}
-	p, err := strconv.Atoi(mAttrs[lp.parentIdxAttr])
-	if err != nil {
-		p = invalidParent
-	}
 	return &Token{
 		Word:   s[0],
 		Strong: len(s[1]) > 2,
-		Parent: p,
 		Attrs:  mAttrs,
 	}
 }
@@ -102,24 +94,6 @@ func (lp *LineParser) normalizeTokens(tokens []string) []string {
 	return ans
 }
 
-func (lp *LineParser) enhanceEmphasis(tokens TokenSlice) {
-	for i, tok := range tokens {
-		parIdx := i + tok.Parent
-		if tok.Strong {
-			if parIdx >= 0 && parIdx < len(tokens) {
-				tokens[i+tok.Parent].Strong = true
-
-			} else {
-				log.Error().
-					Int("parIdx", parIdx).
-					Int("numTokens", len(tokens)).
-					Msg("invalid parent position")
-			}
-			break
-		}
-	}
-}
-
 func (lp *LineParser) parseRawLine(line string) ConcordanceLine {
 	items := lp.normalizeTokens(splitPatt.Split(line, -1))
 	if len(items)%4 != 0 {
@@ -132,7 +106,6 @@ func (lp *LineParser) parseRawLine(line string) ConcordanceLine {
 	for i := 0; i < len(items); i += 4 {
 		tokens = append(tokens, lp.parseTokenQuadruple(items[i:i+4]))
 	}
-	lp.enhanceEmphasis(tokens)
 	return ConcordanceLine{Text: tokens}
 }
 
@@ -144,9 +117,8 @@ func (lp *LineParser) Parse(data mango.GoConcExamples) []ConcordanceLine {
 	return pLines
 }
 
-func NewLineParser(attrs []string, parentIdxAttr string) *LineParser {
+func NewLineParser(attrs []string) *LineParser {
 	return &LineParser{
-		attrs:         attrs,
-		parentIdxAttr: parentIdxAttr,
+		attrs: attrs,
 	}
 }
