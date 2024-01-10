@@ -148,7 +148,7 @@ func (w *Worker) concExample(args rdb.ConcExampleArgs) *results.ConcExample {
 		ans.Error = err.Error()
 		return &ans
 	}
-	parser := conc.NewLineParser(args.Attrs, args.ParentIdxAttr)
+	parser := conc.NewLineParser(args.Attrs)
 	ans.Lines = parser.Parse(concEx)
 	ans.ConcSize = concEx.ConcSize
 	return &ans

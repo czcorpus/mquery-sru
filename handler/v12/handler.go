@@ -148,12 +148,11 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			return http.StatusInternalServerError
 		}
 		args, err := json.Marshal(rdb.ConcExampleArgs{
-			CorpusPath:    a.corporaConf.GetRegistryPath(corpusName),
-			QueryLemma:    "",
-			Query:         query,
-			Attrs:         []string{a.corporaConf.Layers.Text, a.corporaConf.Layers.Text}, // twice, so the line parser works TODO
-			MaxItems:      10,
-			ParentIdxAttr: a.corporaConf.Resources[corpusName].SyntaxParentAttr.Name,
+			CorpusPath: a.corporaConf.GetRegistryPath(corpusName),
+			QueryLemma: "",
+			Query:      query,
+			Attrs:      []string{a.corporaConf.Layers.Text, a.corporaConf.Layers.Text}, // twice, so the line parser works TODO
+			MaxItems:   10,
 		})
 		if err != nil {
 			fcsResponse.General.Error = &general.FCSError{

@@ -23,10 +23,7 @@
         "resources": {
             "syn2020": {
                 "defaultSearchAttr": "lemma",
-                "availableLayers": ["word", "lemma", "pos"],
-                "syntaxParentAttr": {
-                    "name": "someParent"
-                }
+                "availableLayers": ["word", "lemma", "pos"]
             }
         }
     },
