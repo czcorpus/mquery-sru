@@ -23,3 +23,6 @@ go.work
 # local installation
 config.json
 fcs
+
+# generated grammar
+query/parser/fcsql.go

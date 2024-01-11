@@ -1,3 +1,5 @@
+//go:generate pigeon -o query/parser/fcsql.go query/parser/fcsql.peg
+
 package main
 
 import (
