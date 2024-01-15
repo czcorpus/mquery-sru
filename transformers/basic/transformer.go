@@ -19,7 +19,7 @@
 package basic
 
 import (
-	"fcs/general"
+	"errors"
 	"regexp"
 	"strings"
 )
@@ -29,15 +29,39 @@ const EOF = 0
 type basicTransformer struct {
 	input       string
 	parseResult node
-	fcsError    *general.FCSError
+	defaultAttr string
+	errors      []error
+}
+
+// TODO
+func (t *basicTransformer) TranslateWithinCtx(v string) string {
+	switch v {
+	case "sentence", "s":
+		return "s"
+	case "utterance", "u":
+		return "u"
+	case "paragraph", "p":
+		return "p"
+	case "turn", "t":
+		return "t"
+	case "text":
+		return "doc"
+	case "session":
+		return "session"
+	}
+	return "??"
+}
+
+func (t *basicTransformer) AddError(err error) {
+	t.errors = append(t.errors, err)
+}
+
+func (t *basicTransformer) Errors() []error {
+	return t.errors
 }
 
 func (t *basicTransformer) Error(e string) {
-	t.fcsError = &general.FCSError{
-		Code:    general.CodeQueryCannotProcess,
-		Ident:   e,
-		Message: "Cannot process query",
-	}
+	t.AddError(errors.New(e))
 }
 
 type tokenDef struct {
@@ -108,15 +132,19 @@ func (t *basicTransformer) Lex(lval *yySymType) int {
 	return ret
 }
 
-func (t *basicTransformer) CreateCQL(attr string) (string, *general.FCSError) {
-	return t.parseResult.transform(attr)
+func (t *basicTransformer) Generate() string {
+	ans, err := t.parseResult.transform(t.defaultAttr)
+	if err != nil {
+		t.errors = append(t.errors, err)
+	}
+	return ans
 }
 
-func NewBasicTransformer(input string) (*basicTransformer, *general.FCSError) {
+func NewBasicTransformer(input string, defaultAttr string) (*basicTransformer, error) {
 	t := &basicTransformer{input: input}
 	yyParse(t)
-	if t.fcsError != nil {
-		return nil, t.fcsError
+	if len(t.errors) > 0 {
+		return nil, t.errors[0]
 	}
 	return t, nil
 }

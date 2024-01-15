@@ -18,6 +18,8 @@
 
 package general
 
+import "fmt"
+
 // https://www.loc.gov/standards/sru/diagnostics/diagnosticsList.html
 const (
 	// General diagnostics
@@ -42,4 +44,8 @@ type FCSError struct {
 	Code    int
 	Ident   string
 	Message string
+}
+
+func (fe FCSError) Error() string {
+	return fmt.Sprintf("%d: %s (%s)", fe.Code, fe.Message, fe.Ident)
 }
