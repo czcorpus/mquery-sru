@@ -29,7 +29,7 @@
 // 1
 Query <-
     val:MainQuery w:(Ws+ WithinPart)? EOF {
-        var query query
+        query := new(Query)
 
         if w != nil {
             var ok bool
@@ -45,7 +45,7 @@ Query <-
             return query, fmt.Errorf("invalid mainQuery value: %v", w)
         }
         query.mainQuery = tVal
-        return &query, nil
+        return query, nil
     }
 
 // 2

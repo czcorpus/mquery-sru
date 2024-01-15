@@ -29,9 +29,19 @@ type PosAttrProps struct {
 	Name string `json:"name"`
 }
 
+type StructureMapping struct {
+	SentenceStruct  string
+	UtteranceStruct string
+	ParagraphStruct string
+	TurnStruct      string
+	TextStruct      string
+	SessionStruct   string
+}
+
 type CorpusSetup struct {
-	DefaultSearchAttr string   `json:"defaultSearchAttr"`
-	AvailableLayers   []string `json:"availableLayers"`
+	DefaultSearchAttr string           `json:"defaultSearchAttr"`
+	AvailableLayers   []string         `json:"availableLayers"`
+	StructureMapping  StructureMapping `json:"structureMapping"`
 }
 
 type LayersSetup struct {

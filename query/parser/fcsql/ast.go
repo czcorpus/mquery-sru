@@ -19,6 +19,7 @@
 package fcsql
 
 import (
+	"fcs/corpus"
 	"fmt"
 	"strings"
 
@@ -41,13 +42,17 @@ type beType int
 
 // ----
 
-type query struct {
-	mainQuery *mainQuery
-	within    *withinPart
+type Query struct {
+	mainQuery        *mainQuery
+	within           *withinPart
+	structureMapping corpus.StructureMapping
 }
 
-func (q *query) String() string {
-	fmt.Println("> query.String()")
+func (q *Query) AddStructureMapping(m corpus.StructureMapping) {
+	q.structureMapping = m
+}
+
+func (q *Query) String() string {
 	if q.within != nil {
 		return fmt.Sprintf("%s %s", q.mainQuery.String(), q.within.String())
 	}
@@ -62,7 +67,6 @@ type quantifiedQuery struct {
 }
 
 func (qq *quantifiedQuery) String() string {
-	fmt.Println("> quantifiedQuery.String()")
 	if qq.quantifier != "" {
 		return fmt.Sprintf("%s%s", qq.simpleQuery.String(), qq.quantifier)
 	}
@@ -78,7 +82,6 @@ type mainQuery struct {
 }
 
 func (mq *mainQuery) String() string {
-	fmt.Println("> mainQuery.String()")
 	switch mq.operator {
 	case mainQueryOpNone:
 		return mq.quantifiedQuery.String()
@@ -102,7 +105,6 @@ type basicExpression struct {
 }
 
 func (be *basicExpression) String() string {
-	fmt.Println("> basicExpression.String()")
 	switch be.exprType {
 	case basicExpressionTypeGroup:
 		return fmt.Sprintf("(%s)", be.expression.String())
@@ -135,7 +137,6 @@ func (e *expression) AddTailItem(operator string, value *basicExpression) {
 }
 
 func (e *expression) String() string {
-	fmt.Println("> expression.String()")
 	if e == nil {
 		return ""
 	}
@@ -155,7 +156,6 @@ type attribute struct {
 }
 
 func (a *attribute) String() string {
-	fmt.Println("> attribute.String()")
 	if a.name != "" {
 		return fmt.Sprintf("%s:%s", a.name, a.value)
 	}
@@ -185,7 +185,6 @@ type flaggedRegexp struct {
 
 func (fr *flaggedRegexp) String() string {
 	// TODO add support for additional stuff besides case sensitivity
-	fmt.Println("> flaggedRegexp.String()")
 	var flag string
 	for _, f := range fr.flags {
 		if f == "i" || f == "I" || f == "c" || f == "C" {
@@ -217,7 +216,6 @@ type withinPart struct {
 }
 
 func (wp *withinPart) String() string {
-	fmt.Println("> withinPart.String()")
 	return fmt.Sprintf("within <%s />", wp.value)
 }
 
@@ -228,7 +226,6 @@ type implicitQuery struct {
 }
 
 func (wp *implicitQuery) String() string {
-	fmt.Println("> implicitQuery.String()")
 	return wp.flaggedRegexp.String()
 }
 
@@ -239,7 +236,6 @@ type segmentQuery struct {
 }
 
 func (wp *segmentQuery) String() string {
-	fmt.Println("> segmentQuery.String()")
 	return fmt.Sprintf("[%s]", wp.expression.String())
 }
 
@@ -250,7 +246,6 @@ type simpleQuery struct {
 }
 
 func (sq *simpleQuery) String() string {
-	fmt.Println("> simpleQuery.String()")
 	if sq.GetInnerQuery() != nil {
 		return fmt.Sprintf("(%s)", sq.GetInnerQuery().String())
 
@@ -295,7 +290,6 @@ type quotedString struct {
 }
 
 func (qs *quotedString) String() string {
-	fmt.Println("> quotedString.String()")
 	if qs.regexp != "" {
 		return fmt.Sprintf(`"%s"`, qs.regexp)
 	}
@@ -303,7 +297,7 @@ func (qs *quotedString) String() string {
 }
 
 func (qs *quotedString) WithPrefix(p string) string {
-	return fmt.Sprintf(p + qs.value)
+	return fmt.Sprintf(`"%s%s"`, p, qs.value)
 }
 
 func (qs *quotedString) Append(s string) {
