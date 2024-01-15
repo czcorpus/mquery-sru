@@ -25,7 +25,7 @@ import (
 func TestFCSQLParser(t *testing.T) {
 	queries := []string{
 		`"walking"`,
-		`[token = "walking"]`,
+		`[token = "walking"] within p`,
 		`"Dog" /c`,
 		`[word = "Dog" /c]`,
 		`[pos = "NOUN"]`,
@@ -38,7 +38,10 @@ func TestFCSQLParser(t *testing.T) {
 	}
 
 	for i, q := range queries {
-		_, err := Parse(fmt.Sprintf("test_%d", i), []byte(q)) // Debug(true))
+		ans, err := Parse(fmt.Sprintf("test_%d", i), []byte(q)) // Debug(true))
+		if ans != nil {
+			fmt.Printf("ans = %#v\n", ans.(*query).String())
+		}
 		assert.NoError(t, err)
 	}
 }
