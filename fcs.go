@@ -22,13 +22,14 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"fcs/cnf"
+	"fcs/corpus"
 	"fcs/engine"
 	"fcs/general"
 	"fcs/handler"
 	"fcs/monitoring"
+	"fcs/query/parser/fcsql"
 	"fcs/rdb"
 	"fcs/transformers"
-	"fcs/transformers/advanced"
 	"fcs/transformers/basic"
 	"fcs/worker"
 )
@@ -146,26 +147,44 @@ func main() {
 			fmt.Print("> ")
 			input, err := reader.ReadString('\n')
 			if err != nil {
-				fmt.Println("Bye.")
+				fmt.Printf("Error: %w, Bye.\n", err)
 				return
 			}
-
-			var t transformers.Transformer
-			var fcsErr *general.FCSError
+			input = strings.TrimSpace(input)
 			switch flag.Arg(1) {
 			case "basic":
+				var t transformers.Transformer
+				var fcsErr *general.FCSError
 				t, fcsErr = basic.NewBasicTransformer(input)
+				if fcsErr != nil {
+					println(fcsErr.Message, ":", fcsErr.Ident)
+
+				} else {
+					println(t.CreateCQL("<attr>"))
+				}
 			case "advanced":
-				t, fcsErr = advanced.NewAdvancedTransformer(input)
+				ast, err := fcsql.ParseQuery(
+					input,
+					"word",
+					corpus.StructureMapping{
+						SentenceStruct:  "s",
+						UtteranceStruct: "sp",
+						ParagraphStruct: "p",
+						TurnStruct:      "sp",
+						TextStruct:      "doc",
+						SessionStruct:   "doc",
+					},
+				)
+
+				if err != nil {
+					fmt.Printf("error: %w\n", err)
+				}
+				println(ast.String())
 			}
 
-			if fcsErr != nil {
-				println(fcsErr.Message, ":", fcsErr.Ident)
-			} else {
-				println(t.CreateCQL("<attr>"))
-			}
 		}
 	}
+
 	conf := cnf.LoadConfig(flag.Arg(1))
 
 	if action == "worker" {

@@ -19,32 +19,21 @@
 package fcsql
 
 import (
+	"fcs/corpus"
 	"fmt"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
-func TestFCSQLParser(t *testing.T) {
-	queries := []string{
-		`"walking"`,
-		`[token = "walking"] within p`,
-		`"Dog" /c`,
-		`[word = "Dog" /c]`,
-		`[pos = "NOUN"]`,
-		`[pos != "NOUN"]`,
-		`[lemma = "walk"]`,
-		`"blaue|grüne" [pos = "NOUN"]`,
-		`"dogs" []{3,} "cats" within s`,
-		`[z:pos = "ADJ"]`,
-		`[z:pos="ADJ" & q:pos="ADJ"]`,
+// ParseQuery parses FCS-QL and returns an abstract syntax
+// tree which can be used to generate CQL.
+func ParseQuery(q string, defaultAttr string, smapping corpus.StructureMapping) (*Query, error) {
+	ans, err := Parse("query", []byte(q)) // Debug(true))
+	if err != nil {
+		return nil, err
 	}
-
-	for i, q := range queries {
-		ans, err := Parse(fmt.Sprintf("test_%d", i), []byte(q)) // Debug(true))
-		if ans != nil {
-			fmt.Printf("ans = %#v\n", ans.(*Query).String())
-		}
-		assert.NoError(t, err)
+	tAns, ok := ans.(*Query)
+	if !ok {
+		return nil, fmt.Errorf("invalid AST type produced by parser")
 	}
+	tAns.AddStructureMapping(smapping)
+	return tAns, nil
 }
