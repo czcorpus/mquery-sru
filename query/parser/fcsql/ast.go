@@ -20,6 +20,7 @@ package fcsql
 
 import (
 	"fcs/corpus"
+	"fcs/query/compiler"
 	"fmt"
 	"strings"
 
@@ -46,17 +47,49 @@ type Query struct {
 	mainQuery        *mainQuery
 	within           *withinPart
 	structureMapping corpus.StructureMapping
+	errors           []error
 }
 
 func (q *Query) AddStructureMapping(m corpus.StructureMapping) {
 	q.structureMapping = m
 }
 
-func (q *Query) String() string {
-	if q.within != nil {
-		return fmt.Sprintf("%s %s", q.mainQuery.String(), q.within.String())
+func (q *Query) TranslateWithinCtx(v string) string {
+	switch v {
+	case "sentence", "s":
+		return q.structureMapping.SentenceStruct
+	case "utterance", "u":
+		return q.structureMapping.UtteranceStruct
+	case "paragraph", "p":
+		return q.structureMapping.ParagraphStruct
+	case "turn", "t":
+		return q.structureMapping.TurnStruct
+	case "text":
+		return q.structureMapping.TextStruct
+	case "session":
+		return q.structureMapping.SessionStruct
 	}
-	return q.mainQuery.String()
+	return "??"
+}
+
+func (q *Query) AddError(err error) {
+	q.errors = append(q.errors, err)
+}
+
+func (q *Query) Errors() []error {
+	return q.errors
+}
+
+func (q *Query) Generate() string {
+	q.errors = make([]error, 0, 20)
+	if q.within != nil {
+		return fmt.Sprintf(
+			"%s %s",
+			q.mainQuery.Generate(q),
+			q.within.Generate(q),
+		)
+	}
+	return q.mainQuery.Generate(q)
 }
 
 // ----
@@ -66,11 +99,11 @@ type quantifiedQuery struct {
 	quantifier  string
 }
 
-func (qq *quantifiedQuery) String() string {
+func (qq *quantifiedQuery) Generate(ast compiler.AST) string {
 	if qq.quantifier != "" {
-		return fmt.Sprintf("%s%s", qq.simpleQuery.String(), qq.quantifier)
+		return fmt.Sprintf("%s%s", qq.simpleQuery.Generate(ast), qq.quantifier)
 	}
-	return qq.simpleQuery.String()
+	return qq.simpleQuery.Generate(ast)
 }
 
 // -----
@@ -81,14 +114,16 @@ type mainQuery struct {
 	operator        mainQueryOp
 }
 
-func (mq *mainQuery) String() string {
+func (mq *mainQuery) Generate(ast compiler.AST) string {
 	switch mq.operator {
 	case mainQueryOpNone:
-		return mq.quantifiedQuery.String()
+		return mq.quantifiedQuery.Generate(ast)
 	case mainQueryOpSequence:
-		return fmt.Sprintf("%s %s", mq.quantifiedQuery.String(), mq.mainQuery.String())
+		return fmt.Sprintf(
+			"%s %s", mq.quantifiedQuery.Generate(ast), mq.mainQuery.Generate(ast))
 	case mainQueryOpOr:
-		return fmt.Sprintf("%s | %s", mq.quantifiedQuery.String(), mq.mainQuery.String())
+		return fmt.Sprintf(
+			"%s | %s", mq.quantifiedQuery.Generate(ast), mq.mainQuery.Generate(ast))
 	default:
 		return "??"
 	}
@@ -104,14 +139,15 @@ type basicExpression struct {
 	exprType      beType
 }
 
-func (be *basicExpression) String() string {
+func (be *basicExpression) Generate(ast compiler.AST) string {
 	switch be.exprType {
 	case basicExpressionTypeGroup:
-		return fmt.Sprintf("(%s)", be.expression.String())
+		return fmt.Sprintf("(%s)", be.expression.Generate(ast))
 	case basicExpressionTypeNot:
-		return fmt.Sprintf("!%s", be.expression.String())
+		return fmt.Sprintf("!%s", be.expression.Generate(ast))
 	case basicExpressionTypeAttrOpRegexp:
-		return fmt.Sprintf("%s%s%s", be.attribute.String(), be.operator, be.flaggedRegexp.String())
+		return fmt.Sprintf(
+			"%s%s%s", be.attribute.Generate(ast), be.operator, be.flaggedRegexp.Generate(ast))
 	default:
 		return "??"
 	}
@@ -136,14 +172,14 @@ func (e *expression) AddTailItem(operator string, value *basicExpression) {
 	)
 }
 
-func (e *expression) String() string {
+func (e *expression) Generate(ast compiler.AST) string {
 	if e == nil {
 		return ""
 	}
 	var ans strings.Builder
-	ans.WriteString(e.basicExpression.String())
+	ans.WriteString(e.basicExpression.Generate(ast))
 	for _, te := range e.tailValues {
-		ans.WriteString(fmt.Sprintf(" %s %s", te.operator, te.value.String()))
+		ans.WriteString(fmt.Sprintf(" %s %s", te.operator, te.value.Generate(ast)))
 	}
 	return ans.String()
 }
@@ -155,7 +191,7 @@ type attribute struct {
 	value string
 }
 
-func (a *attribute) String() string {
+func (a *attribute) Generate(ast compiler.AST) string {
 	if a.name != "" {
 		return fmt.Sprintf("%s:%s", a.name, a.value)
 	}
@@ -172,8 +208,8 @@ func (r *regexp) WithPrefix(p string) string {
 	return r.quotedString.WithPrefix(p)
 }
 
-func (r *regexp) String() string {
-	return r.quotedString.String()
+func (r *regexp) Generate(ast compiler.AST) string {
+	return r.quotedString.Generate(ast)
 }
 
 // -------
@@ -183,7 +219,7 @@ type flaggedRegexp struct {
 	flags  []string
 }
 
-func (fr *flaggedRegexp) String() string {
+func (fr *flaggedRegexp) Generate(ast compiler.AST) string {
 	// TODO add support for additional stuff besides case sensitivity
 	var flag string
 	for _, f := range fr.flags {
@@ -197,7 +233,7 @@ func (fr *flaggedRegexp) String() string {
 	if flag != "" {
 		return fr.regexp.WithPrefix(flag)
 	}
-	return fr.regexp.String()
+	return fr.regexp.Generate(ast)
 }
 
 func (fr *flaggedRegexp) AttachUntypedFlag(v any) error {
@@ -215,8 +251,8 @@ type withinPart struct {
 	value string
 }
 
-func (wp *withinPart) String() string {
-	return fmt.Sprintf("within <%s />", wp.value)
+func (wp *withinPart) Generate(ast compiler.AST) string {
+	return fmt.Sprintf("within <%s />", ast.TranslateWithinCtx(wp.value))
 }
 
 // ----
@@ -225,8 +261,8 @@ type implicitQuery struct {
 	flaggedRegexp *flaggedRegexp
 }
 
-func (wp *implicitQuery) String() string {
-	return wp.flaggedRegexp.String()
+func (wp *implicitQuery) Generate(ast compiler.AST) string {
+	return wp.flaggedRegexp.Generate(ast)
 }
 
 // ------
@@ -235,8 +271,8 @@ type segmentQuery struct {
 	expression *expression
 }
 
-func (wp *segmentQuery) String() string {
-	return fmt.Sprintf("[%s]", wp.expression.String())
+func (wp *segmentQuery) Generate(ast compiler.AST) string {
+	return fmt.Sprintf("[%s]", wp.expression.Generate(ast))
 }
 
 // -------
@@ -245,15 +281,15 @@ type simpleQuery struct {
 	value any
 }
 
-func (sq *simpleQuery) String() string {
+func (sq *simpleQuery) Generate(ast compiler.AST) string {
 	if sq.GetInnerQuery() != nil {
-		return fmt.Sprintf("(%s)", sq.GetInnerQuery().String())
+		return fmt.Sprintf("(%s)", sq.GetInnerQuery().Generate(ast))
 
 	} else if sq.GetImplicitQuery() != nil {
-		return sq.GetImplicitQuery().String()
+		return sq.GetImplicitQuery().Generate(ast)
 
 	} else if sq.GetSegmentQuery() != nil {
-		return sq.GetSegmentQuery().String()
+		return sq.GetSegmentQuery().Generate(ast)
 	}
 	return "??"
 }
@@ -289,7 +325,7 @@ type quotedString struct {
 	regexp string
 }
 
-func (qs *quotedString) String() string {
+func (qs *quotedString) Generate(ast compiler.AST) string {
 	if qs.regexp != "" {
 		return fmt.Sprintf(`"%s"`, qs.regexp)
 	}

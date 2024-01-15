@@ -110,9 +110,13 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return http.StatusBadRequest
 	}
 
-	transformer, fcsErr := basic.NewBasicTransformer(fcsQuery)
-	if fcsErr != nil {
-		fcsResponse.General.Error = fcsErr
+	transformer, err := basic.NewBasicTransformer(fcsQuery, "word") // TODO !!!
+	if err != nil {
+		fcsResponse.General.Error = &general.FCSError{
+			Code:    general.CodeQuerySyntaxError,
+			Message: err.Error(),
+			Ident:   "TODO", // TODO !!
+		}
 		return http.StatusInternalServerError
 	}
 
@@ -142,9 +146,13 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	// make searches
 	waits := make([]<-chan *rdb.WorkerResult, len(corpora))
 	for i, corpusName := range corpora {
-		query, fcsErr := transformer.CreateCQL(searchAttrs[i])
-		if fcsErr != nil {
-			fcsResponse.General.Error = fcsErr
+		query := transformer.Generate()
+		if len(transformer.Errors()) > 0 {
+			fcsResponse.General.Error = &general.FCSError{
+				Code:    general.CodeQueryCannotProcess,
+				Message: transformer.Errors()[0].Error(),
+				Ident:   "TODO",
+			}
 			return http.StatusInternalServerError
 		}
 		args, err := json.Marshal(rdb.ConcExampleArgs{

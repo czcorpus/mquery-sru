@@ -42,9 +42,10 @@ func TestFCSQLParser(t *testing.T) {
 
 	for i, q := range queries {
 		ans, err := Parse(fmt.Sprintf("test_%d", i), []byte(q)) // Debug(true))
-		if ans != nil {
-			fmt.Printf("ans = %#v\n", ans.(*Query).String())
-		}
 		assert.NoError(t, err)
+		if ans != nil {
+			fmt.Printf("ans = %#v\n", ans.(*Query).Generate())
+		}
+
 	}
 }

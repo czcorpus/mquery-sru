@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/czcorpus/cnc-gokit/collections"
 	"github.com/czcorpus/cnc-gokit/fs"
 )
 
@@ -84,12 +85,37 @@ func (ls *LayersSetup) Validate(confContext string) error {
 	return nil
 }
 
+type SrchResources map[string]*CorpusSetup
+
+func (sr SrchResources) GetCommonDefaultAttr(corpora ...string) string {
+	ans := collections.NewSet[string]()
+	for _, corp := range corpora {
+		tmp := collections.NewSet[string](sr[corp].DefaultSearchAttr)
+		ans = ans.Intersect(tmp)
+	}
+	if ans.Size() == 1 {
+		return ans.ToSlice()[0]
+	}
+	return ""
+}
+
+func (sr SrchResources) GetCommonLayers(corpora ...string) []string {
+	ans := collections.NewSet[string]()
+	for _, corp := range corpora {
+		tmp := collections.NewSet[string](sr[corp].AvailableLayers...)
+		ans = ans.Intersect(tmp)
+	}
+	return ans.ToOrderedSlice()
+}
+
+// ---
+
 // CorporaSetup defines mquery application configuration related
 // to a corpus
 type CorporaSetup struct {
-	RegistryDir string                  `json:"registryDir"`
-	Layers      *LayersSetup            `json:"layers"`
-	Resources   map[string]*CorpusSetup `json:"resources"`
+	RegistryDir string        `json:"registryDir"`
+	Layers      *LayersSetup  `json:"layers"`
+	Resources   SrchResources `json:"resources"`
 }
 
 func (cs *CorporaSetup) GetRegistryPath(corpusID string) string {

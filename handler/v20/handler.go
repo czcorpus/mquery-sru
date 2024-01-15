@@ -23,10 +23,10 @@ import (
 	"fcs/cnf"
 	"fcs/corpus"
 	"fcs/general"
+	"fcs/query/compiler"
+	"fcs/query/parser/fcsql"
 	"fcs/rdb"
 	"fcs/results"
-	"fcs/transformers"
-	"fcs/transformers/advanced"
 	"fcs/transformers/basic"
 	"fmt"
 	"net/http"
@@ -116,14 +116,52 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return http.StatusBadRequest
 	}
 
-	var transformer transformers.Transformer
 	var fcsErr *general.FCSError
+	corpora := strings.Split(ctx.Query("x-fcs-context"), ",")
+	defaultAttr := a.corporaConf.Resources.GetCommonDefaultAttr()
+	if defaultAttr == "" {
+		fcsResponse.General.Error = &general.FCSError{
+			Code:    general.CodeUnsupportedParameterValue,
+			Ident:   defaultAttr,
+			Message: "Unsupported parameter value",
+		}
+		return http.StatusUnprocessableEntity
+	}
 	queryType := ctx.DefaultQuery("queryType", "cql")
+	var ast compiler.AST
 	switch queryType {
 	case "cql":
-		transformer, fcsErr = basic.NewBasicTransformer(fcsQuery)
+		var err error
+		ast, err = basic.NewBasicTransformer(fcsQuery, defaultAttr)
+		if err != nil {
+			fcsErr = &general.FCSError{
+				Code:    general.CodeQuerySyntaxError,
+				Ident:   fcsQuery,
+				Message: "Invalid query syntax",
+			}
+		}
 	case "fcs":
-		transformer, fcsErr = advanced.NewAdvancedTransformer(fcsQuery)
+		var err error
+		ast, err = fcsql.ParseQuery(
+			fcsQuery,
+			defaultAttr,
+			corpus.StructureMapping{ // TODO
+				SentenceStruct:  "s",
+				UtteranceStruct: "s",
+				ParagraphStruct: "p",
+				TurnStruct:      "p",
+				TextStruct:      "doc",
+				SessionStruct:   "doc",
+			},
+		)
+		if err != nil {
+			fcsErr = &general.FCSError{
+				Code:    general.CodeQuerySyntaxError,
+				Ident:   fcsQuery,
+				Message: "Invalid query syntax",
+			}
+		}
+
 	default:
 		fcsErr = &general.FCSError{
 			Code:    general.CodeUnsupportedParameterValue,
@@ -138,9 +176,9 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	fcsResponse.SearchRetrieve.QueryType = queryType
 
 	// get searchable corpora and attrs
-	var corpora, searchAttrs []string
-	if ctx.Request.URL.Query().Has("x-fcs-context") {
-		for _, v := range strings.Split(ctx.Query("x-fcs-context"), ",") {
+	var searchAttrs []string
+	if len(corpora) > 0 {
+		for _, v := range corpora {
 			resource, ok := a.corporaConf.Resources[v]
 			if !ok {
 				fcsResponse.General.Error = &general.FCSError{
@@ -153,6 +191,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			corpora = append(corpora, v)
 			searchAttrs = append(searchAttrs, resource.DefaultSearchAttr)
 		}
+
 	} else {
 		for corpusName, resource := range a.corporaConf.Resources {
 			corpora = append(corpora, corpusName)
@@ -163,9 +202,13 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	// make searches
 	waits := make([]<-chan *rdb.WorkerResult, len(corpora))
 	for i, corpusName := range corpora {
-		query, fcsErr := transformer.CreateCQL(searchAttrs[i])
-		if fcsErr != nil {
-			fcsResponse.General.Error = fcsErr
+		query := ast.Generate()
+		if len(ast.Errors()) > 0 {
+			fcsResponse.General.Error = &general.FCSError{
+				Code:    general.CodeQueryCannotProcess,
+				Ident:   "query", // TODO
+				Message: ast.Errors()[0].Error(),
+			}
 			return http.StatusInternalServerError
 		}
 		args, err := json.Marshal(rdb.ConcExampleArgs{

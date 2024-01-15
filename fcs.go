@@ -27,9 +27,9 @@ import (
 	"fcs/general"
 	"fcs/handler"
 	"fcs/monitoring"
+	"fcs/query/compiler"
 	"fcs/query/parser/fcsql"
 	"fcs/rdb"
-	"fcs/transformers"
 	"fcs/transformers/basic"
 	"fcs/worker"
 )
@@ -153,14 +153,17 @@ func main() {
 			input = strings.TrimSpace(input)
 			switch flag.Arg(1) {
 			case "basic":
-				var t transformers.Transformer
-				var fcsErr *general.FCSError
-				t, fcsErr = basic.NewBasicTransformer(input)
-				if fcsErr != nil {
-					println(fcsErr.Message, ":", fcsErr.Ident)
+				var t compiler.AST
+				var err error
+				t, err = basic.NewBasicTransformer(input, "word")
+				if err != nil {
+					println("syntax error:", err)
 
 				} else {
-					println(t.CreateCQL("<attr>"))
+					println(t.Generate())
+					for i, err := range t.Errors() {
+						fmt.Printf("error[%d]: %s", i, err)
+					}
 				}
 			case "advanced":
 				ast, err := fcsql.ParseQuery(
@@ -179,7 +182,10 @@ func main() {
 				if err != nil {
 					fmt.Printf("error: %w\n", err)
 				}
-				println(ast.String())
+				println(ast.Generate())
+				for i, err := range ast.Errors() {
+					fmt.Printf("error[%d]: %s", i, err)
+				}
 			}
 
 		}
