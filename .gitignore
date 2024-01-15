@@ -25,4 +25,4 @@ config.json
 fcs
 
 # generated grammar
-query/parser/fcsql.go
+query/parser/fcsql/fcsql.go
