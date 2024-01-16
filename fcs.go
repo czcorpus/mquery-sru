@@ -5,7 +5,6 @@ package main
 import (
 	"bufio"
 	"context"
-	"database/sql"
 	"flag"
 	"fmt"
 	"net/http"
@@ -23,7 +22,6 @@ import (
 
 	"fcs/cnf"
 	"fcs/corpus"
-	"fcs/engine"
 	"fcs/general"
 	"fcs/handler"
 	"fcs/monitoring"
@@ -58,7 +56,6 @@ func runApiServer(
 	syscallChan chan os.Signal,
 	exitEvent chan os.Signal,
 	radapter *rdb.Adapter,
-	sqlDB *sql.DB,
 ) {
 	if !conf.LogLevel.IsDebugMode() {
 		gin.SetMode(gin.ReleaseMode)
@@ -232,11 +229,7 @@ func main() {
 		if err != nil {
 			log.Fatal().Err(err).Msg("failed to connect to Redis")
 		}
-		sqlDB, err := engine.Open(conf.DB)
-		if err != nil {
-			log.Fatal().Err(err).Msg("failed to open database connection")
-		}
-		runApiServer(conf, syscallChan, exitEvent, radapter, sqlDB)
+		runApiServer(conf, syscallChan, exitEvent, radapter)
 	case "worker":
 		err := radapter.TestConnection(20*time.Second, testConnCancel)
 		if err != nil {

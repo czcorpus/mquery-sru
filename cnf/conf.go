@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fcs/corpus"
-	"fcs/engine"
 	"fcs/rdb"
 	"os"
 	"path/filepath"
@@ -65,7 +64,6 @@ type Conf struct {
 	ServerInfo             *ServerInfo          `json:"serverInfo"`
 	CorporaSetup           *corpus.CorporaSetup `json:"corpora"`
 	Redis                  *rdb.Conf            `json:"redis"`
-	DB                     *engine.DBConf       `json:"db"`
 	LogFile                string               `json:"logFile"`
 	LogLevel               logging.LogLevel     `json:"logLevel"`
 	Language               string               `json:"language"`
