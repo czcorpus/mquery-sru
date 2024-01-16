@@ -70,7 +70,7 @@ func runApiServer(
 	engine.NoMethod(uniresp.NoMethodHandler)
 	engine.NoRoute(uniresp.NotFoundHandler)
 
-	FCSActions := handler.NewFCSHandler(conf.GeneralInfo, conf.CorporaSetup, radapter)
+	FCSActions := handler.NewFCSHandler(conf.ServerInfo, conf.CorporaSetup, radapter)
 	engine.GET("/", FCSActions.FCSHandler)
 
 	logger := monitoring.NewWorkerJobLogger(conf.TimezoneLocation())

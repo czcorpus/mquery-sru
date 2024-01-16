@@ -21,91 +21,184 @@ package corpus
 import (
 	"fmt"
 	"path/filepath"
+	"sort"
+	"strings"
 
 	"github.com/czcorpus/cnc-gokit/collections"
 	"github.com/czcorpus/cnc-gokit/fs"
 )
 
-type PosAttrProps struct {
-	Name string `json:"name"`
+const (
+	LayerTypeText     LayerType = "text"
+	LayerTypeLemma    LayerType = "lemma"
+	LayerTypePOS      LayerType = "pos"
+	LayerTypeOrth     LayerType = "orth"
+	LayerTypeNorm     LayerType = "norm"
+	LayerTypePhonetic LayerType = "phonetic"
+
+	DefaultLayerType = LayerTypeText
+)
+
+type LayerType string
+
+func (name LayerType) Validate() error {
+	if name == LayerTypeText ||
+		name == LayerTypeLemma ||
+		name == LayerTypePOS ||
+		name == LayerTypeOrth ||
+		name == LayerTypeNorm ||
+		name == LayerTypePhonetic {
+		return nil
+	}
+	return fmt.Errorf("invalid layer name `%s`", name)
+}
+
+func (name LayerType) GetResultID() string {
+	switch name {
+	case LayerTypeText:
+		return "http://clarin.dk/ns/fcs/layer/word"
+	case LayerTypeLemma:
+		return "http://clarin.dk/ns/fcs/layer/lemma"
+	case LayerTypePOS:
+		return "http://clarin.dk/ns/fcs/layer/pos"
+	case LayerTypeOrth:
+		return "http://clarin.dk/ns/fcs/layer/orth"
+	case LayerTypeNorm:
+		return "http://clarin.dk/ns/fcs/layer/norm"
+	case LayerTypePhonetic:
+		return "http://clarin.dk/ns/fcs/layer/phonetic"
+	}
+	return ""
+}
+
+type PosAttr struct {
+	ID             string    `json:"id"`
+	Name           string    `json:"name"`
+	Layer          LayerType `json:"layer"`
+	IsLayerDefault bool      `json:"isLayerDefault"`
 }
 
 type StructureMapping struct {
-	SentenceStruct  string
-	UtteranceStruct string
-	ParagraphStruct string
-	TurnStruct      string
-	TextStruct      string
-	SessionStruct   string
+	SentenceStruct  string `json:"sentenceStruct"`
+	UtteranceStruct string `json:"utteranceStruct"`
+	ParagraphStruct string `json:"paragraphStruct"`
+	TurnStruct      string `json:"turnStruct"`
+	TextStruct      string `json:"textStruct"`
+	SessionStruct   string `json:"sessionStruct"`
 }
 
 type CorpusSetup struct {
-	DefaultSearchAttr string           `json:"defaultSearchAttr"`
-	AvailableLayers   []string         `json:"availableLayers"`
-	StructureMapping  StructureMapping `json:"structureMapping"`
+	PosAttrs         []PosAttr        `json:"posAttrs"`
+	StructureMapping StructureMapping `json:"structureMapping"`
 }
 
-type LayersSetup struct {
-	Text     string `json:"text"`
-	Lemma    string `json:"lemma"`
-	POS      string `json:"pos"`
-	Orth     string `json:"orth"`
-	Norm     string `json:"norm"`
-	Phonetic string `json:"phonetic"`
+func (cs *CorpusSetup) GetLayerDefault(ln LayerType) PosAttr {
+	for _, item := range cs.PosAttrs {
+		if item.IsLayerDefault {
+			return item
+		}
+	}
+	return PosAttr{}
 }
 
-func (ls *LayersSetup) ToDict() map[string]string {
-	layers := make(map[string]string)
-	layers["text"] = ls.Text
-	if ls.Lemma != "" {
-		layers["lemma"] = ls.Lemma
+func (cs *CorpusSetup) GetDefinedLayers() *collections.Set[LayerType] {
+	ans := collections.NewSet[LayerType]()
+	for _, item := range cs.PosAttrs {
+		ans.Add(item.Layer)
 	}
-	if ls.POS != "" {
-		layers["pos"] = ls.POS
-	}
-	if ls.Orth != "" {
-		layers["orth"] = ls.Orth
-	}
-	if ls.Norm != "" {
-		layers["norm"] = ls.Norm
-	}
-	if ls.Phonetic != "" {
-		layers["phonetic"] = ls.Phonetic
-	}
-	return layers
+	return ans
 }
 
-func (ls *LayersSetup) Validate(confContext string) error {
+func (cs *CorpusSetup) GetDefinedLayersAsString() string {
+	layers := cs.GetDefinedLayers().ToOrderedSlice()
+	ans := make([]string, len(layers))
+	for i, v := range layers {
+		ans[i] = string(v)
+	}
+	return strings.Join(ans, " ")
+}
+
+func (ls *CorpusSetup) Validate(confContext string) error {
 	if ls == nil {
 		return fmt.Errorf("missing configuration section `%s.layers`", confContext)
 	}
-	if ls.Text == "" {
-		return fmt.Errorf("missing `%s.layers.text`", confContext)
+	layerDefaults := make(map[LayerType]int)
+	for _, attr := range ls.PosAttrs {
+		if err := attr.Layer.Validate(); err != nil {
+			return err
+		}
+		if attr.IsLayerDefault {
+			layerDefaults[attr.Layer]++
+		}
 	}
+	for layer, num := range layerDefaults {
+		if num != 1 {
+			return fmt.Errorf(
+				"invalid number of isLayerDefault items for layer %s: %d (must be 1)",
+				layer,
+				num,
+			)
+		}
+	}
+
 	return nil
 }
 
 type SrchResources map[string]*CorpusSetup
 
-func (sr SrchResources) GetCommonDefaultAttr(corpora ...string) string {
-	ans := collections.NewSet[string]()
-	for _, corp := range corpora {
-		tmp := collections.NewSet[string](sr[corp].DefaultSearchAttr)
-		ans = ans.Intersect(tmp)
-	}
-	if ans.Size() == 1 {
-		return ans.ToSlice()[0]
-	}
-	return ""
-}
-
-func (sr SrchResources) GetCommonLayers(corpora ...string) []string {
-	ans := collections.NewSet[string]()
-	for _, corp := range corpora {
-		tmp := collections.NewSet[string](sr[corp].AvailableLayers...)
-		ans = ans.Intersect(tmp)
+func (sr SrchResources) GetCommonLayers() []LayerType {
+	ans := collections.NewSet[LayerType]()
+	for _, corp := range sr {
+		ans = ans.Intersect(corp.GetDefinedLayers())
 	}
 	return ans.ToOrderedSlice()
+}
+
+func (sr SrchResources) GetCorpora() []string {
+	ans := make([]string, len(sr))
+	i := 0
+	for k := range sr {
+		ans[i] = k
+		i++
+	}
+	return ans
+}
+
+func (sr SrchResources) GetCommonPosAttrs(corpusNames ...string) []PosAttr {
+	collect := make(map[string]PosAttr)
+	for _, corp := range corpusNames {
+		for _, pa := range sr[corp].PosAttrs {
+			collect[pa.Name] = pa
+		}
+	}
+	i := 0
+	ans := make([]PosAttr, len(collect))
+	for _, v := range collect {
+		ans[i] = v
+		i++
+	}
+	sort.SliceStable(ans, func(i, j int) bool {
+		return strings.Compare(ans[i].Name, ans[j].Name) < 0
+	})
+	return ans
+}
+
+func (sr SrchResources) GetCommonPosAttrNames(corpusName ...string) []string {
+	pa := sr.GetCommonPosAttrs()
+	ans := make([]string, len(pa))
+	for i, pa := range pa {
+		ans[i] = pa.Name
+	}
+	return ans
+}
+
+func (sr SrchResources) Validate(confContext string) error {
+	for name, corp := range sr {
+		if err := corp.Validate(fmt.Sprintf("%s[%s]", confContext, name)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // ---
@@ -114,7 +207,6 @@ func (sr SrchResources) GetCommonLayers(corpora ...string) []string {
 // to a corpus
 type CorporaSetup struct {
 	RegistryDir string        `json:"registryDir"`
-	Layers      *LayersSetup  `json:"layers"`
 	Resources   SrchResources `json:"resources"`
 }
 
@@ -136,5 +228,5 @@ func (cs *CorporaSetup) ValidateAndDefaults(confContext string) error {
 	if !isDir {
 		return fmt.Errorf("`%s.registryDir` is not a directory", confContext)
 	}
-	return cs.Layers.Validate(confContext)
+	return cs.Resources.Validate("resources")
 }

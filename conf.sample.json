@@ -3,8 +3,8 @@
     "listenPort": 8080,
     "serverReadTimeoutSecs": 120,
     "serverWriteTimeoutSecs": 60,
-    "generalInfo": {
-        "serverName": "kdesi",
+    "serverInfo": {
+        "serverName": "my",
         "serverPort": "80",
         "database": "fcs",
         "databaseTitle": "CNC FCS",
@@ -12,18 +12,35 @@
     },
     "corpora": {
         "registryDir": "/path/to/corpora/registry",
-        "layers": {
-            "text": "word",
-            "lemma": "lemma",
-            "pos": "pos",
-            "orth": "orth",
-            "norm": "norm",
-            "phonetic": "phonetic"
-        },
         "resources": {
             "syn2020": {
-                "defaultSearchAttr": "lemma",
-                "availableLayers": ["word", "lemma", "pos"]
+                "posAttrs": [
+                    {
+                        "name": "word",
+                        "id": "attr1",
+                        "layer": "text",
+                        "isLayerDefault": true
+                    },
+                    {
+                        "name": "lemma",
+                        "id": "attr2",
+                        "layer": "lemma"
+                    },
+                    {
+                        "name": "pos",
+                        "id": "attr3",
+                        "layer": "pos",
+                        "isLayerDefault": true
+                    },
+                    {
+                        "name": "tag",
+                        "id": "attr4",
+                        "layer": "pos"
+                    }
+                ],
+                "structureMapping": {
+
+                }
             }
         }
     },
@@ -40,7 +57,7 @@
         "host": "host",
         "name": "name",
         "user": "user",
-        "password": "pwd",
+        "password": "....",
         "port": 3306,
         "poolSize": 5,
         "corpusTable": "kontext_corpus"

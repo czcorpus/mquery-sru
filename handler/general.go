@@ -67,7 +67,7 @@ func (a *FCSHandler) FCSHandler(ctx *gin.Context) {
 }
 
 func NewFCSHandler(
-	generalConf *cnf.GeneralInfo,
+	serverInfo *cnf.ServerInfo,
 	corporaConf *corpus.CorporaSetup,
 	radapter *rdb.Adapter,
 ) *FCSHandler {
@@ -75,8 +75,8 @@ func NewFCSHandler(
 		conf:     corporaConf,
 		radapter: radapter,
 		versions: map[string]FCSSubHandler{
-			"1.2": v12.NewFCSSubHandlerV12(generalConf, corporaConf, radapter),
-			"2.0": v20.NewFCSSubHandlerV20(generalConf, corporaConf, radapter),
+			"1.2": v12.NewFCSSubHandlerV12(serverInfo, corporaConf, radapter),
+			"2.0": v20.NewFCSSubHandlerV20(serverInfo, corporaConf, radapter),
 		},
 	}
 }

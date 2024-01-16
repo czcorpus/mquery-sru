@@ -20,6 +20,7 @@ package cnf
 
 import (
 	"encoding/json"
+	"errors"
 	"fcs/corpus"
 	"fcs/engine"
 	"fcs/rdb"
@@ -39,12 +40,19 @@ const (
 	dfltTimeZone               = "Europe/Prague"
 )
 
-type GeneralInfo struct {
+type ServerInfo struct {
 	ServerName          string `json:"serverName"`
 	ServerPort          string `json:"serverPort"`
 	Database            string `json:"database"`
 	DatabaseTitle       string `json:"databaseTitle"`
 	DatabaseDescription string `json:"databaseDescription"`
+}
+
+func (s *ServerInfo) Validate() error {
+	if s == nil {
+		return errors.New("missing serverInfo section")
+	}
+	return nil
 }
 
 // Conf is a global configuration of the app
@@ -54,7 +62,7 @@ type Conf struct {
 	ServerReadTimeoutSecs  int                  `json:"serverReadTimeoutSecs"`
 	ServerWriteTimeoutSecs int                  `json:"serverWriteTimeoutSecs"`
 	CorsAllowedOrigins     []string             `json:"corsAllowedOrigins"`
-	GeneralInfo            *GeneralInfo         `json:"generalInfo"`
+	ServerInfo             *ServerInfo          `json:"serverInfo"`
 	CorporaSetup           *corpus.CorporaSetup `json:"corpora"`
 	Redis                  *rdb.Conf            `json:"redis"`
 	DB                     *engine.DBConf       `json:"db"`
@@ -117,15 +125,21 @@ func ValidateAndDefaults(conf *Conf) {
 			dfltServerWriteTimeoutSecs,
 		)
 	}
+	if err := conf.ServerInfo.Validate(); err != nil {
+		log.Fatal().Err(err).Msg("invalid configuration")
+		return
+	}
 	if conf.Language == "" {
 		conf.Language = dfltLanguage
 		log.Warn().Msgf("language not specified, using default: %s", conf.Language)
 	}
 	if err := conf.CorporaSetup.ValidateAndDefaults("corpora"); err != nil {
 		log.Fatal().Err(err).Msg("invalid configuration")
+		return
 	}
 	if err := conf.CorporaSetup.ValidateAndDefaults("corporaSetup"); err != nil {
 		log.Fatal().Err(err).Msg("invalid configuration")
+		return
 	}
 	if conf.TimeZone == "" {
 		log.Warn().
@@ -134,5 +148,6 @@ func ValidateAndDefaults(conf *Conf) {
 	}
 	if _, err := time.LoadLocation(conf.TimeZone); err != nil {
 		log.Fatal().Err(err).Msg("invalid time zone")
+		return
 	}
 }
