@@ -18,7 +18,10 @@
 
 package v20
 
-import "fcs/general"
+import (
+	"fcs/corpus"
+	"fcs/general"
+)
 
 type FCSResourceInfo struct {
 	PID             string
@@ -47,7 +50,7 @@ type FCSSearchRow struct {
 	PID        string
 	Web        string
 	Ref        string
-	LayerAttrs []string
+	LayerAttrs []corpus.LayerType
 	Tokens     []Token
 }
 
@@ -57,7 +60,9 @@ type FCSExplain struct {
 	Database            string
 	DatabaseTitle       string
 	DatabaseDescription string
-	Layers              map[string]string
+	PosAttrs            []corpus.PosAttr
+	Resources           []FCSResourceInfo
+	ExtraResponseData   bool
 }
 
 type FCSSearchRetrieve struct {
@@ -71,6 +76,5 @@ type FCSResponse struct {
 	Operation     string
 
 	Explain        FCSExplain
-	Resources      []FCSResourceInfo
 	SearchRetrieve FCSSearchRetrieve
 }

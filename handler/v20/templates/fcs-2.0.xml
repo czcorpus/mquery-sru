@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 {{ if eq .Operation "explain" }}
-<sruResponse:explainResponse xmlns:sru="http://www.loc.gov/zing/srw/">
+<sruResponse:explainResponse xmlns:sruResponse="http://docs.oasis-open.org/ns/search-ws/sruResponse">
   <sruResponse:version>2.0</sruResponse:version>
   {{ if .General.Error }}
     {{ template "diagnostics" .General.Error }}
@@ -9,12 +9,14 @@
       <sruResponse:recordSchema>http://explain.z3950.org/dtd/2.0/</sruResponse:recordSchema>
       <sruResponse:recordXMLEscaping>xml</sruResponse:recordXMLEscaping>
       <sruResponse:recordData>
-        {{ template "explain" .Explain }}
+          {{ template "explain" .Explain }}
       </sruResponse:recordData>
     </sruResponse:record>
+    {{ if .Explain.ExtraResponseData }}
     <sruResponse:extraResponseData>
       {{ template "description" . }}
     </sruResponse:extraResponseData>
+    {{ end }}
   {{ end }}
 </sruResponse:explainResponse>
 {{ else }}{{ if eq .Operation "searchRetrieve" }}

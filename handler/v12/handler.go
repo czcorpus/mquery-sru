@@ -35,7 +35,7 @@ import (
 )
 
 type FCSSubHandlerV12 struct {
-	generalConf *cnf.GeneralInfo
+	serverInfo  *cnf.ServerInfo
 	corporaConf *corpus.CorporaSetup
 	radapter    *rdb.Adapter
 	tmpl        *template.Template
@@ -63,11 +63,11 @@ func (a *FCSSubHandlerV12) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 
 	// prepare response data
 	fcsResponse.Explain = FCSExplain{
-		ServerName:          a.generalConf.ServerName,
-		ServerPort:          a.generalConf.ServerPort,
-		Database:            a.generalConf.Database,
-		DatabaseTitle:       a.generalConf.DatabaseTitle,
-		DatabaseDescription: a.generalConf.DatabaseDescription,
+		ServerName:          a.serverInfo.ServerName,
+		ServerPort:          a.serverInfo.ServerPort,
+		Database:            a.serverInfo.Database,
+		DatabaseTitle:       a.serverInfo.DatabaseTitle,
+		DatabaseDescription: a.serverInfo.DatabaseDescription,
 	}
 	if ctx.Query("x-fcs-endpoint-description") == "true" {
 		for corpusName, _ := range a.corporaConf.Resources {
@@ -120,11 +120,10 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return http.StatusInternalServerError
 	}
 
-	// get searchable corpora and attrs
-	var corpora, searchAttrs []string
-	if ctx.Request.URL.Query().Has("x-fcs-context") {
-		for _, v := range strings.Split(ctx.Query("x-fcs-context"), ",") {
-			resource, ok := a.corporaConf.Resources[v]
+	corpora := strings.Split(ctx.Query("x-fcs-context"), ",")
+	if len(corpora) > 0 {
+		for _, v := range corpora {
+			_, ok := a.corporaConf.Resources[v]
 			if !ok {
 				fcsResponse.General.Error = &general.FCSError{
 					Code:    general.CodeUnsupportedParameterValue,
@@ -134,14 +133,14 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 				return http.StatusBadRequest
 			}
 			corpora = append(corpora, v)
-			searchAttrs = append(searchAttrs, resource.DefaultSearchAttr)
 		}
+
 	} else {
-		for corpusName, resource := range a.corporaConf.Resources {
+		for corpusName, _ := range a.corporaConf.Resources {
 			corpora = append(corpora, corpusName)
-			searchAttrs = append(searchAttrs, resource.DefaultSearchAttr)
 		}
 	}
+	searchAttrs := a.corporaConf.Resources.GetCommonPosAttrNames(corpora...)
 
 	// make searches
 	waits := make([]<-chan *rdb.WorkerResult, len(corpora))
@@ -159,7 +158,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			CorpusPath: a.corporaConf.GetRegistryPath(corpusName),
 			QueryLemma: "",
 			Query:      query,
-			Attrs:      []string{a.corporaConf.Layers.Text, a.corporaConf.Layers.Text}, // twice, so the line parser works TODO
+			Attrs:      searchAttrs,
 			MaxItems:   10,
 		})
 		if err != nil {
@@ -305,12 +304,12 @@ func (a *FCSSubHandlerV12) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 }
 
 func NewFCSSubHandlerV12(
-	generalConf *cnf.GeneralInfo,
+	serverInfo *cnf.ServerInfo,
 	corporaConf *corpus.CorporaSetup,
 	radapter *rdb.Adapter,
 ) *FCSSubHandlerV12 {
 	return &FCSSubHandlerV12{
-		generalConf:             generalConf,
+		serverInfo:              serverInfo,
 		corporaConf:             corporaConf,
 		radapter:                radapter,
 		tmpl:                    template.Must(template.New("").Funcs(general.GetTemplateFuncMap()).ParseGlob("handler/v12/templates/*")),

@@ -38,7 +38,7 @@ import (
 )
 
 type FCSSubHandlerV20 struct {
-	generalConf *cnf.GeneralInfo
+	serverInfo  *cnf.ServerInfo
 	corporaConf *corpus.CorporaSetup
 	radapter    *rdb.Adapter
 	tmpl        *template.Template
@@ -67,24 +67,25 @@ func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 
 	// prepare response data
 	fcsResponse.Explain = FCSExplain{
-		ServerName:          a.generalConf.ServerName,
-		ServerPort:          a.generalConf.ServerPort,
-		Database:            a.generalConf.Database,
-		DatabaseTitle:       a.generalConf.DatabaseTitle,
-		DatabaseDescription: a.generalConf.DatabaseDescription,
-		Layers:              a.corporaConf.Layers.ToDict(),
+		ServerName:          a.serverInfo.ServerName,
+		ServerPort:          a.serverInfo.ServerPort,
+		Database:            a.serverInfo.Database,
+		DatabaseTitle:       a.serverInfo.DatabaseTitle,
+		DatabaseDescription: a.serverInfo.DatabaseDescription,
+		PosAttrs:            a.corporaConf.Resources.GetCommonPosAttrs(a.corporaConf.Resources.GetCorpora()...),
 	}
 	if ctx.Query("x-fcs-endpoint-description") == "true" {
+		fcsResponse.Explain.ExtraResponseData = true
 		for corpusName, corpusConf := range a.corporaConf.Resources {
-			fcsResponse.Resources = append(
-				fcsResponse.Resources,
+			fcsResponse.Explain.Resources = append(
+				fcsResponse.Explain.Resources,
 				FCSResourceInfo{
 					PID:             corpusName,
 					Title:           corpusName,
 					Description:     "TODO",
 					URI:             "TODO",
 					Languages:       []string{"cs", "TODO"},
-					AvailableLayers: strings.Join(corpusConf.AvailableLayers, " "),
+					AvailableLayers: corpusConf.GetDefinedLayersAsString(),
 				},
 			)
 		}
@@ -118,21 +119,12 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 
 	var fcsErr *general.FCSError
 	corpora := strings.Split(ctx.Query("x-fcs-context"), ",")
-	defaultAttr := a.corporaConf.Resources.GetCommonDefaultAttr()
-	if defaultAttr == "" {
-		fcsResponse.General.Error = &general.FCSError{
-			Code:    general.CodeUnsupportedParameterValue,
-			Ident:   defaultAttr,
-			Message: "Unsupported parameter value",
-		}
-		return http.StatusUnprocessableEntity
-	}
 	queryType := ctx.DefaultQuery("queryType", "cql")
 	var ast compiler.AST
 	switch queryType {
 	case "cql":
 		var err error
-		ast, err = basic.NewBasicTransformer(fcsQuery, defaultAttr)
+		ast, err = basic.NewBasicTransformer(fcsQuery, string(corpus.DefaultLayerType))
 		if err != nil {
 			fcsErr = &general.FCSError{
 				Code:    general.CodeQuerySyntaxError,
@@ -144,7 +136,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		var err error
 		ast, err = fcsql.ParseQuery(
 			fcsQuery,
-			defaultAttr,
+			string(corpus.DefaultLayerType),
 			corpus.StructureMapping{ // TODO
 				SentenceStruct:  "s",
 				UtteranceStruct: "s",
@@ -176,10 +168,9 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	fcsResponse.SearchRetrieve.QueryType = queryType
 
 	// get searchable corpora and attrs
-	var searchAttrs []string
 	if len(corpora) > 0 {
 		for _, v := range corpora {
-			resource, ok := a.corporaConf.Resources[v]
+			_, ok := a.corporaConf.Resources[v]
 			if !ok {
 				fcsResponse.General.Error = &general.FCSError{
 					Code:    general.CodeUnsupportedParameterValue,
@@ -189,15 +180,14 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 				return http.StatusBadRequest
 			}
 			corpora = append(corpora, v)
-			searchAttrs = append(searchAttrs, resource.DefaultSearchAttr)
 		}
 
 	} else {
-		for corpusName, resource := range a.corporaConf.Resources {
+		for corpusName, _ := range a.corporaConf.Resources {
 			corpora = append(corpora, corpusName)
-			searchAttrs = append(searchAttrs, resource.DefaultSearchAttr)
 		}
 	}
+	searchAttrs := a.corporaConf.Resources.GetCommonPosAttrNames(corpora...)
 
 	// make searches
 	waits := make([]<-chan *rdb.WorkerResult, len(corpora))
@@ -215,7 +205,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			CorpusPath: a.corporaConf.GetRegistryPath(corpusName),
 			QueryLemma: "",
 			Query:      query,
-			Attrs:      append([]string{a.corporaConf.Layers.Text}, a.corporaConf.Resources[corpusName].AvailableLayers...),
+			Attrs:      searchAttrs,
 			MaxItems:   10,
 		})
 		if err != nil {
@@ -271,7 +261,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		for _, l := range r.Lines {
 			segmentPos := 1
 			row := FCSSearchRow{
-				LayerAttrs: a.corporaConf.Resources[corpora[i]].AvailableLayers,
+				LayerAttrs: a.corporaConf.Resources[corpora[i]].GetDefinedLayers().ToOrderedSlice(),
 				Position:   len(fcsResponse.SearchRetrieve.Results) + 1,
 				PID:        corpora[i],
 				Web:        "TODO",
@@ -357,12 +347,12 @@ func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 }
 
 func NewFCSSubHandlerV20(
-	generalConf *cnf.GeneralInfo,
+	generalConf *cnf.ServerInfo,
 	corporaConf *corpus.CorporaSetup,
 	radapter *rdb.Adapter,
 ) *FCSSubHandlerV20 {
 	return &FCSSubHandlerV20{
-		generalConf:             generalConf,
+		serverInfo:              generalConf,
 		corporaConf:             corporaConf,
 		radapter:                radapter,
 		tmpl:                    template.Must(template.New("").Funcs(general.GetTemplateFuncMap()).ParseGlob("handler/v20/templates/*")),
