@@ -47,11 +47,18 @@ type Query struct {
 	mainQuery        *mainQuery
 	within           *withinPart
 	structureMapping corpus.StructureMapping
+	posAttrs         []corpus.PosAttr
 	errors           []error
 }
 
-func (q *Query) AddStructureMapping(m corpus.StructureMapping) {
+func (q *Query) SetStructureMapping(m corpus.StructureMapping) *Query {
 	q.structureMapping = m
+	return q
+}
+
+func (q *Query) SetPosAttrs(attrs []corpus.PosAttr) *Query {
+	q.posAttrs = attrs
+	return q
 }
 
 func (q *Query) TranslateWithinCtx(v string) string {
@@ -70,6 +77,25 @@ func (q *Query) TranslateWithinCtx(v string) string {
 		return q.structureMapping.SessionStruct
 	}
 	return "??"
+}
+
+func (q *Query) TranslatePosAttr(qualifier, name string) string {
+	if qualifier != "" {
+		for _, p := range q.posAttrs {
+			if p.Name == qualifier && string(p.Layer) == name {
+				return p.Name
+			}
+		}
+
+	} else {
+		for _, p := range q.posAttrs {
+			if string(p.Layer) == name && p.IsLayerDefault {
+				return p.Name
+			}
+		}
+	}
+	q.AddError(fmt.Errorf("unknown attribute and/or layer %s:%s", qualifier, name))
+	return ""
 }
 
 func (q *Query) AddError(err error) {
@@ -192,10 +218,7 @@ type attribute struct {
 }
 
 func (a *attribute) Generate(ast compiler.AST) string {
-	if a.name != "" {
-		return fmt.Sprintf("%s:%s", a.name, a.value)
-	}
-	return a.value
+	return ast.TranslatePosAttr(a.name, a.value)
 }
 
 // -------

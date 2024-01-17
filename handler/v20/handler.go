@@ -93,6 +93,78 @@ func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 	return http.StatusOK
 }
 
+func (a *FCSSubHandlerV20) translateQuery(
+	corpusName, query, queryType string,
+) (compiler.AST, *general.FCSError) {
+	var ast compiler.AST
+	var fcsErr *general.FCSError
+	switch queryType {
+	case "cql":
+		var err error
+		ast, err = basic.NewBasicTransformer(query, string(corpus.DefaultLayerType))
+		if err != nil {
+			fcsErr = &general.FCSError{
+				Code:    general.CodeQuerySyntaxError,
+				Ident:   query,
+				Message: "Invalid query syntax",
+			}
+		}
+	case "fcs":
+		var err error
+		ast, err = fcsql.ParseQuery(
+			query,
+			corpus.DefaultLayerType,
+			a.corporaConf.Resources[corpusName].PosAttrs,
+			a.corporaConf.Resources[corpusName].StructureMapping,
+		)
+		if err != nil {
+			fcsErr = &general.FCSError{
+				Code:    general.CodeQuerySyntaxError,
+				Ident:   query,
+				Message: "Invalid query syntax",
+			}
+		}
+
+	default:
+		fcsErr = &general.FCSError{
+			Code:    general.CodeUnsupportedParameterValue,
+			Ident:   queryType,
+			Message: "Unsupported queryType value",
+		}
+	}
+	return ast, fcsErr
+}
+
+func (a *FCSSubHandlerV20) exportAttrsByLayers(
+	word string,
+	attrs map[string]string,
+	layers []corpus.LayerType,
+	posAttrs []corpus.PosAttr,
+) map[corpus.LayerType]string {
+	ans := make(map[corpus.LayerType]string)
+	for _, layer := range layers {
+		if layer == corpus.DefaultLayerType {
+			ans[layer] = word
+			// TODO this won't work for custom attributes requested from the 'text' layer
+		} else {
+			var found bool
+			for _, posAttr := range posAttrs {
+				if posAttr.Layer == layer {
+					if v, ok := attrs[posAttr.Name]; ok {
+						ans[layer] = v
+						found = true
+						break
+					}
+				}
+			}
+			if !found {
+				ans[layer] = "??"
+			}
+		}
+	}
+	return ans
+}
+
 func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResponse) int {
 	// check if all parameters are supported
 	for key, _ := range ctx.Request.URL.Query() {
@@ -106,7 +178,6 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		}
 	}
 
-	// prepare query
 	fcsQuery := ctx.Query("query")
 	if len(fcsQuery) == 0 {
 		fcsResponse.General.Error = &general.FCSError{
@@ -117,56 +188,9 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return http.StatusBadRequest
 	}
 
-	var fcsErr *general.FCSError
 	corpora := strings.Split(ctx.Query("x-fcs-context"), ",")
 	queryType := ctx.DefaultQuery("queryType", "cql")
-	var ast compiler.AST
-	switch queryType {
-	case "cql":
-		var err error
-		ast, err = basic.NewBasicTransformer(fcsQuery, string(corpus.DefaultLayerType))
-		if err != nil {
-			fcsErr = &general.FCSError{
-				Code:    general.CodeQuerySyntaxError,
-				Ident:   fcsQuery,
-				Message: "Invalid query syntax",
-			}
-		}
-	case "fcs":
-		var err error
-		ast, err = fcsql.ParseQuery(
-			fcsQuery,
-			string(corpus.DefaultLayerType),
-			corpus.StructureMapping{ // TODO
-				SentenceStruct:  "s",
-				UtteranceStruct: "s",
-				ParagraphStruct: "p",
-				TurnStruct:      "p",
-				TextStruct:      "doc",
-				SessionStruct:   "doc",
-			},
-		)
-		if err != nil {
-			fcsErr = &general.FCSError{
-				Code:    general.CodeQuerySyntaxError,
-				Ident:   fcsQuery,
-				Message: "Invalid query syntax",
-			}
-		}
-
-	default:
-		fcsErr = &general.FCSError{
-			Code:    general.CodeUnsupportedParameterValue,
-			Ident:   queryType,
-			Message: "Unsupported queryType value",
-		}
-	}
-	if fcsErr != nil {
-		fcsResponse.General.Error = fcsErr
-		return http.StatusInternalServerError
-	}
 	fcsResponse.SearchRetrieve.QueryType = queryType
-
 	// get searchable corpora and attrs
 	if len(corpora) > 0 {
 		for _, v := range corpora {
@@ -179,7 +203,6 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 				}
 				return http.StatusBadRequest
 			}
-			corpora = append(corpora, v)
 		}
 
 	} else {
@@ -192,6 +215,13 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	// make searches
 	waits := make([]<-chan *rdb.WorkerResult, len(corpora))
 	for i, corpusName := range corpora {
+
+		ast, fcsErr := a.translateQuery(corpusName, fcsQuery, queryType)
+		if fcsErr != nil {
+			fcsResponse.General.Error = fcsErr
+			return http.StatusInternalServerError
+		}
+
 		query := ast.Generate()
 		if len(ast.Errors()) > 0 {
 			fcsResponse.General.Error = &general.FCSError{
@@ -257,6 +287,8 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 
 	// transform results
 	fcsResponse.SearchRetrieve.Results = make([]FCSSearchRow, 0, 100)
+	commonLayers := a.corporaConf.Resources.GetCommonLayers()
+	commonPosAttrs := a.corporaConf.Resources.GetCommonPosAttrs(corpora...)
 	for i, r := range results {
 		for _, l := range r.Lines {
 			segmentPos := 1
@@ -276,7 +308,12 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 						Start: segmentPos,
 						End:   segmentPos + len(t.Word) - 1,
 					},
-					Layers: t.Attrs,
+					Layers: a.exportAttrsByLayers(
+						t.Word,
+						t.Attrs,
+						commonLayers,
+						commonPosAttrs,
+					),
 				}
 				segmentPos += len(t.Word) + 1 // with space between words
 				row.Tokens = append(row.Tokens, token)

@@ -42,7 +42,7 @@ type Token struct {
 	Text    string
 	Hit     bool
 	Segment Segment
-	Layers  map[string]string
+	Layers  map[corpus.LayerType]string
 }
 
 type FCSSearchRow struct {

@@ -52,6 +52,11 @@ func (t *basicTransformer) TranslateWithinCtx(v string) string {
 	return "??"
 }
 
+func (t *basicTransformer) TranslatePosAttr(qualifier, name string) string {
+	// TODO !!!!
+	return qualifier
+}
+
 func (t *basicTransformer) AddError(err error) {
 	t.errors = append(t.errors, err)
 }

@@ -118,7 +118,7 @@
 
 {{ define "advancedDataView" }}
   <fcs:DataView type="application/x-clarin-fcs-adv+xml">
-    <adv:Advanced unit="item">
+    <adv:Advanced unit="item" xmlns:adv="http://clarin.eu/fcs/dataview/advanced">
       <adv:Segments>
         {{ range .Tokens }}
           <adv:Segment id="{{ .Segment.ID }}" start="{{ .Segment.Start }}" end="{{ .Segment.End }}"/>

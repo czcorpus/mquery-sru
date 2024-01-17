@@ -5,4 +5,5 @@ type AST interface {
 	AddError(err error)
 	Errors() []error
 	TranslateWithinCtx(v string) string
+	TranslatePosAttr(qualifier, name string) string
 }
