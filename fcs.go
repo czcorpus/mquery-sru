@@ -165,7 +165,25 @@ func main() {
 			case "advanced":
 				ast, err := fcsql.ParseQuery(
 					input,
-					"word",
+					corpus.LayerTypeText,
+					[]corpus.PosAttr{
+						{
+							ID:             "id1",
+							Name:           "word",
+							Layer:          "text",
+							IsLayerDefault: true,
+						},
+						{
+							ID:    "id2",
+							Name:  "lemma",
+							Layer: "lemma",
+						},
+						{
+							ID:    "id3",
+							Name:  "pos",
+							Layer: "pos",
+						},
+					},
 					corpus.StructureMapping{
 						SentenceStruct:  "s",
 						UtteranceStruct: "sp",
@@ -177,12 +195,17 @@ func main() {
 				)
 
 				if err != nil {
-					fmt.Printf("error: %w\n", err)
+					fmt.Printf("parsing error: %w\n", err)
+					os.Exit(1)
 				}
-				println(ast.Generate())
+				outQuery := ast.Generate()
 				for i, err := range ast.Errors() {
-					fmt.Printf("error[%d]: %s", i, err)
+					fmt.Printf("semantic error[%d]: %s\n", i, err)
 				}
+				if len(ast.Errors()) > 0 {
+					os.Exit(1)
+				}
+				println(outQuery)
 			}
 
 		}

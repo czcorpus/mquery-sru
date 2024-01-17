@@ -20,7 +20,7 @@
   {{ end }}
 </sruResponse:explainResponse>
 {{ else }}{{ if eq .Operation "searchRetrieve" }}
-<sruResponse:searchRetrieveResponse xmlns:sru="http://www.loc.gov/zing/srw/">
+<sruResponse:searchRetrieveResponse xmlns:sruResponse="http://docs.oasis-open.org/ns/search-ws/sruResponse">
   <sruResponse:version>2.0</sruResponse:version>
   <sruResponse:numberOfRecords>{{ .SearchRetrieve.Results | len }}</sruResponse:numberOfRecords>
   {{ if .General.Error }}

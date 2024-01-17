@@ -147,9 +147,14 @@ func (ls *CorpusSetup) Validate(confContext string) error {
 type SrchResources map[string]*CorpusSetup
 
 func (sr SrchResources) GetCommonLayers() []LayerType {
-	ans := collections.NewSet[LayerType]()
+	var ans *collections.Set[LayerType]
 	for _, corp := range sr {
-		ans = ans.Intersect(corp.GetDefinedLayers())
+		if ans == nil {
+			ans = corp.GetDefinedLayers()
+
+		} else {
+			ans = ans.Intersect(corp.GetDefinedLayers())
+		}
 	}
 	return ans.ToOrderedSlice()
 }
@@ -164,6 +169,10 @@ func (sr SrchResources) GetCorpora() []string {
 	return ans
 }
 
+// GetCommonPosAttrs returns positional attributes common
+// to provided corpora. The attribute of the text layer which
+// is set as default will be listed always first, the rest
+// is sorted alphabetically.
 func (sr SrchResources) GetCommonPosAttrs(corpusNames ...string) []PosAttr {
 	collect := make(map[string]PosAttr)
 	for _, corp := range corpusNames {
@@ -178,13 +187,19 @@ func (sr SrchResources) GetCommonPosAttrs(corpusNames ...string) []PosAttr {
 		i++
 	}
 	sort.SliceStable(ans, func(i, j int) bool {
+		if ans[i].Layer == DefaultLayerType && ans[i].IsLayerDefault {
+			return true
+		}
+		if ans[j].Layer == DefaultLayerType && ans[j].IsLayerDefault {
+			return false
+		}
 		return strings.Compare(ans[i].Name, ans[j].Name) < 0
 	})
 	return ans
 }
 
 func (sr SrchResources) GetCommonPosAttrNames(corpusName ...string) []string {
-	pa := sr.GetCommonPosAttrs()
+	pa := sr.GetCommonPosAttrs(corpusName...)
 	ans := make([]string, len(pa))
 	for i, pa := range pa {
 		ans[i] = pa.Name
