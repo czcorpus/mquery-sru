@@ -1,4 +1,5 @@
 // Copyright 2023 Martin Zimandl <martin.zimandl@gmail.com>
+// Copyright 2023 Tomas Machalek <tomas.machalek@gmail.com>
 // Copyright 2023 Institute of the Czech National Corpus,
 //                Faculty of Arts, Charles University
 //   This file is part of MQUERY.
@@ -20,7 +21,6 @@ package v20
 
 import (
 	"encoding/json"
-	"fcs/cnf"
 	"fcs/corpus"
 	"fcs/general"
 	"fcs/query/compiler"
@@ -31,67 +31,10 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"text/template"
 
 	"github.com/czcorpus/cnc-gokit/collections"
 	"github.com/gin-gonic/gin"
 )
-
-type FCSSubHandlerV20 struct {
-	serverInfo  *cnf.ServerInfo
-	corporaConf *corpus.CorporaSetup
-	radapter    *rdb.Adapter
-	tmpl        *template.Template
-
-	supportedRecordPackings []string
-	supportedOperations     []string
-	supportedQueryTypes     []string
-
-	queryGeneral        []string
-	queryExplain        []string
-	querySearchRetrieve []string
-}
-
-func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSResponse) int {
-	// check if all parameters are supported
-	for key, _ := range ctx.Request.URL.Query() {
-		if !collections.SliceContains(a.queryGeneral, key) && !collections.SliceContains(a.queryExplain, key) {
-			fcsResponse.General.Error = &general.FCSError{
-				Code:    general.CodeUnsupportedParameter,
-				Ident:   key,
-				Message: "Unsupported parameter",
-			}
-			return http.StatusBadRequest
-		}
-	}
-
-	// prepare response data
-	fcsResponse.Explain = FCSExplain{
-		ServerName:          a.serverInfo.ServerName,
-		ServerPort:          a.serverInfo.ServerPort,
-		Database:            a.serverInfo.Database,
-		DatabaseTitle:       a.serverInfo.DatabaseTitle,
-		DatabaseDescription: a.serverInfo.DatabaseDescription,
-		PosAttrs:            a.corporaConf.Resources.GetCommonPosAttrs(a.corporaConf.Resources.GetCorpora()...),
-	}
-	if ctx.Query("x-fcs-endpoint-description") == "true" {
-		fcsResponse.Explain.ExtraResponseData = true
-		for corpusName, corpusConf := range a.corporaConf.Resources {
-			fcsResponse.Explain.Resources = append(
-				fcsResponse.Explain.Resources,
-				FCSResourceInfo{
-					PID:             corpusName,
-					Title:           corpusName,
-					Description:     "TODO",
-					URI:             "TODO",
-					Languages:       []string{"cs", "TODO"},
-					AvailableLayers: corpusConf.GetDefinedLayersAsString(),
-				},
-			)
-		}
-	}
-	return http.StatusOK
-}
 
 func (a *FCSSubHandlerV20) translateQuery(
 	corpusName, query, queryType string,
@@ -323,81 +266,4 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		}
 	}
 	return http.StatusOK
-}
-
-func (a *FCSSubHandlerV20) produceResponse(ctx *gin.Context, fcsResponse *FCSResponse, code int) {
-	if err := a.tmpl.ExecuteTemplate(ctx.Writer, "fcs-2.0.xml", fcsResponse); err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-	ctx.Writer.WriteHeader(code)
-}
-
-func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.FCSGeneralResponse) {
-	fcsResponse := &FCSResponse{
-		General:       fcsGeneralResponse,
-		RecordPacking: "xml",
-		Operation:     "explain",
-	}
-	if fcsResponse.General.Error != nil {
-		a.produceResponse(ctx, fcsResponse, http.StatusBadRequest)
-		return
-	}
-
-	recordPacking := ctx.DefaultQuery("recordPacking", fcsResponse.RecordPacking)
-	if !collections.SliceContains(a.supportedRecordPackings, recordPacking) {
-		fcsResponse.General.Error = &general.FCSError{
-			Code:    general.CodeUnsupportedRecordPacking,
-			Ident:   "recordPacking",
-			Message: "Unsupported record packing",
-		}
-		a.produceResponse(ctx, fcsResponse, http.StatusBadRequest)
-		return
-	}
-	if recordPacking == "xml" {
-		ctx.Writer.Header().Set("Content-Type", "application/xml")
-	} else if recordPacking == "string" {
-		ctx.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	}
-	fcsResponse.RecordPacking = recordPacking
-
-	operation := ctx.DefaultQuery("operation", fcsResponse.Operation)
-	if !collections.SliceContains(a.supportedOperations, operation) {
-		fcsResponse.General.Error = &general.FCSError{
-			Code:    general.CodeUnsupportedOperation,
-			Ident:   "",
-			Message: "Unsupported operation",
-		}
-		a.produceResponse(ctx, fcsResponse, http.StatusBadRequest)
-		return
-	}
-	fcsResponse.Operation = operation
-
-	code := http.StatusOK
-	switch fcsResponse.Operation {
-	case "explain":
-		code = a.explain(ctx, fcsResponse)
-	case "searchRetrieve":
-		code = a.searchRetrieve(ctx, fcsResponse)
-	}
-	a.produceResponse(ctx, fcsResponse, code)
-}
-
-func NewFCSSubHandlerV20(
-	generalConf *cnf.ServerInfo,
-	corporaConf *corpus.CorporaSetup,
-	radapter *rdb.Adapter,
-) *FCSSubHandlerV20 {
-	return &FCSSubHandlerV20{
-		serverInfo:              generalConf,
-		corporaConf:             corporaConf,
-		radapter:                radapter,
-		tmpl:                    template.Must(template.New("").Funcs(general.GetTemplateFuncMap()).ParseGlob("handler/v20/templates/*")),
-		supportedOperations:     []string{"explain", "scan", "searchRetrieve"},
-		supportedQueryTypes:     []string{"cql", "fcs"},
-		supportedRecordPackings: []string{"xml", "string"},
-		queryGeneral:            []string{"version", "recordPacking", "operation"},
-		queryExplain:            []string{"x-fcs-endpoint-description"},
-		querySearchRetrieve:     []string{"query", "queryType", "x-fcs-context", "x-fcs-dataviews", "x-fcs-rewrites-allowed"},
-	}
 }
