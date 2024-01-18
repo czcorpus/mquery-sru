@@ -1,0 +1,20 @@
+{{ $lastPosition := 0 }}
+<sruResponse:records>
+  {{ $queryType := .QueryType }}
+  {{ range .Results }}
+    <sruResponse:record>
+      <sruResponse:recordSchema>http://clarin.eu/fcs/resource</sruResponse:recordSchema>
+      <sruResponse:recordXMLEscaping>xml</sruResponse:recordXMLEscaping>
+      <sruResponse:recordData>
+        <fcs:Resource xmlns:fcs="http://clarin.eu/fcs/resource" pid="{{ .PID }}"{{ if .Web }} ref="{{ .Web }}"{{ end }}>
+          <fcs:ResourceFragment>
+            {{ template "basicDataView.xml" . }}
+            {{ if eq $queryType "fcs" }}{{ template "advancedDataView.xml" . }}{{ end }}
+          </fcs:ResourceFragment>
+        </fcs:Resource>
+      </sruResponse:recordData>
+      <sruResponse:recordPosition>{{ $lastPosition = .Position }}{{ .Position }}</sruResponse:recordPosition>
+    </sruResponse:record>
+  {{ end }}
+</sruResponse:records>
+<sruResponse:nextRecordPosition>{{ add $lastPosition 1 }}</sruResponse:nextRecordPosition>

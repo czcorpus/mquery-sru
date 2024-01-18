@@ -23,27 +23,129 @@ import (
 	"fcs/cnf"
 	"fcs/corpus"
 	"fcs/general"
+	"fcs/handler/common"
 	"fcs/rdb"
+	"fmt"
 	"net/http"
 	"text/template"
 
-	"github.com/czcorpus/cnc-gokit/collections"
 	"github.com/gin-gonic/gin"
 )
+
+const (
+	OperationExplain       Operation     = "explain"
+	OperationScan          Operation     = "scan"
+	OperationSearchRetrive Operation     = "searchRetrieve"
+	QueryTypeCQL           QueryType     = "cql"
+	QueryTypeFCS           QueryType     = "fcs"
+	RecordPackingXML       RecordPacking = "xml"
+	RecordPackingString    RecordPacking = "string"
+
+	SearchRetrArgVersion            SearchRetrArg = "version"
+	SearchRetrArgRecordPacking      SearchRetrArg = "recordPacking"
+	SearchRetrArgOperation          SearchRetrArg = "operation"
+	SearchRetrArgQuery              SearchRetrArg = "query"
+	SearchRetrArgQueryType          SearchRetrArg = "queryType"
+	SearchRetrArgFCSContext         SearchRetrArg = "x-fcs-context"
+	SearchRetrArgFCSDataViews       SearchRetrArg = "x-fcs-dataviews"
+	SearchRetrArgFCSRewritesAllowed SearchRetrArg = "x-fcs-rewrites-allowed"
+
+	ExplainArgVersion                ExplainArg = "version"
+	ExplainArgRecordPacking          ExplainArg = "recordPacking"
+	ExplainArgOperation              ExplainArg = "operation"
+	ExplainArgFCSEndpointDescription ExplainArg = "x-fcs-endpoint-description"
+)
+
+type Operation string
+
+func (op Operation) Validate() error {
+	if op == OperationExplain || op == OperationScan ||
+		op == OperationSearchRetrive {
+		return nil
+	}
+	return fmt.Errorf("unknown operation: %s", op)
+}
+
+// ----
+
+type QueryType string
+
+func (qt QueryType) Validate() error {
+	if qt == QueryTypeCQL || qt == QueryTypeFCS {
+		return nil
+	}
+	return fmt.Errorf("unknown query type: %s", qt)
+}
+
+func (qt QueryType) String() string {
+	return string(qt)
+}
+
+// ----
+
+type RecordPacking string
+
+func (rp RecordPacking) Validate() error {
+	if rp == RecordPackingString || rp == RecordPackingXML {
+		return nil
+	}
+	return fmt.Errorf("unknown record packing: %s", rp)
+}
+
+// ----
+
+type SearchRetrArg string
+
+func (sra SearchRetrArg) Validate() error {
+	if sra == SearchRetrArgVersion ||
+		sra == SearchRetrArgRecordPacking ||
+		sra == SearchRetrArgOperation ||
+		sra == SearchRetrArgQuery ||
+		sra == SearchRetrArgQueryType ||
+		sra == SearchRetrArgFCSContext ||
+		sra == SearchRetrArgFCSDataViews ||
+		sra == SearchRetrArgFCSRewritesAllowed {
+		return nil
+	}
+	return fmt.Errorf("unknown searchRetrieve argument: %s", sra)
+}
+
+func (sra SearchRetrArg) String() string {
+	return string(sra)
+}
+
+// ----
+
+type ExplainArg string
+
+func (arg ExplainArg) Validate() error {
+	if arg == ExplainArgVersion ||
+		arg == ExplainArgRecordPacking ||
+		arg == ExplainArgOperation ||
+		arg == ExplainArgFCSEndpointDescription {
+		return nil
+	}
+	return fmt.Errorf("unknown explain argument: %s", arg)
+}
+
+func (arg ExplainArg) String() string {
+	return string(arg)
+}
+
+// ----
+
+func getTypedArg[T ~string](ctx *gin.Context, name string, dflt T) T {
+	v := ctx.DefaultQuery(name, string(dflt))
+	return T(v)
+}
+
+// ----
 
 type FCSSubHandlerV20 struct {
 	serverInfo  *cnf.ServerInfo
 	corporaConf *corpus.CorporaSetup
 	radapter    *rdb.Adapter
 	tmpl        *template.Template
-
-	supportedRecordPackings []string
-	supportedOperations     []string
-	supportedQueryTypes     []string
-
-	queryGeneral        []string
-	queryExplain        []string
-	querySearchRetrieve []string
 }
 
 func (a *FCSSubHandlerV20) produceResponse(ctx *gin.Context, fcsResponse *FCSResponse, code int) {
@@ -57,20 +159,20 @@ func (a *FCSSubHandlerV20) produceResponse(ctx *gin.Context, fcsResponse *FCSRes
 func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.FCSGeneralResponse) {
 	fcsResponse := &FCSResponse{
 		General:       fcsGeneralResponse,
-		RecordPacking: "xml",
-		Operation:     "explain",
+		RecordPacking: RecordPackingXML,
+		Operation:     OperationExplain,
 	}
 	if fcsResponse.General.Error != nil {
 		a.produceResponse(ctx, fcsResponse, http.StatusBadRequest)
 		return
 	}
 
-	recordPacking := ctx.DefaultQuery("recordPacking", fcsResponse.RecordPacking)
-	if !collections.SliceContains(a.supportedRecordPackings, recordPacking) {
+	recordPacking := getTypedArg(ctx, "recordPacking", fcsResponse.RecordPacking)
+	if err := recordPacking.Validate(); err != nil {
 		fcsResponse.General.Error = &general.FCSError{
 			Code:    general.CodeUnsupportedRecordPacking,
 			Ident:   "recordPacking",
-			Message: "Unsupported record packing",
+			Message: err.Error(),
 		}
 		a.produceResponse(ctx, fcsResponse, http.StatusBadRequest)
 		return
@@ -82,11 +184,11 @@ func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 	}
 	fcsResponse.RecordPacking = recordPacking
 
-	operation := ctx.DefaultQuery("operation", fcsResponse.Operation)
-	if !collections.SliceContains(a.supportedOperations, operation) {
+	operation := getTypedArg(ctx, "operation", fcsResponse.Operation)
+	if err := operation.Validate(); err != nil {
 		fcsResponse.General.Error = &general.FCSError{
 			Code:    general.CodeUnsupportedOperation,
-			Ident:   "",
+			Ident:   "operation",
 			Message: "Unsupported operation",
 		}
 		a.produceResponse(ctx, fcsResponse, http.StatusBadRequest)
@@ -110,15 +212,12 @@ func NewFCSSubHandlerV20(
 	radapter *rdb.Adapter,
 ) *FCSSubHandlerV20 {
 	return &FCSSubHandlerV20{
-		serverInfo:              generalConf,
-		corporaConf:             corporaConf,
-		radapter:                radapter,
-		tmpl:                    template.Must(template.New("").Funcs(general.GetTemplateFuncMap()).ParseGlob("handler/v20/templates/*")),
-		supportedOperations:     []string{"explain", "scan", "searchRetrieve"},
-		supportedQueryTypes:     []string{"cql", "fcs"},
-		supportedRecordPackings: []string{"xml", "string"},
-		queryGeneral:            []string{"version", "recordPacking", "operation"},
-		queryExplain:            []string{"x-fcs-endpoint-description"},
-		querySearchRetrieve:     []string{"query", "queryType", "x-fcs-context", "x-fcs-dataviews", "x-fcs-rewrites-allowed"},
+		serverInfo:  generalConf,
+		corporaConf: corporaConf,
+		radapter:    radapter,
+		tmpl: template.Must(
+			template.New("").
+				Funcs(common.GetTemplateFunctions()).
+				ParseGlob("handler/v20/templates/*")),
 	}
 }

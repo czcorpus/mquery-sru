@@ -39,6 +39,12 @@ const (
 	DefaultLayerType = LayerTypeText
 )
 
+// LayerType is a layer above positional attributes
+// combining similar attribute types (e.g. annotation).
+// In Manatee, no such thing is defined but it is
+// nevertheless supported via configuration of corpora
+// in MQuery-FCS where each positional attribute belongs
+// to a specific layer.
 type LayerType string
 
 func (name LayerType) Validate() error {
@@ -71,13 +77,26 @@ func (name LayerType) GetResultID() string {
 	return ""
 }
 
+// PosAttr represents a corpus positional attribute
 type PosAttr struct {
-	ID             string    `json:"id"`
-	Name           string    `json:"name"`
-	Layer          LayerType `json:"layer"`
-	IsLayerDefault bool      `json:"isLayerDefault"`
+	ID   string `json:"id"`
+	Name string `json:"name"`
+
+	// Layer defines a layer the attribute is attached to
+	// (this is not supported directly by Manatee so it
+	// is configured and supported in MQuery-FCS)
+	Layer LayerType `json:"layer"`
+
+	// IsLayerDefault defines whether the attribute is
+	// used as a default one when querying its layer.
+	// (e.g. the `word` attribute is typically set as
+	// the default for the `text` layer)
+	IsLayerDefault bool `json:"isLayerDefault"`
 }
 
+// StructureMapping provides mapping between custom
+// corpus structures and FCS-QL generic structures
+// (paragraph, sentence, utterance,...)
 type StructureMapping struct {
 	SentenceStruct  string `json:"sentenceStruct"`
 	UtteranceStruct string `json:"utteranceStruct"`
@@ -87,11 +106,17 @@ type StructureMapping struct {
 	SessionStruct   string `json:"sessionStruct"`
 }
 
+// CorpusSetup is a complete corpus configuration
+// (it is part of MQuery-FCS configuration)
 type CorpusSetup struct {
+	PID              string           `json:"pid"`
+	FullName         string           `json:"fullName"`
 	PosAttrs         []PosAttr        `json:"posAttrs"`
 	StructureMapping StructureMapping `json:"structureMapping"`
 }
 
+// GetLayerDefault provides default positional
+// attribute for a specified layer.
 func (cs *CorpusSetup) GetLayerDefault(ln LayerType) PosAttr {
 	for _, item := range cs.PosAttrs {
 		if item.IsLayerDefault {
@@ -101,6 +126,7 @@ func (cs *CorpusSetup) GetLayerDefault(ln LayerType) PosAttr {
 	return PosAttr{}
 }
 
+// GetDefinedLayers returns all the layers defined for the corpus
 func (cs *CorpusSetup) GetDefinedLayers() *collections.Set[LayerType] {
 	ans := collections.NewSet[LayerType]()
 	for _, item := range cs.PosAttrs {
@@ -109,6 +135,9 @@ func (cs *CorpusSetup) GetDefinedLayers() *collections.Set[LayerType] {
 	return ans
 }
 
+// GetDefinedLayersAsString provides all the layers
+// defined for the corpus formatted as a single string
+// (this is required in SRU XML)
 func (cs *CorpusSetup) GetDefinedLayersAsString() string {
 	layers := cs.GetDefinedLayers().ToOrderedSlice()
 	ans := make([]string, len(layers))
@@ -118,6 +147,8 @@ func (cs *CorpusSetup) GetDefinedLayersAsString() string {
 	return strings.Join(ans, " ")
 }
 
+// Validate validates corpus setup. This should be run
+// as part of server startup (i.e. before any requests start)
 func (ls *CorpusSetup) Validate(confContext string) error {
 	if ls == nil {
 		return fmt.Errorf("missing configuration section `%s.layers`", confContext)
@@ -144,6 +175,10 @@ func (ls *CorpusSetup) Validate(confContext string) error {
 	return nil
 }
 
+// -----
+
+// SrchResources is a configuration of all the enabled
+// corpora.
 type SrchResources map[string]*CorpusSetup
 
 func (sr SrchResources) GetCommonLayers() []LayerType {
@@ -198,6 +233,8 @@ func (sr SrchResources) GetCommonPosAttrs(corpusNames ...string) []PosAttr {
 	return ans
 }
 
+// GetCommonPosAttrNames is the same as GetCommonPosAttrs
+// but it returns just a list of attribute names.
 func (sr SrchResources) GetCommonPosAttrNames(corpusName ...string) []string {
 	pa := sr.GetCommonPosAttrs(corpusName...)
 	ans := make([]string, len(pa))
@@ -207,6 +244,8 @@ func (sr SrchResources) GetCommonPosAttrNames(corpusName ...string) []string {
 	return ans
 }
 
+// Validate validates all the corpora configurations.
+// This should be run during server startup.
 func (sr SrchResources) Validate(confContext string) error {
 	for name, corp := range sr {
 		if err := corp.Validate(fmt.Sprintf("%s[%s]", confContext, name)); err != nil {

@@ -22,7 +22,7 @@ go.work
 
 # local installation
 config.json
-fcs
+mquery-fcs
 
 # generated grammar
 query/parser/fcsql/fcsql.go

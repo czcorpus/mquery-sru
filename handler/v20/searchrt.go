@@ -32,17 +32,17 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/czcorpus/cnc-gokit/collections"
 	"github.com/gin-gonic/gin"
 )
 
 func (a *FCSSubHandlerV20) translateQuery(
-	corpusName, query, queryType string,
+	corpusName, query string,
+	queryType QueryType,
 ) (compiler.AST, *general.FCSError) {
 	var ast compiler.AST
 	var fcsErr *general.FCSError
 	switch queryType {
-	case "cql":
+	case QueryTypeCQL:
 		var err error
 		ast, err = basic.NewBasicTransformer(query, string(corpus.DefaultLayerType))
 		if err != nil {
@@ -52,7 +52,7 @@ func (a *FCSSubHandlerV20) translateQuery(
 				Message: "Invalid query syntax",
 			}
 		}
-	case "fcs":
+	case QueryTypeFCS:
 		var err error
 		ast, err = fcsql.ParseQuery(
 			query,
@@ -71,7 +71,7 @@ func (a *FCSSubHandlerV20) translateQuery(
 	default:
 		fcsErr = &general.FCSError{
 			Code:    general.CodeUnsupportedParameterValue,
-			Ident:   queryType,
+			Ident:   queryType.String(),
 			Message: "Unsupported queryType value",
 		}
 	}
@@ -111,11 +111,11 @@ func (a *FCSSubHandlerV20) exportAttrsByLayers(
 func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResponse) int {
 	// check if all parameters are supported
 	for key, _ := range ctx.Request.URL.Query() {
-		if !collections.SliceContains(a.queryGeneral, key) && !collections.SliceContains(a.querySearchRetrieve, key) {
+		if err := SearchRetrArg(key).Validate(); err != nil {
 			fcsResponse.General.Error = &general.FCSError{
 				Code:    general.CodeUnsupportedParameter,
 				Ident:   key,
-				Message: "Unsupported parameter",
+				Message: err.Error(),
 			}
 			return http.StatusBadRequest
 		}
@@ -131,8 +131,8 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return http.StatusBadRequest
 	}
 
-	corpora := strings.Split(ctx.Query("x-fcs-context"), ",")
-	queryType := ctx.DefaultQuery("queryType", "cql")
+	corpora := strings.Split(ctx.Query(SearchRetrArgFCSContext.String()), ",")
+	queryType := getTypedArg[QueryType](ctx, "queryType", QueryTypeCQL)
 	fcsResponse.SearchRetrieve.QueryType = queryType
 	// get searchable corpora and attrs
 	if len(corpora) > 0 {
@@ -141,7 +141,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			if !ok {
 				fcsResponse.General.Error = &general.FCSError{
 					Code:    general.CodeUnsupportedParameterValue,
-					Ident:   "x-fcs-context",
+					Ident:   SearchRetrArgFCSContext.String(),
 					Message: "Unknown context " + v,
 				}
 				return http.StatusBadRequest
@@ -169,7 +169,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		if len(ast.Errors()) > 0 {
 			fcsResponse.General.Error = &general.FCSError{
 				Code:    general.CodeQueryCannotProcess,
-				Ident:   "query", // TODO
+				Ident:   SearchRetrArgQuery.String(),
 				Message: ast.Errors()[0].Error(),
 			}
 			return http.StatusInternalServerError
