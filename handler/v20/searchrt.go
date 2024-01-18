@@ -25,9 +25,9 @@ import (
 	"fcs/general"
 	"fcs/query/compiler"
 	"fcs/query/parser/fcsql"
+	"fcs/query/parser/simple"
 	"fcs/rdb"
 	"fcs/results"
-	"fcs/transformers/basic"
 	"fmt"
 	"net/http"
 	"strings"
@@ -44,7 +44,12 @@ func (a *FCSSubHandlerV20) translateQuery(
 	switch queryType {
 	case QueryTypeCQL:
 		var err error
-		ast, err = basic.NewBasicTransformer(query, string(corpus.DefaultLayerType))
+		ast, err = simple.ParseQuery(
+			query,
+			corpus.DefaultLayerType,
+			a.corporaConf.Resources[corpusName].PosAttrs,
+			a.corporaConf.Resources[corpusName].StructureMapping,
+		)
 		if err != nil {
 			fcsErr = &general.FCSError{
 				Code:    general.CodeQuerySyntaxError,

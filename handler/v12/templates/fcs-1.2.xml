@@ -13,7 +13,7 @@
       </sru:recordData>
     </sru:record>
     <sru:extraResponseData>
-      {{ template "description.xml" .Resources }}
+      {{ template "description.xml" .Explain.Resources }}
     </sru:extraResponseData>
   {{ end }}
 </sru:explainResponse>

@@ -128,7 +128,7 @@ type FCSSubHandlerV12 struct {
 }
 
 func (a *FCSSubHandlerV12) produceResponse(ctx *gin.Context, fcsResponse *FCSResponse, code int) {
-	if err := a.tmpl.ExecuteTemplate(ctx.Writer, "fcs-2.0.xml", fcsResponse); err != nil {
+	if err := a.tmpl.ExecuteTemplate(ctx.Writer, "fcs-1.2.xml", fcsResponse); err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
@@ -197,6 +197,6 @@ func NewFCSSubHandlerV12(
 		tmpl: template.Must(
 			template.New("").
 				Funcs(common.GetTemplateFunctions()).
-				ParseGlob("handler/v20/templates/*")),
+				ParseGlob("handler/v12/templates/*")),
 	}
 }
