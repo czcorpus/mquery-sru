@@ -26,10 +26,9 @@ import (
 	"fcs/handler"
 	"fcs/handler/form"
 	"fcs/monitoring"
-	"fcs/query/compiler"
 	"fcs/query/parser/fcsql"
+	"fcs/query/parser/simple"
 	"fcs/rdb"
-	"fcs/transformers/basic"
 	"fcs/worker"
 )
 
@@ -154,18 +153,49 @@ func main() {
 			input = strings.TrimSpace(input)
 			switch flag.Arg(1) {
 			case "basic":
-				var t compiler.AST
-				var err error
-				t, err = basic.NewBasicTransformer(input, "word")
-				if err != nil {
-					println("syntax error:", err)
+				ast, err := simple.ParseQuery(
+					input,
+					corpus.LayerTypeText,
+					[]corpus.PosAttr{
+						{
+							ID:             "id1",
+							Name:           "word",
+							Layer:          "text",
+							IsLayerDefault: true,
+						},
+						{
+							ID:    "id2",
+							Name:  "lemma",
+							Layer: "lemma",
+						},
+						{
+							ID:    "id3",
+							Name:  "pos",
+							Layer: "pos",
+						},
+					},
+					corpus.StructureMapping{
+						SentenceStruct:  "s",
+						UtteranceStruct: "sp",
+						ParagraphStruct: "p",
+						TurnStruct:      "sp",
+						TextStruct:      "doc",
+						SessionStruct:   "doc",
+					},
+				)
 
-				} else {
-					println(t.Generate())
-					for i, err := range t.Errors() {
-						fmt.Printf("error[%d]: %s", i, err)
-					}
+				if err != nil {
+					fmt.Printf("parsing error: %w\n", err)
+					os.Exit(1)
 				}
+				outQuery := ast.Generate()
+				for i, err := range ast.Errors() {
+					fmt.Printf("semantic error[%d]: %s\n", i, err)
+				}
+				if len(ast.Errors()) > 0 {
+					os.Exit(1)
+				}
+				println(outQuery)
 			case "advanced":
 				ast, err := fcsql.ParseQuery(
 					input,
