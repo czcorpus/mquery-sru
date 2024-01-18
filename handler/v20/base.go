@@ -54,6 +54,8 @@ const (
 	ExplainArgRecordPacking          ExplainArg = "recordPacking"
 	ExplainArgOperation              ExplainArg = "operation"
 	ExplainArgFCSEndpointDescription ExplainArg = "x-fcs-endpoint-description"
+
+	DefaultQueryType QueryType = QueryTypeCQL
 )
 
 type Operation string

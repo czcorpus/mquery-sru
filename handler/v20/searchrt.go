@@ -137,9 +137,11 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return http.StatusBadRequest
 	}
 
-	corpora := strings.Split(ctx.Query(SearchRetrArgFCSContext.String()), ",")
-	queryType := getTypedArg[QueryType](ctx, "queryType", QueryTypeCQL)
-	fcsResponse.SearchRetrieve.QueryType = queryType
+	corpora := a.corporaConf.Resources.GetCorpora()
+	if ctx.Request.URL.Query().Has(ctx.Query(SearchRetrArgFCSContext.String())) {
+		corpora = strings.Split(ctx.Query(SearchRetrArgFCSContext.String()), ",")
+	}
+
 	// get searchable corpora and attrs
 	if len(corpora) > 0 {
 		for _, v := range corpora {
@@ -155,11 +157,17 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		}
 
 	} else {
-		for corpusName, _ := range a.corporaConf.Resources {
-			corpora = append(corpora, corpusName)
+		fcsResponse.General.Error = &general.FCSError{
+			Code:    general.CodeUnsupportedParameterValue,
+			Ident:   SearchRetrArgFCSContext.String(),
+			Message: "Empty context",
 		}
+		return http.StatusBadRequest
 	}
-	searchAttrs := a.corporaConf.Resources.GetCommonPosAttrNames(corpora...)
+	retrieveAttrs := a.corporaConf.Resources.GetCommonPosAttrNames(corpora...)
+
+	queryType := getTypedArg[QueryType](ctx, "queryType", DefaultQueryType)
+	fcsResponse.SearchRetrieve.QueryType = queryType
 
 	// make searches
 	waits := make([]<-chan *rdb.WorkerResult, len(corpora))
@@ -184,7 +192,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			CorpusPath: a.corporaConf.GetRegistryPath(corpusName),
 			QueryLemma: "",
 			Query:      query,
-			Attrs:      searchAttrs,
+			Attrs:      retrieveAttrs,
 			MaxItems:   10,
 		})
 		if err != nil {
