@@ -37,23 +37,171 @@
 }
 
 Query <-
-    t:Term {
-        query := new(Query)
-        term, ok := t.(string)
+    b:BinaryOperatorQuery EOF {
+        ans := new(Query)
+        tB, ok := b.(*binaryOperatorQuery)
         if !ok {
-            return nil, fmt.Errorf("Invalid term %v: ", t)
+            return ans, fmt.Errorf("invalid value passed to `b:BinaryOperatorQuery` in `Query`: %v", b)
         }
-        query.query = term
-        return query, nil
+        ans.binaryOperatorQuery = tB
+        return ans, nil
     }
 
-Term  <-
-    "\"" val:[^"]* "\"" { return stringFromChars(val), nil }
-    / Char* { return string(c.text), nil }
+BinaryOperatorQuery <-
+    nrq:NonRecursiveQuery rest:(Ws BinaryOperator Ws NonRecursiveQuery)* {
 
+    ans := new(binaryOperatorQuery)
 
-Char = [0-9a-zA-Z]
-UnaryOperator = "NOT"
-BinaryOperator = "AND" / "OR" / "PROX"
-_ "whitespace" = [ \n\t\r]
-EOF = !.
+    tNrq, ok := nrq.(*nonRecursiveQuery)
+    if !ok {
+        return ans, fmt.Errorf("invalid value passed to `nrq:NonRecursiveQuery` in `BinaryOperatorQuery`: %v", nrq)
+    }
+    ans.nonRecursiveQuery = tNrq
+
+    xRest, ok := rest.([]any)
+    if !ok {
+        return ans, fmt.Errorf("invalid value passed to `rest:(...)` in `BinaryOperatorQuery`: %v", rest)
+    }
+    for _, v := range xRest {
+        op := fromIdxOfUntypedSlice(v, 1)
+        tOp, ok := op.(string)
+        if !ok {
+            return ans, fmt.Errorf("invalid value passed to `BinaryOperator` in `BinaryOperatorQuery`: %v", op)
+        }
+        nrq := fromIdxOfUntypedSlice(v, 3)
+        tNrq, ok := nrq.(*nonRecursiveQuery)
+        if !ok {
+            return ans, fmt.Errorf("invalid value passed to `NonRecursiveQuery` in `BinaryOperatorQuery`: %v", nrq)
+        }
+        ans.AddRest(tOp, tNrq)
+    }
+    return ans, nil
+}
+
+NonRecursiveQuery <-
+    pe:ParenthesisExpr {
+        ans := new(nonRecursiveQuery)
+        tPe, ok := pe.(*parenthesisExpr)
+        if !ok {
+            return ans, fmt.Errorf("invalid value passed to `pe:ParenthesisExpr` in `NonRecursiveQuery`: %v", pe)
+        }
+        ans.parenthesisExpr = tPe
+        return ans, nil
+    } /
+    op:UnaryOperator boq:BinaryOperatorQuery {
+        ans := new(nonRecursiveQuery)
+        tOp, ok := op.(string)
+        if !ok {
+            return ans, fmt.Errorf("invalid value passed to `op:UnaryOperator` in `NonRecursiveQuery`: %v", op)
+        }
+        ans.unaryOperator = tOp
+        tBoq, ok := boq.(*binaryOperatorQuery)
+        if !ok {
+            return ans, fmt.Errorf("invalid value passed to `boq:BinaryOperatorQuery` in `NonRecursiveQuery`: %v", boq)
+        }
+        ans.binaryOperatorQuery = tBoq
+        return ans, nil
+
+    }/
+    t:Term {
+        ans := new(nonRecursiveQuery)
+        tT, ok := t.(*term)
+        if !ok {
+            return ans, fmt.Errorf("invalid value passed to `t:Term` in `NonRecursiveQuery`: %v", t)
+        }
+        ans.term = tT
+        return ans, nil
+    }
+
+ParenthesisExpr <-
+    "(" boq:BinaryOperatorQuery ")" {
+        ans := new(parenthesisExpr)
+        tBoq, ok := boq.(*binaryOperatorQuery)
+        if !ok {
+            return ans, fmt.Errorf("invalid value passed to `boq:BinaryOperatorQuery` in `ParenthesisExpr`: %v", boq)
+        }
+        ans.binaryOperatorQuery = tBoq
+        return ans, nil
+    }
+
+Term <-
+    qt:QuotedText {
+        ans := new(term)
+        tText, ok := qt.(*quotedText)
+        if !ok {
+            return ans, fmt.Errorf("invalid value passed to `quotedText:QuotedText` in `Term`: %v", qt)
+        }
+        ans.quotedText = tText
+        return ans, nil
+    } /
+    t:Text {
+        ans := new(term)
+        tText, ok := t.(*text)
+        if !ok {
+            return ans, fmt.Errorf("invalid value passed to `t:Text` in `Term`: %v", t)
+        }
+        ans.text = tText
+        return ans, nil
+
+    }
+
+QuotedText <-
+    "\"" w:Word rest:(_ Word)* "\"" {
+        ans := new(quotedText)
+        tw, ok := w.(*word)
+        if !ok {
+            return ans, fmt.Errorf("invalid value passed to `w:Word` in `QuotedText`: %v", w)
+        }
+        ans.AddWord(tw)
+        xRest, ok := rest.([]any)
+        if !ok {
+            return ans, fmt.Errorf("invalid value passed to `rest:(...)` in `QuotedText`: %v", rest)
+        }
+        for _, v := range xRest {
+            v2 := fromIdxOfUntypedSlice(v, 1)
+            v2T, ok := v2.(*word)
+            if !ok {
+                return ans, fmt.Errorf("invalid value passed to `rest:(...Word)` in `QuotedText`: %v", rest)
+            }
+            ans.AddWord(v2T)
+        }
+        return ans, nil
+    }
+
+Text <-
+    w:Word {
+        ans := new(text)
+        wt, ok := w.(*word)
+        if !ok {
+            return ans, fmt.Errorf("invalid value passed to `w` in `Text`: %v", w)
+        }
+        ans.word = wt
+        return ans, nil
+    }
+
+Word <-
+    chars:Char+ {
+        word := new(word)
+        word.value = string(c.text)
+        return word, nil
+    }
+
+_ "whitespace" <- [ \n\t\r]*
+
+Ws <- [ \n\t\r]+
+
+Char <- [0-9a-zA-Z]
+
+UnaryOperator <- "NOT" {
+    return string(c.text), nil
+}
+
+BinaryOperator <-
+    "AND" {
+        return string(c.text), nil
+    } /
+    "OR" {
+        return string(c.text), nil
+    }
+
+EOF <- !.
