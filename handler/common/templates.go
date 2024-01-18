@@ -16,11 +16,11 @@
 //  You should have received a copy of the GNU General Public License
 //  along with MQUERY.  If not, see <https://www.gnu.org/licenses/>.
 
-package general
+package common
 
 import "text/template"
 
-func GetTemplateFuncMap() template.FuncMap {
+func GetTemplateFunctions() template.FuncMap {
 	return template.FuncMap{
 		"add": func(i, j int) int {
 			return i + j

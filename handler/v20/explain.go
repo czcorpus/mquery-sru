@@ -23,18 +23,17 @@ import (
 	"fcs/general"
 	"net/http"
 
-	"github.com/czcorpus/cnc-gokit/collections"
 	"github.com/gin-gonic/gin"
 )
 
 func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSResponse) int {
 	// check if all parameters are supported
 	for key, _ := range ctx.Request.URL.Query() {
-		if !collections.SliceContains(a.queryGeneral, key) && !collections.SliceContains(a.queryExplain, key) {
+		if err := ExplainArg(key).Validate(); err != nil {
 			fcsResponse.General.Error = &general.FCSError{
 				Code:    general.CodeUnsupportedParameter,
 				Ident:   key,
-				Message: "Unsupported parameter",
+				Message: err.Error(),
 			}
 			return http.StatusBadRequest
 		}
@@ -49,7 +48,7 @@ func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 		DatabaseDescription: a.serverInfo.DatabaseDescription,
 		PosAttrs:            a.corporaConf.Resources.GetCommonPosAttrs(a.corporaConf.Resources.GetCorpora()...),
 	}
-	if ctx.Query("x-fcs-endpoint-description") == "true" {
+	if ctx.Query(ExplainArgFCSEndpointDescription.String()) == "true" {
 		fcsResponse.Explain.ExtraResponseData = true
 		for corpusName, corpusConf := range a.corporaConf.Resources {
 			fcsResponse.Explain.Resources = append(

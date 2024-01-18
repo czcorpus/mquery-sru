@@ -24,11 +24,15 @@ import (
 )
 
 type FCSResourceInfo struct {
-	PID             string
-	Title           string
-	Description     string
-	URI             string
-	Languages       []string
+	PID         string
+	Title       string
+	Description string
+	URI         string
+	Languages   []string
+
+	// AvailableLayers is a list of values separated
+	// by single space (as required in CLARIN-FCS
+	// Interface Specification)
 	AvailableLayers string
 }
 
@@ -66,14 +70,14 @@ type FCSExplain struct {
 }
 
 type FCSSearchRetrieve struct {
-	QueryType string
+	QueryType QueryType
 	Results   []FCSSearchRow
 }
 
 type FCSResponse struct {
 	General       general.FCSGeneralResponse
-	RecordPacking string
-	Operation     string
+	RecordPacking RecordPacking
+	Operation     Operation
 
 	Explain        FCSExplain
 	SearchRetrieve FCSSearchRetrieve

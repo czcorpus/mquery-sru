@@ -23,6 +23,7 @@ import (
 	"fcs/cnf"
 	"fcs/corpus"
 	"fcs/general"
+	"fcs/handler/common"
 	"fcs/rdb"
 	"fcs/results"
 	"fcs/transformers/basic"
@@ -312,7 +313,7 @@ func NewFCSSubHandlerV12(
 		serverInfo:              serverInfo,
 		corporaConf:             corporaConf,
 		radapter:                radapter,
-		tmpl:                    template.Must(template.New("").Funcs(general.GetTemplateFuncMap()).ParseGlob("handler/v12/templates/*")),
+		tmpl:                    template.Must(template.New("").Funcs(common.GetTemplateFunctions()).ParseGlob("handler/v12/templates/*")),
 		supportedOperations:     []string{"explain", "scan", "searchRetrieve"},
 		supportedRecordPackings: []string{"xml", "string"},
 		queryGeneral:            []string{"version", "recordPacking", "operation"},
