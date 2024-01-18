@@ -1,0 +1,20 @@
+<sru:records>
+  {{ range .Results }}
+    <sru:record>
+      <sru:recordSchema>http://clarin.eu/fcs/resource</sru:recordSchema>
+      <sru:recordPacking>xml</sru:recordPacking>
+      <sru:recordData>
+        <fcs:Resource xmlns:fcs="http://clarin.eu/fcs/resource" pid="{{ .PID }}"{{ if .Web }} ref="{{ .Web }}"{{ end }}>
+          <fcs:ResourceFragment>
+            <fcs:DataView type="application/x-clarin-fcs-hits+xml">
+              <hits:Result xmlns:hits="http://clarin.eu/fcs/dataview/hits">
+                {{ .Left }} <hits:Hit>{{ .KWIC }}</hits:Hit> {{ .Right }}
+              </hits:Result>
+            </fcs:DataView>
+          </fcs:ResourceFragment>
+        </fcs:Resource>
+      </sru:recordData>
+      <sru:recordPosition>{{ .Position }}</sru:recordPosition>
+    </sru:record>
+  {{ end }}
+</sru:records>

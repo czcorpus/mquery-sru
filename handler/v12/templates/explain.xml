@@ -1,0 +1,20 @@
+<zr:explain xmlns:zr="http://explain.z3950.org/dtd/2.0/">
+  <zr:serverInfo protocol="SRU" version="1.2" transport="http">
+    <zr:host>{{ .ServerName }}</zr:host>
+    <zr:port>{{ .ServerPort }}</zr:port>
+    <zr:database>{{ .Database }}</zr:database>
+  </zr:serverInfo>
+  <zr:databaseInfo>
+    <zr:title lang="en" primary="true">{{ .DatabaseTitle }}</zr:title>
+    <zr:description lang="en" primary="true">{{ .DatabaseDescription }}</zr:description>
+  </zr:databaseInfo>
+  <zr:schemaInfo>
+    <zr:schema identifier="http://clarin.eu/fcs/resource" name="fcs">
+      <zr:title lang="en" primary="true">CLARIN Federated Content Search</zr:title>
+    </zr:schema>
+  </zr:schemaInfo>
+  <zr:configInfo>
+    <zr:default type="numberOfRecords">TODO</zr:default>
+    <zr:setting type="maximumRecords">TODO</zr:setting>
+  </zr:configInfo>
+</zr:explain>
