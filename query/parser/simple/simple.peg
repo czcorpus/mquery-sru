@@ -1,0 +1,59 @@
+// Copyright 2024 Tomas Machalek <tomas.machalek@gmail.com>
+// Copyright 2024 Institute of the Czech National Corpus,
+//                Faculty of Arts, Charles University
+//   This file is part of MQUERY.
+//
+//  MQUERY is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  MQUERY is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with MQUERY.  If not, see <https://www.gnu.org/licenses/>.
+
+
+{
+    package simple
+
+    import (
+        "fmt"
+        "reflect"
+    )
+
+    func stringFromChars(chars interface{}) string {
+        str := ""
+        r := chars.([]interface{})
+        for _, i := range r {
+            j := i.([]uint8)
+            str += string(j[0])
+        }
+        return str
+    }
+}
+
+Query <-
+    t:Term {
+        query := new(Query)
+        term, ok := t.(string)
+        if !ok {
+            return nil, fmt.Errorf("Invalid term %v: ", t)
+        }
+        query.query = term
+        return query, nil
+    }
+
+Term  <-
+    "\"" val:[^"]* "\"" { return stringFromChars(val), nil }
+    / Char* { return string(c.text), nil }
+
+
+Char = [0-9a-zA-Z]
+UnaryOperator = "NOT"
+BinaryOperator = "AND" / "OR" / "PROX"
+_ "whitespace" = [ \n\t\r]
+EOF = !.
