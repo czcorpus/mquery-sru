@@ -24,6 +24,7 @@ import (
 	"fcs/corpus"
 	"fcs/general"
 	"fcs/handler"
+	"fcs/handler/form"
 	"fcs/monitoring"
 	"fcs/query/compiler"
 	"fcs/query/parser/fcsql"
@@ -69,6 +70,9 @@ func runApiServer(
 
 	FCSActions := handler.NewFCSHandler(conf.ServerInfo, conf.CorporaSetup, radapter)
 	engine.GET("/", FCSActions.FCSHandler)
+
+	uIActions := form.NewFormHandler(conf.CorporaSetup)
+	engine.GET("/ui/form", uIActions.Handle)
 
 	logger := monitoring.NewWorkerJobLogger(conf.TimezoneLocation())
 	logger.GoRunTimelineWriter()
