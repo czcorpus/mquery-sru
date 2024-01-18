@@ -87,6 +87,10 @@ type PosAttr struct {
 	// is configured and supported in MQuery-FCS)
 	Layer LayerType `json:"layer"`
 
+	// IsSimpleSearchAttr defines whether the attribute is
+	// used as a search attr in simple query
+	IsSimpleSearchAttr bool `json:"isSimpleSearchAttr"`
+
 	// IsLayerDefault defines whether the attribute is
 	// used as a default one when querying its layer.
 	// (e.g. the `word` attribute is typically set as
@@ -113,6 +117,17 @@ type CorpusSetup struct {
 	FullName         string           `json:"fullName"`
 	PosAttrs         []PosAttr        `json:"posAttrs"`
 	StructureMapping StructureMapping `json:"structureMapping"`
+}
+
+// GetSimpleSearchAttrs provides all simple search attrs
+func (cs *CorpusSetup) GetSimpleSearchAttrs() []string {
+	searchAttrs := make([]string, 0, 5)
+	for _, item := range cs.PosAttrs {
+		if item.IsSimpleSearchAttr {
+			searchAttrs = append(searchAttrs, item.Name)
+		}
+	}
+	return searchAttrs
 }
 
 // GetLayerDefault provides default positional

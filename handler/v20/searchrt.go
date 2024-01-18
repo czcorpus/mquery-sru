@@ -46,6 +46,7 @@ func (a *FCSSubHandlerV20) translateQuery(
 		var err error
 		ast, err = simple.ParseQuery(
 			query,
+			a.corporaConf.Resources[corpusName].GetSimpleSearchAttrs(),
 			corpus.DefaultLayerType,
 			a.corporaConf.Resources[corpusName].PosAttrs,
 			a.corporaConf.Resources[corpusName].StructureMapping,
