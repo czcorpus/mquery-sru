@@ -97,11 +97,14 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		}
 
 	} else {
-		for corpusName, _ := range a.corporaConf.Resources {
-			corpora = append(corpora, corpusName)
+		fcsResponse.General.Error = &general.FCSError{
+			Code:    general.CodeUnsupportedParameterValue,
+			Ident:   SearchRetrArgFCSContext.String(),
+			Message: "Empty context",
 		}
+		return http.StatusBadRequest
 	}
-	searchAttrs := a.corporaConf.Resources.GetCommonPosAttrNames(corpora...)
+	retrieveAttrs := a.corporaConf.Resources.GetCommonPosAttrNames(corpora...)
 
 	// make searches
 	waits := make([]<-chan *rdb.WorkerResult, len(corpora))
@@ -126,7 +129,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			CorpusPath: a.corporaConf.GetRegistryPath(corpusName),
 			QueryLemma: "",
 			Query:      query,
-			Attrs:      searchAttrs,
+			Attrs:      retrieveAttrs,
 			MaxItems:   10,
 		})
 		if err != nil {
