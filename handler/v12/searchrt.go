@@ -77,7 +77,11 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return http.StatusBadRequest
 	}
 
-	corpora := strings.Split(ctx.Query(SearchRetrArgFCSContext.String()), ",")
+	corpora := a.corporaConf.Resources.GetCorpora()
+	if ctx.Request.URL.Query().Has(ctx.Query(SearchRetrArgFCSContext.String())) {
+		corpora = strings.Split(ctx.Query(SearchRetrArgFCSContext.String()), ",")
+	}
+
 	// get searchable corpora and attrs
 	if len(corpora) > 0 {
 		for _, v := range corpora {

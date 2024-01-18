@@ -137,7 +137,10 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return http.StatusBadRequest
 	}
 
-	corpora := strings.Split(ctx.Query(SearchRetrArgFCSContext.String()), ",")
+	corpora := a.corporaConf.Resources.GetCorpora()
+	if ctx.Request.URL.Query().Has(ctx.Query(SearchRetrArgFCSContext.String())) {
+		corpora = strings.Split(ctx.Query(SearchRetrArgFCSContext.String()), ",")
+	}
 	queryType := getTypedArg[QueryType](ctx, "queryType", QueryTypeCQL)
 	fcsResponse.SearchRetrieve.QueryType = queryType
 	// get searchable corpora and attrs
