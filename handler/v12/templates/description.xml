@@ -1,0 +1,23 @@
+<ed:EndpointDescription xmlns:ed="http://clarin.eu/fcs/endpoint-description" version="1">
+  <ed:Capabilities>
+    <ed:Capability>http://clarin.eu/fcs/capability/basic-search</ed:Capability>
+  </ed:Capabilities>
+  <ed:SupportedDataViews>
+    <ed:SupportedDataView id="hits" delivery-policy="send-by-default">application/x-clarin-fcs-hits+xml</ed:SupportedDataView>
+  </ed:SupportedDataViews>
+  <ed:Resources>
+    {{ range . }}
+      <ed:Resource pid="{{ .PID }}">
+        <ed:Title xml:lang="en">{{ .Title }}</ed:Title>
+        <ed:Description xml:lang="en">{{ .Description }}</ed:Description>
+        <ed:LandingPageURI>{{ .URI }}</ed:LandingPageURI>
+        <ed:Languages>
+          {{ range .Languages }}
+            <ed:Language>{{ . }}</ed:Language>
+          {{ end }}
+        </ed:Languages>
+        <ed:AvailableDataViews ref="hits"/>
+      </ed:Resource>
+    {{ end }}
+  </ed:Resources>
+</ed:EndpointDescription>

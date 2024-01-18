@@ -26,3 +26,4 @@ mquery-fcs
 
 # generated grammar
 query/parser/fcsql/fcsql.go
+query/parser/simple/simple.go

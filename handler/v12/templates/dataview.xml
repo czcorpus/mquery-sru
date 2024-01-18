@@ -1,0 +1,15 @@
+{{ define "basicDataView.xml" }}
+  <fcs:DataView type="application/x-clarin-fcs-hits+xml">
+    <hits:Result xmlns:hits="http://clarin.eu/fcs/dataview/hits">
+      {{ $lastHit := false -}}
+      {{ range $i, $t := .Tokens -}}
+        {{ if and $lastHit (not $t.Hit) }}</hits:Hit>{{ end -}}
+        {{ if gt $i 0 }}{{ " " }}{{ end -}}
+        {{ if and (not $lastHit) $t.Hit }}<hits:Hit>{{ end -}}
+        {{ $t.Text -}}
+        {{ $lastHit = $t.Hit -}}
+      {{ end -}}
+      {{ if $lastHit }}</hits:Hit>{{ end -}}
+    </hits:Result>
+  </fcs:DataView>
+{{ end }}

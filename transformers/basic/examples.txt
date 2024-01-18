@@ -1,7 +1,0 @@
-cat
-"cat"
-cat AND dog
-"grumpy cat"
-"grumpy cat" AND dog
-"grumpy cat" OR "lazy dog"
-cat AND (mouse OR "lazy dog")

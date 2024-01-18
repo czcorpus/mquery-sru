@@ -17,103 +17,43 @@
 //  You should have received a copy of the GNU General Public License
 //  along with MQUERY.  If not, see <https://www.gnu.org/licenses/>.
 
-package v20
+package v12
 
 import (
 	"encoding/json"
 	"fcs/corpus"
 	"fcs/general"
 	"fcs/query/compiler"
-	"fcs/query/parser/fcsql"
 	"fcs/query/parser/simple"
 	"fcs/rdb"
 	"fcs/results"
-	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
-func (a *FCSSubHandlerV20) translateQuery(
+func (a *FCSSubHandlerV12) translateQuery(
 	corpusName, query string,
-	queryType QueryType,
 ) (compiler.AST, *general.FCSError) {
-	var ast compiler.AST
 	var fcsErr *general.FCSError
-	switch queryType {
-	case QueryTypeCQL:
-		var err error
-		ast, err = simple.ParseQuery(
-			query,
-			corpus.DefaultLayerType,
-			a.corporaConf.Resources[corpusName].PosAttrs,
-			a.corporaConf.Resources[corpusName].StructureMapping,
-		)
-		if err != nil {
-			fcsErr = &general.FCSError{
-				Code:    general.CodeQuerySyntaxError,
-				Ident:   query,
-				Message: "Invalid query syntax",
-			}
-		}
-	case QueryTypeFCS:
-		var err error
-		ast, err = fcsql.ParseQuery(
-			query,
-			corpus.DefaultLayerType,
-			a.corporaConf.Resources[corpusName].PosAttrs,
-			a.corporaConf.Resources[corpusName].StructureMapping,
-		)
-		if err != nil {
-			fcsErr = &general.FCSError{
-				Code:    general.CodeQuerySyntaxError,
-				Ident:   query,
-				Message: "Invalid query syntax",
-			}
-		}
-
-	default:
+	ast, err := simple.ParseQuery(
+		query,
+		corpus.DefaultLayerType,
+		a.corporaConf.Resources[corpusName].PosAttrs,
+		a.corporaConf.Resources[corpusName].StructureMapping,
+	)
+	if err != nil {
 		fcsErr = &general.FCSError{
-			Code:    general.CodeUnsupportedParameterValue,
-			Ident:   queryType.String(),
-			Message: "Unsupported queryType value",
+			Code:    general.CodeQuerySyntaxError,
+			Ident:   query,
+			Message: "Invalid query syntax",
 		}
 	}
 	return ast, fcsErr
 }
 
-func (a *FCSSubHandlerV20) exportAttrsByLayers(
-	word string,
-	attrs map[string]string,
-	layers []corpus.LayerType,
-	posAttrs []corpus.PosAttr,
-) map[corpus.LayerType]string {
-	ans := make(map[corpus.LayerType]string)
-	for _, layer := range layers {
-		if layer == corpus.DefaultLayerType {
-			ans[layer] = word
-			// TODO this won't work for custom attributes requested from the 'text' layer
-		} else {
-			var found bool
-			for _, posAttr := range posAttrs {
-				if posAttr.Layer == layer {
-					if v, ok := attrs[posAttr.Name]; ok {
-						ans[layer] = v
-						found = true
-						break
-					}
-				}
-			}
-			if !found {
-				ans[layer] = "??"
-			}
-		}
-	}
-	return ans
-}
-
-func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResponse) int {
+func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResponse) int {
 	// check if all parameters are supported
 	for key, _ := range ctx.Request.URL.Query() {
 		if err := SearchRetrArg(key).Validate(); err != nil {
@@ -137,8 +77,6 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	}
 
 	corpora := strings.Split(ctx.Query(SearchRetrArgFCSContext.String()), ",")
-	queryType := getTypedArg[QueryType](ctx, "queryType", QueryTypeCQL)
-	fcsResponse.SearchRetrieve.QueryType = queryType
 	// get searchable corpora and attrs
 	if len(corpora) > 0 {
 		for _, v := range corpora {
@@ -164,7 +102,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	waits := make([]<-chan *rdb.WorkerResult, len(corpora))
 	for i, corpusName := range corpora {
 
-		ast, fcsErr := a.translateQuery(corpusName, fcsQuery, queryType)
+		ast, fcsErr := a.translateQuery(corpusName, fcsQuery)
 		if fcsErr != nil {
 			fcsResponse.General.Error = fcsErr
 			return http.StatusInternalServerError
@@ -235,35 +173,19 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 
 	// transform results
 	fcsResponse.SearchRetrieve.Results = make([]FCSSearchRow, 0, 100)
-	commonLayers := a.corporaConf.Resources.GetCommonLayers()
-	commonPosAttrs := a.corporaConf.Resources.GetCommonPosAttrs(corpora...)
 	for i, r := range results {
 		for _, l := range r.Lines {
-			segmentPos := 1
 			row := FCSSearchRow{
-				LayerAttrs: a.corporaConf.Resources[corpora[i]].GetDefinedLayers().ToOrderedSlice(),
-				Position:   len(fcsResponse.SearchRetrieve.Results) + 1,
-				PID:        corpora[i],
-				Web:        "TODO",
-				Ref:        "TODO",
+				Position: len(fcsResponse.SearchRetrieve.Results) + 1,
+				PID:      corpora[i],
+				Web:      "TODO",
+				Ref:      "TODO",
 			}
-			for j, t := range l.Text {
+			for _, t := range l.Text {
 				token := Token{
 					Text: t.Word,
 					Hit:  t.Strong,
-					Segment: Segment{
-						ID:    fmt.Sprintf("s%d", j),
-						Start: segmentPos,
-						End:   segmentPos + len(t.Word) - 1,
-					},
-					Layers: a.exportAttrsByLayers(
-						t.Word,
-						t.Attrs,
-						commonLayers,
-						commonPosAttrs,
-					),
 				}
-				segmentPos += len(t.Word) + 1 // with space between words
 				row.Tokens = append(row.Tokens, token)
 
 			}

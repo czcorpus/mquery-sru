@@ -18,7 +18,10 @@
 
 package v12
 
-import "fcs/general"
+import (
+	"fcs/corpus"
+	"fcs/general"
+)
 
 type FCSResourceInfo struct {
 	PID         string
@@ -28,14 +31,17 @@ type FCSResourceInfo struct {
 	Languages   []string
 }
 
+type Token struct {
+	Text string
+	Hit  bool
+}
+
 type FCSSearchRow struct {
 	Position int
 	PID      string
-	Left     string
-	KWIC     string
-	Right    string
 	Web      string
 	Ref      string
+	Tokens   []Token
 }
 
 type FCSExplain struct {
@@ -44,6 +50,9 @@ type FCSExplain struct {
 	Database            string
 	DatabaseTitle       string
 	DatabaseDescription string
+	PosAttrs            []corpus.PosAttr
+	Resources           []FCSResourceInfo
+	ExtraResponseData   bool
 }
 
 type FCSSearchRetrieve struct {
@@ -52,10 +61,9 @@ type FCSSearchRetrieve struct {
 
 type FCSResponse struct {
 	General       general.FCSGeneralResponse
-	RecordPacking string
-	Operation     string
+	RecordPacking RecordPacking
+	Operation     Operation
 
 	Explain        FCSExplain
-	Resources      []FCSResourceInfo
 	SearchRetrieve FCSSearchRetrieve
 }
