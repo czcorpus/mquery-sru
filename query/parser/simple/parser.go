@@ -27,6 +27,7 @@ import (
 // tree which can be used to generate CQL.
 func ParseQuery(
 	q string,
+	cqlAttrs []string,
 	defaultLayer corpus.LayerType,
 	posAttrs []corpus.PosAttr,
 	smapping corpus.StructureMapping,
@@ -40,6 +41,7 @@ func ParseQuery(
 		return nil, fmt.Errorf("invalid AST type produced by parser")
 	}
 	tAns.
+		SetCQLAttrs(cqlAttrs).
 		SetStructureMapping(smapping).
 		SetPosAttrs(posAttrs)
 	return tAns, nil

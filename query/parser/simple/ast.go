@@ -26,9 +26,15 @@ import (
 
 type Query struct {
 	query            string
+	cqlAttrs         []string
 	structureMapping corpus.StructureMapping
 	posAttrs         []corpus.PosAttr
 	errors           []error
+}
+
+func (q *Query) SetCQLAttrs(attrs []string) *Query {
+	q.cqlAttrs = attrs
+	return q
 }
 
 func (q *Query) SetStructureMapping(m corpus.StructureMapping) *Query {
@@ -90,7 +96,11 @@ func (q *Query) Generate() string {
 	ans := ""
 	for _, v := range strings.Split(q.query, " ") {
 		if v != "" {
-			ans += fmt.Sprintf("[%s=\"%s\"]", q.structureMapping.TextStruct, v)
+			subquery := make([]string, len(q.cqlAttrs))
+			for i, attr := range q.cqlAttrs {
+				subquery[i] = fmt.Sprintf("%s=\"%s\"", attr, v)
+			}
+			ans += fmt.Sprintf("[%s]", strings.Join(subquery, "|"))
 		}
 	}
 	return ans

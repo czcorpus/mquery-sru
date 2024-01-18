@@ -155,6 +155,7 @@ func main() {
 			case "basic":
 				ast, err := simple.ParseQuery(
 					input,
+					[]string{"word", "lemma"},
 					corpus.LayerTypeText,
 					[]corpus.PosAttr{
 						{
