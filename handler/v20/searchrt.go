@@ -46,8 +46,6 @@ func (a *FCSSubHandlerV20) translateQuery(
 		var err error
 		ast, err = simple.ParseQuery(
 			query,
-			a.corporaConf.Resources[corpusName].GetSimpleSearchAttrs(),
-			corpus.DefaultLayerType,
 			a.corporaConf.Resources[corpusName].PosAttrs,
 			a.corporaConf.Resources[corpusName].StructureMapping,
 		)
@@ -55,14 +53,13 @@ func (a *FCSSubHandlerV20) translateQuery(
 			fcsErr = &general.FCSError{
 				Code:    general.CodeQuerySyntaxError,
 				Ident:   query,
-				Message: "Invalid query syntax",
+				Message: fmt.Sprintf("Invalid query syntax: %s", err),
 			}
 		}
 	case QueryTypeFCS:
 		var err error
 		ast, err = fcsql.ParseQuery(
 			query,
-			corpus.DefaultLayerType,
 			a.corporaConf.Resources[corpusName].PosAttrs,
 			a.corporaConf.Resources[corpusName].StructureMapping,
 		)
@@ -70,7 +67,7 @@ func (a *FCSSubHandlerV20) translateQuery(
 			fcsErr = &general.FCSError{
 				Code:    general.CodeQuerySyntaxError,
 				Ident:   query,
-				Message: "Invalid query syntax",
+				Message: fmt.Sprintf("Invalid query syntax: %s", err),
 			}
 		}
 
@@ -137,9 +134,9 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return http.StatusBadRequest
 	}
 
-	corpora := a.corporaConf.Resources.GetCorpora()
-	if ctx.Request.URL.Query().Has(ctx.Query(SearchRetrArgFCSContext.String())) {
-		corpora = strings.Split(ctx.Query(SearchRetrArgFCSContext.String()), ",")
+	corpora := strings.Split(ctx.DefaultQuery(SearchRetrArgFCSContext.String(), ""), ",")
+	if len(corpora) == 0 || len(corpora) == 1 && corpora[0] == "" {
+		corpora = a.corporaConf.Resources.GetCorpora()
 	}
 
 	// get searchable corpora and attrs
@@ -164,6 +161,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		}
 		return http.StatusBadRequest
 	}
+
 	retrieveAttrs := a.corporaConf.Resources.GetCommonPosAttrNames(corpora...)
 
 	queryType := getTypedArg[QueryType](ctx, "queryType", DefaultQueryType)

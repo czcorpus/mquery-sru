@@ -169,12 +169,16 @@ func (ls *CorpusSetup) Validate(confContext string) error {
 		return fmt.Errorf("missing configuration section `%s.layers`", confContext)
 	}
 	layerDefaults := make(map[LayerType]int)
+	var simpleSrchAttrs int
 	for _, attr := range ls.PosAttrs {
 		if err := attr.Layer.Validate(); err != nil {
 			return err
 		}
 		if attr.IsLayerDefault {
 			layerDefaults[attr.Layer]++
+		}
+		if attr.IsSimpleSearchAttr {
+			simpleSrchAttrs++
 		}
 	}
 	for layer, num := range layerDefaults {
@@ -185,6 +189,9 @@ func (ls *CorpusSetup) Validate(confContext string) error {
 				num,
 			)
 		}
+	}
+	if simpleSrchAttrs == 0 {
+		return fmt.Errorf("no positional attributes are set to be used in basic search query")
 	}
 
 	return nil

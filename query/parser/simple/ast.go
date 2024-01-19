@@ -21,22 +21,30 @@ package simple
 import (
 	"errors"
 	"fcs/corpus"
-	"fcs/query/compiler"
 	"fmt"
 	"strings"
 )
 
 type Query struct {
 	binaryOperatorQuery *binaryOperatorQuery
-	cqlAttrs            []string
 	structureMapping    corpus.StructureMapping
 	posAttrs            []corpus.PosAttr
 	errors              []error
 }
 
-func (q *Query) SetCQLAttrs(attrs []string) *Query {
-	q.cqlAttrs = attrs
-	return q
+func (q *Query) getDefaultAttrsExp(word string) string {
+	var ans strings.Builder
+	for i, p := range q.posAttrs {
+		if p.IsSimpleSearchAttr {
+			if i > 0 {
+				ans.WriteString(fmt.Sprintf(` | %s="%s"`, p.Name, word))
+
+			} else {
+				ans.WriteString(fmt.Sprintf(`%s="%s"`, p.Name, word))
+			}
+		}
+	}
+	return "[" + ans.String() + "]"
 }
 
 func (q *Query) SetStructureMapping(m corpus.StructureMapping) *Query {
@@ -114,16 +122,43 @@ func (boq *binaryOperatorQuery) AddRest(op string, nrq *nonRecursiveQuery) {
 	boq.rest = append(boq.rest, &binaryOperatorQueryRest{operation: op, nonRecursiveQuery: nrq})
 }
 
-func (boq *binaryOperatorQuery) Generate(ast compiler.AST) string {
+func (boq *binaryOperatorQuery) operatorAt(idx int) string {
+	if idx < len(boq.rest) {
+		return boq.rest[idx].operation
+	}
+	return ""
+}
+
+func (boq *binaryOperatorQuery) Generate(ast *Query) string {
 	var rest strings.Builder
 	for _, v := range boq.rest {
 		rest.WriteString(" " + v.nonRecursiveQuery.Generate(ast))
 	}
-	return fmt.Sprintf(
-		"%s %s",
-		boq.nonRecursiveQuery.Generate(ast),
-		rest.String(),
-	)
+	if boq.operatorAt(0) == "AND" {
+		return fmt.Sprintf(
+			"(%s within ([]{0,10} %s []{0,10} within <%s />))",
+			boq.nonRecursiveQuery.Generate(ast),
+			rest.String(),
+			ast.structureMapping.SentenceStruct,
+		)
+
+	} else if boq.operatorAt(0) == "OR" {
+		return fmt.Sprintf(
+			"(%s | %s)",
+			boq.nonRecursiveQuery.Generate(ast),
+			rest.String(),
+		)
+
+	} else if len(boq.rest) == 0 {
+		return boq.nonRecursiveQuery.Generate(ast)
+
+	} else {
+		return fmt.Sprintf(
+			"(?? %s %s)",
+			boq.nonRecursiveQuery.Generate(ast),
+			rest.String(),
+		)
+	}
 }
 
 // ----
@@ -135,7 +170,7 @@ type nonRecursiveQuery struct {
 	term                *term
 }
 
-func (nrq *nonRecursiveQuery) Generate(ast compiler.AST) string {
+func (nrq *nonRecursiveQuery) Generate(ast *Query) string {
 	if nrq.parenthesisExpr != nil {
 		return nrq.parenthesisExpr.Generate(ast)
 	}
@@ -159,8 +194,12 @@ type parenthesisExpr struct {
 	binaryOperatorQuery *binaryOperatorQuery
 }
 
-func (pe *parenthesisExpr) Generate(ast compiler.AST) string {
-	return fmt.Sprintf("(%s)", pe.binaryOperatorQuery.Generate(ast))
+func (pe *parenthesisExpr) Generate(ast *Query) string {
+	// NOTE: We don't need to generate parentheses here
+	// ans the only contained non-terminal is binaryOperatorQuery
+	// and it always produces an expression in parentheses.
+	// And we don't want double ones.
+	return pe.binaryOperatorQuery.Generate(ast)
 }
 
 // ---
@@ -170,7 +209,7 @@ type term struct {
 	quotedText *quotedText
 }
 
-func (t *term) Generate(ast compiler.AST) string {
+func (t *term) Generate(ast *Query) string {
 	if t.text != nil {
 		return t.text.Generate(ast)
 	}
@@ -187,12 +226,12 @@ type quotedText struct {
 	words []*word
 }
 
-func (qt *quotedText) Generate(ast compiler.AST) string {
+func (qt *quotedText) Generate(ast *Query) string {
 	var ans strings.Builder
 	for _, v := range qt.words {
-		ans.WriteString(" " + v.Generate(ast))
+		ans.WriteString(" " + ast.getDefaultAttrsExp(v.Generate(ast)))
 	}
-	return fmt.Sprintf(`"%s"`, ans.String())
+	return ans.String()
 }
 
 func (qt *quotedText) AddWord(w *word) {
@@ -205,8 +244,8 @@ type text struct {
 	word *word
 }
 
-func (t *text) Generate(ast compiler.AST) string {
-	return t.word.Generate(ast)
+func (t *text) Generate(ast *Query) string {
+	return ast.getDefaultAttrsExp(t.word.Generate(ast))
 }
 
 // ------
@@ -215,7 +254,7 @@ type word struct {
 	value string
 }
 
-func (w *word) Generate(ast compiler.AST) string {
+func (w *word) Generate(ast *Query) string {
 	return w.value
 }
 
