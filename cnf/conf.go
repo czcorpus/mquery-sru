@@ -37,6 +37,7 @@ const (
 	dfltMaxNumConcurrentJobs   = 4
 	dfltVertMaxNumErrors       = 100
 	dfltTimeZone               = "Europe/Prague"
+	dfltSourcesRootDir         = "."
 )
 
 type ServerInfo struct {
@@ -56,18 +57,22 @@ func (s *ServerInfo) Validate() error {
 
 // Conf is a global configuration of the app
 type Conf struct {
-	ListenAddress          string               `json:"listenAddress"`
-	ListenPort             int                  `json:"listenPort"`
-	ServerReadTimeoutSecs  int                  `json:"serverReadTimeoutSecs"`
-	ServerWriteTimeoutSecs int                  `json:"serverWriteTimeoutSecs"`
-	CorsAllowedOrigins     []string             `json:"corsAllowedOrigins"`
-	ServerInfo             *ServerInfo          `json:"serverInfo"`
-	CorporaSetup           *corpus.CorporaSetup `json:"corpora"`
-	Redis                  *rdb.Conf            `json:"redis"`
-	LogFile                string               `json:"logFile"`
-	LogLevel               logging.LogLevel     `json:"logLevel"`
-	Language               string               `json:"language"`
-	TimeZone               string               `json:"timeZone"`
+	ListenAddress          string   `json:"listenAddress"`
+	ListenPort             int      `json:"listenPort"`
+	ServerReadTimeoutSecs  int      `json:"serverReadTimeoutSecs"`
+	ServerWriteTimeoutSecs int      `json:"serverWriteTimeoutSecs"`
+	CorsAllowedOrigins     []string `json:"corsAllowedOrigins"`
+
+	// SourcesRootDir is mainly used to locate html/xml templates and other
+	// assets so we can refer them in a relative way inside the code
+	SourcesRootDir string               `json:"sourcesRootDir"`
+	ServerInfo     *ServerInfo          `json:"serverInfo"`
+	CorporaSetup   *corpus.CorporaSetup `json:"corpora"`
+	Redis          *rdb.Conf            `json:"redis"`
+	LogFile        string               `json:"logFile"`
+	LogLevel       logging.LogLevel     `json:"logLevel"`
+	Language       string               `json:"language"`
+	TimeZone       string               `json:"timeZone"`
 
 	srcPath string
 }
@@ -147,5 +152,10 @@ func ValidateAndDefaults(conf *Conf) {
 	if _, err := time.LoadLocation(conf.TimeZone); err != nil {
 		log.Fatal().Err(err).Msg("invalid time zone")
 		return
+	}
+	if conf.SourcesRootDir == "" {
+		log.Warn().
+			Str("sourcesRootDir", dfltSourcesRootDir).
+			Msg("sources root directory not specified, using default")
 	}
 }

@@ -76,13 +76,16 @@ func NewFCSHandler(
 	serverInfo *cnf.ServerInfo,
 	corporaConf *corpus.CorporaSetup,
 	radapter *rdb.Adapter,
+	projectRootDir string,
 ) *FCSHandler {
 	return &FCSHandler{
 		conf:     corporaConf,
 		radapter: radapter,
 		versions: map[string]FCSSubHandler{
-			Version12: v12.NewFCSSubHandlerV12(serverInfo, corporaConf, radapter),
-			Version20: v20.NewFCSSubHandlerV20(serverInfo, corporaConf, radapter),
+			Version12: v12.NewFCSSubHandlerV12(
+				serverInfo, corporaConf, radapter, projectRootDir),
+			Version20: v20.NewFCSSubHandlerV20(
+				serverInfo, corporaConf, radapter, projectRootDir),
 		},
 	}
 }
