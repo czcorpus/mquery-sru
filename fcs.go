@@ -83,10 +83,11 @@ func runApiServer(
 	engine.NoMethod(uniresp.NoMethodHandler)
 	engine.NoRoute(uniresp.NotFoundHandler)
 
-	FCSActions := handler.NewFCSHandler(conf.ServerInfo, conf.CorporaSetup, radapter)
+	FCSActions := handler.NewFCSHandler(
+		conf.ServerInfo, conf.CorporaSetup, radapter, conf.SourcesRootDir)
 	engine.GET("/", FCSActions.FCSHandler)
 
-	uIActions := form.NewFormHandler(conf.CorporaSetup)
+	uIActions := form.NewFormHandler(conf.CorporaSetup, conf.SourcesRootDir)
 	engine.GET("/ui/form", uIActions.Handle)
 
 	logger := monitoring.NewWorkerJobLogger(conf.TimezoneLocation())

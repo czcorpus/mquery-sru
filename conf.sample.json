@@ -3,6 +3,7 @@
     "listenPort": 8080,
     "serverReadTimeoutSecs": 120,
     "serverWriteTimeoutSecs": 60,
+    "sourcesRootDir": "/path/to/project/root",
     "serverInfo": {
         "serverName": "my",
         "serverPort": "80",

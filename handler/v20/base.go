@@ -27,6 +27,7 @@ import (
 	"fcs/rdb"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"text/template"
 
 	"github.com/gin-gonic/gin"
@@ -212,7 +213,9 @@ func NewFCSSubHandlerV20(
 	generalConf *cnf.ServerInfo,
 	corporaConf *corpus.CorporaSetup,
 	radapter *rdb.Adapter,
+	projectRootDir string,
 ) *FCSSubHandlerV20 {
+	path := filepath.Join(projectRootDir, "handler", "v20", "templates")
 	return &FCSSubHandlerV20{
 		serverInfo:  generalConf,
 		corporaConf: corporaConf,
@@ -220,6 +223,6 @@ func NewFCSSubHandlerV20(
 		tmpl: template.Must(
 			template.New("").
 				Funcs(common.GetTemplateFunctions()).
-				ParseGlob("handler/v20/templates/*")),
+				ParseGlob(path + "/*")),
 	}
 }

@@ -3,6 +3,7 @@ package form
 import (
 	"fcs/corpus"
 	"net/http"
+	"path/filepath"
 
 	"text/template"
 
@@ -25,10 +26,10 @@ func (a *FormHandler) Handle(ctx *gin.Context) {
 	ctx.Writer.WriteHeader(http.StatusOK)
 }
 
-func NewFormHandler(conf *corpus.CorporaSetup) *FormHandler {
+func NewFormHandler(conf *corpus.CorporaSetup, projectRootDir string) *FormHandler {
+	path := filepath.Join(projectRootDir, "handler", "form", "templates")
 	tmpl := template.Must(
-		template.New("").
-			ParseGlob("handler/form/templates/*"))
+		template.New("").ParseGlob(path + "/*"))
 	return &FormHandler{
 		conf: conf,
 		tmpl: tmpl,
