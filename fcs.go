@@ -1,10 +1,28 @@
+// Copyright 2023 Martin Zimandl <martin.zimandl@gmail.com>
+// Copyright 2024 Tomas Machalek <tomas.machalek@gmail.com>
+// Copyright 2023 Institute of the Czech National Corpus,
+//                Faculty of Arts, Charles University
+//   This file is part of MQUERY.
+//
+//  MQUERY is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  MQUERY is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with MQUERY.  If not, see <https://www.gnu.org/licenses/>.
+
 //go:generate pigeon -o query/parser/fcsql/fcsql.go query/parser/fcsql/fcsql.peg
 //go:generate pigeon -o query/parser/simple/simple.go query/parser/simple/simple.peg
 
 package main
 
 import (
-	"bufio"
 	"context"
 	"flag"
 	"fmt"
@@ -22,13 +40,10 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"fcs/cnf"
-	"fcs/corpus"
 	"fcs/general"
 	"fcs/handler"
 	"fcs/handler/form"
 	"fcs/monitoring"
-	"fcs/query/parser/fcsql"
-	"fcs/query/parser/simple"
 	"fcs/rdb"
 	"fcs/worker"
 )
@@ -143,107 +158,14 @@ func main() {
 		fmt.Printf("cnc-fcs %s\nbuild date: %s\nlast commit: %s\n", version.Version, version.BuildDate, version.GitCommit)
 		return
 	case "transform":
-		reader := bufio.NewReader(os.Stdin)
-		for {
-			fmt.Print("> ")
-			input, err := reader.ReadString('\n')
-			if err != nil {
-				fmt.Printf("Error: %w, Bye.\n", err)
-				return
-			}
-			input = strings.TrimSpace(input)
-			switch flag.Arg(1) {
-			case "basic":
-				ast, err := simple.ParseQuery(
-					input,
-					[]string{"word", "lemma"},
-					corpus.LayerTypeText,
-					[]corpus.PosAttr{
-						{
-							ID:             "id1",
-							Name:           "word",
-							Layer:          "text",
-							IsLayerDefault: true,
-						},
-						{
-							ID:    "id2",
-							Name:  "lemma",
-							Layer: "lemma",
-						},
-						{
-							ID:    "id3",
-							Name:  "pos",
-							Layer: "pos",
-						},
-					},
-					corpus.StructureMapping{
-						SentenceStruct:  "s",
-						UtteranceStruct: "sp",
-						ParagraphStruct: "p",
-						TurnStruct:      "sp",
-						TextStruct:      "doc",
-						SessionStruct:   "doc",
-					},
-				)
-
-				if err != nil {
-					fmt.Printf("parsing error: %w\n", err)
-					os.Exit(1)
-				}
-				outQuery := ast.Generate()
-				for i, err := range ast.Errors() {
-					fmt.Printf("semantic error[%d]: %s\n", i, err)
-				}
-				if len(ast.Errors()) > 0 {
-					os.Exit(1)
-				}
-				println(outQuery)
-			case "advanced":
-				ast, err := fcsql.ParseQuery(
-					input,
-					corpus.LayerTypeText,
-					[]corpus.PosAttr{
-						{
-							ID:             "id1",
-							Name:           "word",
-							Layer:          "text",
-							IsLayerDefault: true,
-						},
-						{
-							ID:    "id2",
-							Name:  "lemma",
-							Layer: "lemma",
-						},
-						{
-							ID:    "id3",
-							Name:  "pos",
-							Layer: "pos",
-						},
-					},
-					corpus.StructureMapping{
-						SentenceStruct:  "s",
-						UtteranceStruct: "sp",
-						ParagraphStruct: "p",
-						TurnStruct:      "sp",
-						TextStruct:      "doc",
-						SessionStruct:   "doc",
-					},
-				)
-
-				if err != nil {
-					fmt.Printf("parsing error: %w\n", err)
-					os.Exit(1)
-				}
-				outQuery := ast.Generate()
-				for i, err := range ast.Errors() {
-					fmt.Printf("semantic error[%d]: %s\n", i, err)
-				}
-				if len(ast.Errors()) > 0 {
-					os.Exit(1)
-				}
-				println(outQuery)
-			}
-
+		switch flag.Arg(1) {
+		case "basic":
+			repl(translateBasicQuery)
+		case "advanced":
+			repl(translateFCSQuery)
+		default:
+			fmt.Println("Unknown query type")
+			os.Exit(2)
 		}
 	}
 
