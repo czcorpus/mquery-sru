@@ -46,7 +46,6 @@ func repl(translate func(string)) {
 func translateBasicQuery(input string) {
 	ast, err := simple.ParseQuery(
 		input,
-		corpus.LayerTypeText,
 		[]corpus.PosAttr{
 			{
 				ID:                 "id1",
@@ -94,7 +93,6 @@ func translateBasicQuery(input string) {
 func translateFCSQuery(input string) {
 	ast, err := fcsql.ParseQuery(
 		input,
-		corpus.LayerTypeText,
 		[]corpus.PosAttr{
 			{
 				ID:             "id1",

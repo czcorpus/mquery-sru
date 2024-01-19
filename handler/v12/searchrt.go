@@ -21,7 +21,6 @@ package v12
 
 import (
 	"encoding/json"
-	"fcs/corpus"
 	"fcs/general"
 	"fcs/query/compiler"
 	"fcs/query/parser/simple"
@@ -39,7 +38,6 @@ func (a *FCSSubHandlerV12) translateQuery(
 	var fcsErr *general.FCSError
 	ast, err := simple.ParseQuery(
 		query,
-		corpus.DefaultLayerType,
 		a.corporaConf.Resources[corpusName].PosAttrs,
 		a.corporaConf.Resources[corpusName].StructureMapping,
 	)
@@ -114,7 +112,6 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			fcsResponse.General.Error = fcsErr
 			return http.StatusInternalServerError
 		}
-
 		query := ast.Generate()
 		if len(ast.Errors()) > 0 {
 			fcsResponse.General.Error = &general.FCSError{
