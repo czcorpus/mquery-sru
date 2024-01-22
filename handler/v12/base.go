@@ -129,11 +129,13 @@ type FCSSubHandlerV12 struct {
 }
 
 func (a *FCSSubHandlerV12) produceResponse(ctx *gin.Context, fcsResponse *FCSResponse, code int) {
+	ctx.Writer.WriteHeader(code)
+	// TODO in case an error occurs in executing of the template, how can we rewrite
+	// an already written status header? (see docs for ctx.Write)
 	if err := a.tmpl.ExecuteTemplate(ctx.Writer, "fcs-1.2.xml", fcsResponse); err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	ctx.Writer.WriteHeader(code)
 }
 
 func (a *FCSSubHandlerV12) Handle(ctx *gin.Context, fcsGeneralResponse general.FCSGeneralResponse) {

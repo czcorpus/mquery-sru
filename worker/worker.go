@@ -143,7 +143,8 @@ func (w *Worker) tokenCoverage(mktokencovPath, subcPath, corpusPath, structure s
 
 func (w *Worker) concExample(args rdb.ConcExampleArgs) *results.ConcExample {
 	var ans results.ConcExample
-	concEx, err := mango.GetConcExamples(args.CorpusPath, args.Query, args.Attrs, args.MaxItems)
+	concEx, err := mango.GetConcExamples(
+		args.CorpusPath, args.Query, args.Attrs, args.StartLine, args.MaxItems)
 	if err != nil {
 		ans.Error = err.Error()
 		return &ans

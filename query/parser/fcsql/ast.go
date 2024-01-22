@@ -247,7 +247,7 @@ func (fr *flaggedRegexp) Generate(ast compiler.AST) string {
 	var flag string
 	for _, f := range fr.flags {
 		if f == "i" || f == "I" || f == "c" || f == "C" {
-			flag = "($i)"
+			flag = "(?i)"
 
 		} else {
 			log.Warn().Str("flag", flag).Msg("requested unsupported regexp flag")

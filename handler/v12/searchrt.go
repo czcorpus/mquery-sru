@@ -123,7 +123,6 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		}
 		args, err := json.Marshal(rdb.ConcExampleArgs{
 			CorpusPath: a.corporaConf.GetRegistryPath(corpusName),
-			QueryLemma: "",
 			Query:      query,
 			Attrs:      retrieveAttrs,
 			MaxItems:   10,

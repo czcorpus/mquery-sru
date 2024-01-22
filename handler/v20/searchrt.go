@@ -30,6 +30,7 @@ import (
 	"fcs/results"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -133,6 +134,46 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		}
 		return http.StatusBadRequest
 	}
+	fcsResponse.SearchRetrieve.EchoedSRRequest.Query = fcsQuery
+
+	xStartRecord := ctx.DefaultQuery(SearchRetrStartRecord.String(), "1")
+	startRecord, err := strconv.Atoi(xStartRecord)
+	if err != nil {
+		fcsResponse.General.Error = &general.FCSError{
+			Code:    general.CodeUnsupportedParameterValue,
+			Ident:   SearchRetrStartRecord.String(),
+			Message: "Invalid parameter value",
+		}
+		return http.StatusUnprocessableEntity
+	}
+	if startRecord < 1 {
+		fcsResponse.General.Error = &general.FCSError{
+			Code:    general.CodeUnsupportedParameterValue,
+			Ident:   SearchRetrStartRecord.String(),
+			Message: "Invalid parameter value",
+		}
+		return http.StatusUnprocessableEntity
+	}
+	fcsResponse.SearchRetrieve.EchoedSRRequest.StartRecord = startRecord
+
+	xMaximumRecords := ctx.DefaultQuery(SearchMaximumRecords.String(), "100")
+	maximumRecords, err := strconv.Atoi(xMaximumRecords)
+	if err != nil {
+		fcsResponse.General.Error = &general.FCSError{
+			Code:    general.CodeUnsupportedParameterValue,
+			Ident:   SearchMaximumRecords.String(),
+			Message: "Invalid parameter value",
+		}
+		return http.StatusUnprocessableEntity
+	}
+	if maximumRecords < 1 {
+		fcsResponse.General.Error = &general.FCSError{
+			Code:    general.CodeUnsupportedParameterValue,
+			Ident:   SearchMaximumRecords.String(),
+			Message: "Invalid parameter value",
+		}
+		return http.StatusUnprocessableEntity
+	}
 
 	corpora := strings.Split(ctx.DefaultQuery(SearchRetrArgFCSContext.String(), ""), ",")
 	if len(corpora) == 0 || len(corpora) == 1 && corpora[0] == "" {
@@ -149,7 +190,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 					Ident:   SearchRetrArgFCSContext.String(),
 					Message: "Unknown context " + v,
 				}
-				return http.StatusBadRequest
+				return http.StatusUnprocessableEntity
 			}
 		}
 
@@ -188,10 +229,10 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		}
 		args, err := json.Marshal(rdb.ConcExampleArgs{
 			CorpusPath: a.corporaConf.GetRegistryPath(corpusName),
-			QueryLemma: "",
 			Query:      query,
 			Attrs:      retrieveAttrs,
-			MaxItems:   10,
+			StartLine:  startRecord - 1,
+			MaxItems:   maximumRecords,
 		})
 		if err != nil {
 			fcsResponse.General.Error = &general.FCSError{

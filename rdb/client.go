@@ -54,10 +54,10 @@ type Query struct {
 
 type ConcExampleArgs struct {
 	CorpusPath string   `json:"corpusPath"`
-	QueryLemma string   `json:"queryLemma"`
 	Query      string   `json:"query"`
 	Attrs      []string `json:"attrs"`
 	MaxItems   int      `json:"maxItems"`
+	StartLine  int      `json:"startLine"`
 }
 
 func (q Query) ToJSON() (string, error) {
