@@ -194,7 +194,13 @@ func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 	}
 	fcsResponse.RecordPacking = recordPacking
 
-	operation := getTypedArg(ctx, "operation", fcsResponse.Operation)
+	var operation Operation
+	if ctx.Request.URL.Query().Has("operation") {
+		operation = getTypedArg(ctx, "operation", fcsResponse.Operation)
+
+	} else if ctx.Request.URL.Query().Has("query") {
+		operation = OperationSearchRetrive
+	}
 	if err := operation.Validate(); err != nil {
 		fcsResponse.General.Error = &general.FCSError{
 			Code:    general.CodeUnsupportedOperation,
@@ -208,9 +214,9 @@ func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 
 	code := http.StatusOK
 	switch fcsResponse.Operation {
-	case "explain":
+	case OperationExplain:
 		code = a.explain(ctx, fcsResponse)
-	case "searchRetrieve":
+	case OperationSearchRetrive:
 		code = a.searchRetrieve(ctx, fcsResponse)
 	}
 	a.produceResponse(ctx, fcsResponse, code)

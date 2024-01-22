@@ -180,9 +180,9 @@ func (a *FCSSubHandlerV12) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 
 	code := http.StatusOK
 	switch fcsResponse.Operation {
-	case "explain":
+	case OperationExplain:
 		code = a.explain(ctx, fcsResponse)
-	case "searchRetrieve":
+	case OperationSearchRetrive:
 		code = a.searchRetrieve(ctx, fcsResponse)
 	}
 	a.produceResponse(ctx, fcsResponse, code)
