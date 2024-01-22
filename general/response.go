@@ -18,6 +18,21 @@
 
 package general
 
+const (
+
+	// ConformantStatusBadRequest
+	// Note: we want to keep awareness about proper
+	// states but to keep in line with the FCS specification,
+	// 200 is expected
+	ConformantStatusBadRequest = 200
+
+	// ConformantUnprocessableEntity
+	// Note: we want to keep awareness about proper
+	// states but to keep in line with the FCS specification,
+	// 200 is expected
+	ConformantUnprocessableEntity = 200
+)
+
 type FCSGeneralResponse struct {
 	Version string
 	Error   *FCSError

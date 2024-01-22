@@ -35,7 +35,7 @@ func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 				Ident:   key,
 				Message: err.Error(),
 			}
-			return http.StatusBadRequest
+			return general.ConformantStatusBadRequest
 		}
 	}
 

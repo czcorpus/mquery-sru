@@ -121,7 +121,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 				Ident:   key,
 				Message: err.Error(),
 			}
-			return http.StatusBadRequest
+			return general.ConformantStatusBadRequest
 		}
 	}
 
@@ -132,7 +132,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			Ident:   "fcs_query",
 			Message: "Mandatory parameter not supplied",
 		}
-		return http.StatusBadRequest
+		return general.ConformantStatusBadRequest
 	}
 	fcsResponse.SearchRetrieve.EchoedSRRequest.Query = fcsQuery
 
@@ -144,7 +144,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			Ident:   SearchRetrStartRecord.String(),
 			Message: "Invalid parameter value",
 		}
-		return http.StatusUnprocessableEntity
+		return general.ConformantUnprocessableEntity
 	}
 	if startRecord < 1 {
 		fcsResponse.General.Error = &general.FCSError{
@@ -152,7 +152,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			Ident:   SearchRetrStartRecord.String(),
 			Message: "Invalid parameter value",
 		}
-		return http.StatusUnprocessableEntity
+		return general.ConformantUnprocessableEntity
 	}
 	fcsResponse.SearchRetrieve.EchoedSRRequest.StartRecord = startRecord
 
@@ -164,7 +164,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			Ident:   SearchMaximumRecords.String(),
 			Message: "Invalid parameter value",
 		}
-		return http.StatusUnprocessableEntity
+		return general.ConformantUnprocessableEntity
 	}
 	if maximumRecords < 1 {
 		fcsResponse.General.Error = &general.FCSError{
@@ -172,7 +172,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			Ident:   SearchMaximumRecords.String(),
 			Message: "Invalid parameter value",
 		}
-		return http.StatusUnprocessableEntity
+		return general.ConformantUnprocessableEntity
 	}
 
 	corpora := strings.Split(ctx.DefaultQuery(SearchRetrArgFCSContext.String(), ""), ",")
@@ -190,7 +190,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 					Ident:   SearchRetrArgFCSContext.String(),
 					Message: "Unknown context " + v,
 				}
-				return http.StatusUnprocessableEntity
+				return general.ConformantUnprocessableEntity
 			}
 		}
 
@@ -200,7 +200,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			Ident:   SearchRetrArgFCSContext.String(),
 			Message: "Empty context",
 		}
-		return http.StatusBadRequest
+		return general.ConformantStatusBadRequest
 	}
 
 	retrieveAttrs := a.corporaConf.Resources.GetCommonPosAttrNames(corpora...)

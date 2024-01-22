@@ -145,7 +145,7 @@ func (a *FCSSubHandlerV12) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 		Operation:     OperationExplain,
 	}
 	if fcsResponse.General.Error != nil {
-		a.produceResponse(ctx, fcsResponse, http.StatusBadRequest)
+		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
 		return
 	}
 
@@ -156,7 +156,7 @@ func (a *FCSSubHandlerV12) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 			Ident:   "recordPacking",
 			Message: err.Error(),
 		}
-		a.produceResponse(ctx, fcsResponse, http.StatusBadRequest)
+		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
 		return
 	}
 	if recordPacking == "xml" {
@@ -173,7 +173,7 @@ func (a *FCSSubHandlerV12) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 			Ident:   "operation",
 			Message: "Unsupported operation",
 		}
-		a.produceResponse(ctx, fcsResponse, http.StatusBadRequest)
+		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
 		return
 	}
 	fcsResponse.Operation = operation
