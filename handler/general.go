@@ -58,15 +58,17 @@ type FCSHandler struct {
 func (a *FCSHandler) FCSHandler(ctx *gin.Context) {
 	fcsGeneralResponse := general.FCSGeneralResponse{
 		Version: ctx.DefaultQuery("version", DefaultVersion),
+		Fatal:   false,
+		Errors:  make([]general.FCSError, 0, 10),
 	}
 
 	handler, ok := a.versions[fcsGeneralResponse.Version]
 	if !ok {
-		fcsGeneralResponse.Error = &general.FCSError{
+		fcsGeneralResponse.AddError(general.FCSError{
 			Code:    general.CodeUnsupportedVersion,
 			Ident:   DefaultVersion,
 			Message: "Unsupported version " + fcsGeneralResponse.Version,
-		}
+		})
 		fcsGeneralResponse.Version = DefaultVersion
 	}
 	handler.Handle(ctx, fcsGeneralResponse)

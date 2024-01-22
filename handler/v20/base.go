@@ -172,18 +172,18 @@ func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 		Operation:     OperationExplain,
 	}
 
-	if fcsResponse.General.Error != nil {
+	if fcsResponse.General.HasFatalError() {
 		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
 		return
 	}
 
 	recordPacking := getTypedArg(ctx, "recordPacking", fcsResponse.RecordPacking)
 	if err := recordPacking.Validate(); err != nil {
-		fcsResponse.General.Error = &general.FCSError{
+		fcsResponse.General.AddError(general.FCSError{
 			Code:    general.CodeUnsupportedRecordPacking,
 			Ident:   "recordPacking",
 			Message: err.Error(),
-		}
+		})
 		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
 		return
 	}
@@ -202,11 +202,11 @@ func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 		operation = OperationSearchRetrive
 	}
 	if err := operation.Validate(); err != nil {
-		fcsResponse.General.Error = &general.FCSError{
+		fcsResponse.General.AddError(general.FCSError{
 			Code:    general.CodeUnsupportedOperation,
 			Ident:   "operation",
 			Message: fmt.Sprintf("Unsupported operation: %s", operation),
-		}
+		})
 		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
 		return
 	}

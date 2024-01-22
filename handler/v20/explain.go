@@ -30,11 +30,11 @@ func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 	// check if all parameters are supported
 	for key, _ := range ctx.Request.URL.Query() {
 		if err := ExplainArg(key).Validate(); err != nil {
-			fcsResponse.General.Error = &general.FCSError{
+			fcsResponse.General.AddError(general.FCSError{
 				Code:    general.CodeUnsupportedParameter,
 				Ident:   key,
 				Message: err.Error(),
-			}
+			})
 			return general.ConformantStatusBadRequest
 		}
 	}

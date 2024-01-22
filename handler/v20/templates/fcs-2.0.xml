@@ -2,12 +2,13 @@
 {{ if eq .Operation "explain" }}
 <sruResponse:explainResponse xmlns:sruResponse="http://docs.oasis-open.org/ns/search-ws/sruResponse">
   <sruResponse:version>2.0</sruResponse:version>
-  {{ if .General.Error }}
+  {{ if gt ( len .General.Errors ) 0 }}
     <sruResponse:recordData>
         {{ template "explain.xml" .Explain }}
     </sruResponse:recordData>
-    {{ template "diagnostics.xml" .General.Error }}
-  {{ else }}
+    {{ template "diagnostics.xml" .General.Errors }}
+  {{ end }}
+  {{ if not .General.Fatal }}
     <sruResponse:record>
       <sruResponse:recordSchema>http://explain.z3950.org/dtd/2.0/</sruResponse:recordSchema>
       <sruResponse:recordXMLEscaping>xml</sruResponse:recordXMLEscaping>
@@ -26,9 +27,10 @@
 <sruResponse:searchRetrieveResponse xmlns:sruResponse="http://docs.oasis-open.org/ns/search-ws/sruResponse">
   <sruResponse:version>2.0</sruResponse:version>
   <sruResponse:numberOfRecords>{{ .SearchRetrieve.Results | len }}</sruResponse:numberOfRecords>
-  {{ if .General.Error }}
-    {{ template "diagnostics.xml" .General.Error }}
-  {{ else }}
+  {{ if gt ( len .General.Errors ) 0 }}
+    {{ template "diagnostics.xml" .General.Errors }}
+  {{ end }}
+  {{ if not .General.Fatal }}
     {{ template "searchret.xml" .SearchRetrieve }}
   {{ end }}
   <sruResponse:resultCountPrecision>info:srw/vocabulary/resultCountPrecision/1/exact</sruResponse:resultCountPrecision>

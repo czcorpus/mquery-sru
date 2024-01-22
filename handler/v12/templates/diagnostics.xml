@@ -1,7 +1,14 @@
 <sru:diagnostics xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/">
-  <diag:diagnostic>
-      <diag:uri>info:srw/diagnostic/1/{{ .Code }}</diag:uri>
+  {{ range . }}
+    <diag:diagnostic>
+      {{ if gt .Code 0 }}
+        <diag:uri>info:srw/diagnostic/1/{{ .Code }}</diag:uri>
+      {{ end }}
+      {{ if gt .Type 0 }}
+        <diag:uri>info:srw/diagnostic/{{ .Type }}</diag:uri>
+      {{ end }}
       <diag:details>{{ .Ident }}</diag:details>
       <diag:message>{{ .Message }}</diag:message>
-  </diag:diagnostic>
+    </diag:diagnostic>
+  {{ end }}
 </sru:diagnostics>

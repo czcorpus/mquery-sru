@@ -188,6 +188,10 @@ func (ls *CorpusSetup) Validate(confContext string) error {
 		}
 	}
 
+	if ls.Languages == nil {
+		return fmt.Errorf("missing required configuration section `%s.languages`", confContext)
+	}
+
 	if ls == nil {
 		return fmt.Errorf("missing configuration section `%s.layers`", confContext)
 	}
