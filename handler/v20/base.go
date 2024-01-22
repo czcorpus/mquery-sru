@@ -205,7 +205,7 @@ func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 		fcsResponse.General.Error = &general.FCSError{
 			Code:    general.CodeUnsupportedOperation,
 			Ident:   "operation",
-			Message: "Unsupported operation",
+			Message: fmt.Sprintf("Unsupported operation: %s", operation),
 		}
 		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
 		return
