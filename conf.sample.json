@@ -16,9 +16,12 @@
         "resources": {
             "syn2020": {
                 "pid": "syn2020",
-                "fullName": "syn2020",
-                "description": "A synchronous representative and reference corpus of contemporary written Czech, containing 100 million text words.",
-                "uri": "",
+                "fullName": {"eng": "syn2020", "ces": "syn2020"},
+                "description": {
+                    "eng": "A synchronous representative and reference corpus of contemporary written Czech, containing 100 million text words.",
+                    "ces": "Synchronní reprezentativní a referenční korpus současné psané češtiny, obsahující 100 milionů textových slov."
+                },
+                "uri": "http://wiki.korpus.cz/doku.php/cnk:syn2020",
                 "posAttrs": [
                     {
                         "name": "word",

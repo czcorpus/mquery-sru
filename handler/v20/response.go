@@ -25,8 +25,8 @@ import (
 
 type FCSResourceInfo struct {
 	PID         string
-	Title       string
-	Description string
+	Title       map[string]string
+	Description map[string]string
 	URI         string
 	Languages   []string
 

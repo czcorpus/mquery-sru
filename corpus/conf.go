@@ -113,9 +113,12 @@ type StructureMapping struct {
 // CorpusSetup is a complete corpus configuration
 // (it is part of MQuery-FCS configuration)
 type CorpusSetup struct {
-	PID              string           `json:"pid"`
-	FullName         string           `json:"fullName"`
-	Description      string           `json:"description"`
+	PID string `json:"pid"`
+
+	// language mapping - uses ISO 639-3 three letter language codes
+	FullName    map[string]string `json:"fullName"`
+	Description map[string]string `json:"description"`
+
 	URI              string           `json:"uri"`
 	PosAttrs         []PosAttr        `json:"posAttrs"`
 	StructureMapping StructureMapping `json:"structureMapping"`

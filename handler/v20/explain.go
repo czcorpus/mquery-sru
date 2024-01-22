@@ -51,6 +51,10 @@ func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 	if ctx.Query(ExplainArgFCSEndpointDescription.String()) == "true" {
 		fcsResponse.Explain.ExtraResponseData = true
 		for _, corpusConf := range a.corporaConf.Resources {
+			languages := []string{}
+			for lang, _ := range corpusConf.FullName {
+				languages = append(languages, lang)
+			}
 			fcsResponse.Explain.Resources = append(
 				fcsResponse.Explain.Resources,
 				FCSResourceInfo{
@@ -58,7 +62,7 @@ func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 					Title:           corpusConf.FullName,
 					Description:     corpusConf.Description,
 					URI:             corpusConf.URI,
-					Languages:       []string{"cs", "TODO"},
+					Languages:       languages,
 					AvailableLayers: corpusConf.GetDefinedLayersAsString(),
 				},
 			)
