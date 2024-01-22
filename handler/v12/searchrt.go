@@ -60,7 +60,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 				Ident:   key,
 				Message: err.Error(),
 			}
-			return http.StatusBadRequest
+			return general.ConformantStatusBadRequest
 		}
 	}
 
@@ -71,7 +71,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			Ident:   "fcs_query",
 			Message: "Mandatory parameter not supplied",
 		}
-		return http.StatusBadRequest
+		return general.ConformantStatusBadRequest
 	}
 
 	corpora := a.corporaConf.Resources.GetCorpora()
@@ -89,7 +89,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 					Ident:   SearchRetrArgFCSContext.String(),
 					Message: "Unknown context " + v,
 				}
-				return http.StatusBadRequest
+				return general.ConformantStatusBadRequest
 			}
 		}
 
@@ -99,7 +99,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			Ident:   SearchRetrArgFCSContext.String(),
 			Message: "Empty context",
 		}
-		return http.StatusBadRequest
+		return general.ConformantStatusBadRequest
 	}
 	retrieveAttrs := a.corporaConf.Resources.GetCommonPosAttrNames(corpora...)
 
