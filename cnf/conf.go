@@ -46,8 +46,8 @@ type ServerInfo struct {
 	Database   string `json:"database"`
 
 	// language mappings
-	DatabaseTitle       map[string]string `json:"databaseTitle"`
-	DatabaseDescription map[string]string `json:"databaseDescription"`
+	DatabaseTitle       map[string]string `json:"databaseTitle"`       // section required, "en" required
+	DatabaseDescription map[string]string `json:"databaseDescription"` // section optional, "en" required
 	PrimaryLanguage     string            `json:"primaryLanguage"`
 }
 
@@ -55,6 +55,21 @@ func (s *ServerInfo) Validate() error {
 	if s == nil {
 		return errors.New("missing serverInfo section")
 	}
+	if s.DatabaseTitle == nil {
+		return errors.New("missing configuration section `serverInfo.databaseTitle`")
+	}
+	_, ok := s.DatabaseTitle["en"]
+	if !ok {
+		return errors.New("missing required configuration for `serverInfo.databaseTitle.en`")
+	}
+
+	if s.DatabaseDescription != nil {
+		_, ok := s.DatabaseDescription["en"]
+		if !ok {
+			return errors.New("missing required configuration for `serverInfo.databaseDescription.en`")
+		}
+	}
+
 	return nil
 }
 
