@@ -194,7 +194,7 @@ func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 	}
 	fcsResponse.RecordPacking = recordPacking
 
-	var operation Operation
+	var operation Operation = OperationExplain
 	if ctx.Request.URL.Query().Has("operation") {
 		operation = getTypedArg(ctx, "operation", fcsResponse.Operation)
 
