@@ -25,8 +25,8 @@ import (
 
 type FCSResourceInfo struct {
 	PID         string
-	Title       string
-	Description string
+	Title       map[string]string
+	Description map[string]string
 	URI         string
 	Languages   []string
 }
@@ -48,8 +48,9 @@ type FCSExplain struct {
 	ServerName          string
 	ServerPort          string
 	Database            string
-	DatabaseTitle       string
-	DatabaseDescription string
+	DatabaseTitle       map[string]string
+	DatabaseDescription map[string]string
+	PrimaryLanguage     string
 	PosAttrs            []corpus.PosAttr
 	Resources           []FCSResourceInfo
 	ExtraResponseData   bool

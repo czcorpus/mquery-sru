@@ -5,8 +5,13 @@
     <zr:database>{{ .Database }}</zr:database>
   </zr:serverInfo>
   <zr:databaseInfo>
-    <zr:title lang="en" primary="true">{{ .DatabaseTitle }}</zr:title>
-    <zr:description lang="en" primary="true">{{ .DatabaseDescription }}</zr:description>
+    {{ $primaryLang := .PrimaryLanguage -}}
+    {{ range $lang, $title := .DatabaseTitle }}
+      <zr:title lang="{{ $lang }}"{{ if eq $lang $primaryLang }} primary="true"{{ end }}>{{ $title }}</zr:title>
+    {{ end }}
+    {{ range $lang, $desc := .DatabaseDescription }}
+      <zr:description lang="{{ $lang }}"{{ if eq $lang $primaryLang }} primary="true"{{ end }}>{{ $desc }}</zr:description>
+    {{ end }}
   </zr:databaseInfo>
   <zr:indexInfo>
     <zr:set identifier="http://clarin.eu/fcs/resource" name="fcs">

@@ -8,13 +8,26 @@
         "serverName": "my",
         "serverPort": "80",
         "database": "fcs",
-        "databaseTitle": "CNC FCS",
-        "databaseDescription": "CNC API for FCS"
+        "databaseTitle": {
+            "en": "CNC FCS"
+        },
+        "databaseDescription": {
+            "en": "CNC API for FCS"
+        },
+        "primaryLanguage": "en"
     },
     "corpora": {
         "registryDir": "/path/to/corpora/registry",
         "resources": {
             "syn2020": {
+                "pid": "syn2020",
+                "fullName": {"en": "syn2020", "cs": "syn2020"},
+                "description": {
+                    "en": "A synchronous representative and reference corpus of contemporary written Czech, containing 100 million text words.",
+                    "cs": "Synchronní reprezentativní a referenční korpus současné psané češtiny, obsahující 100 milionů textových slov."
+                },
+                "languages": ["ces"],
+                "uri": "http://wiki.korpus.cz/doku.php/cnk:syn2020",
                 "posAttrs": [
                     {
                         "name": "word",

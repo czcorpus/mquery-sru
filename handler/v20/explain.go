@@ -46,19 +46,20 @@ func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 		Database:            a.serverInfo.Database,
 		DatabaseTitle:       a.serverInfo.DatabaseTitle,
 		DatabaseDescription: a.serverInfo.DatabaseDescription,
+		PrimaryLanguage:     a.serverInfo.PrimaryLanguage,
 		PosAttrs:            a.corporaConf.Resources.GetCommonPosAttrs(a.corporaConf.Resources.GetCorpora()...),
 	}
 	if ctx.Query(ExplainArgFCSEndpointDescription.String()) == "true" {
 		fcsResponse.Explain.ExtraResponseData = true
-		for corpusName, corpusConf := range a.corporaConf.Resources {
+		for _, corpusConf := range a.corporaConf.Resources {
 			fcsResponse.Explain.Resources = append(
 				fcsResponse.Explain.Resources,
 				FCSResourceInfo{
-					PID:             corpusName,
-					Title:           corpusName,
-					Description:     "TODO",
-					URI:             "TODO",
-					Languages:       []string{"cs", "TODO"},
+					PID:             corpusConf.PID,
+					Title:           corpusConf.FullName,
+					Description:     corpusConf.Description,
+					URI:             corpusConf.URI,
+					Languages:       corpusConf.Languages,
 					AvailableLayers: corpusConf.GetDefinedLayersAsString(),
 				},
 			)

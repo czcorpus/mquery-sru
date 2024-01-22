@@ -15,8 +15,12 @@
   <ed:Resources>
     {{ range .Explain.Resources }}
       <ed:Resource pid="{{ .PID }}">
-        <ed:Title xml:lang="en">{{ .Title }}</ed:Title>
-        <ed:Description xml:lang="en">{{ .Description }}</ed:Description>
+        {{ range $lang, $title := .Title }}
+          <ed:Title xml:lang="{{ $lang }}">{{ $title }}</ed:Title>
+        {{ end }}
+        {{ range $lang, $desc := .Description }}
+          <ed:Description xml:lang="{{ $lang }}">{{ $desc }}</ed:Description>
+        {{ end }}
         <ed:LandingPageURI>{{ .URI }}</ed:LandingPageURI>
         <ed:Languages>
           {{ range .Languages }}
