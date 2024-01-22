@@ -86,6 +86,7 @@ func runApiServer(
 	FCSActions := handler.NewFCSHandler(
 		conf.ServerInfo, conf.CorporaSetup, radapter, conf.SourcesRootDir)
 	engine.GET("/", FCSActions.FCSHandler)
+	engine.HEAD("/", FCSActions.FCSHandler)
 
 	uIActions := form.NewFormHandler(conf.CorporaSetup, conf.SourcesRootDir)
 	engine.GET("/ui/form", uIActions.Handle)
