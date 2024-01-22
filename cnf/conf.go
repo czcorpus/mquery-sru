@@ -41,11 +41,14 @@ const (
 )
 
 type ServerInfo struct {
-	ServerName          string `json:"serverName"`
-	ServerPort          string `json:"serverPort"`
-	Database            string `json:"database"`
-	DatabaseTitle       string `json:"databaseTitle"`
-	DatabaseDescription string `json:"databaseDescription"`
+	ServerName string `json:"serverName"`
+	ServerPort string `json:"serverPort"`
+	Database   string `json:"database"`
+
+	// language mappings
+	DatabaseTitle       map[string]string `json:"databaseTitle"`
+	DatabaseDescription map[string]string `json:"databaseDescription"`
+	PrimaryLanguage     string            `json:"primaryLanguage"`
 }
 
 func (s *ServerInfo) Validate() error {

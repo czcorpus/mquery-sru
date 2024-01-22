@@ -48,8 +48,9 @@ type FCSExplain struct {
 	ServerName          string
 	ServerPort          string
 	Database            string
-	DatabaseTitle       string
-	DatabaseDescription string
+	DatabaseTitle       map[string]string
+	DatabaseDescription map[string]string
+	PrimaryLanguage     string
 	PosAttrs            []corpus.PosAttr
 	Resources           []FCSResourceInfo
 	ExtraResponseData   bool

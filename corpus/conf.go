@@ -115,9 +115,12 @@ type StructureMapping struct {
 type CorpusSetup struct {
 	PID string `json:"pid"`
 
-	// language mapping - uses ISO 639-3 three letter language codes
+	// language mappings
 	FullName    map[string]string `json:"fullName"`
 	Description map[string]string `json:"description"`
+
+	// languages used in resource - ISO 639-3 three letter language codes
+	Languages []string `json:"languages"`
 
 	URI              string           `json:"uri"`
 	PosAttrs         []PosAttr        `json:"posAttrs"`
