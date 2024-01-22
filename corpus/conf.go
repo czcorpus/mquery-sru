@@ -115,6 +115,8 @@ type StructureMapping struct {
 type CorpusSetup struct {
 	PID              string           `json:"pid"`
 	FullName         string           `json:"fullName"`
+	Description      string           `json:"description"`
+	URI              string           `json:"uri"`
 	PosAttrs         []PosAttr        `json:"posAttrs"`
 	StructureMapping StructureMapping `json:"structureMapping"`
 }

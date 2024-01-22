@@ -15,6 +15,10 @@
         "registryDir": "/path/to/corpora/registry",
         "resources": {
             "syn2020": {
+                "pid": "syn2020",
+                "fullName": "syn2020",
+                "description": "A synchronous representative and reference corpus of contemporary written Czech, containing 100 million text words.",
+                "uri": "",
                 "posAttrs": [
                     {
                         "name": "word",
