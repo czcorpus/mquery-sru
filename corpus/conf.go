@@ -116,8 +116,8 @@ type CorpusSetup struct {
 	PID string `json:"pid"`
 
 	// language mappings
-	FullName    map[string]string `json:"fullName"`
-	Description map[string]string `json:"description"`
+	FullName    map[string]string `json:"fullName"`    // section required, "en" required
+	Description map[string]string `json:"description"` // section optional, "en" required
 
 	// languages used in resource - ISO 639-3 three letter language codes
 	Languages []string `json:"languages"`
@@ -173,6 +173,21 @@ func (cs *CorpusSetup) GetDefinedLayersAsString() string {
 // Validate validates corpus setup. This should be run
 // as part of server startup (i.e. before any requests start)
 func (ls *CorpusSetup) Validate(confContext string) error {
+	if ls.FullName == nil {
+		return fmt.Errorf("missing configuration section `%s.fullName`", confContext)
+	}
+	_, ok := ls.FullName["en"]
+	if !ok {
+		return fmt.Errorf("missing required configuration for `%s.fullName.en`", confContext)
+	}
+
+	if ls.Description != nil {
+		_, ok := ls.Description["en"]
+		if !ok {
+			return fmt.Errorf("missing required configuration for `%s.description.en`", confContext)
+		}
+	}
+
 	if ls == nil {
 		return fmt.Errorf("missing configuration section `%s.layers`", confContext)
 	}
