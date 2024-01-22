@@ -43,6 +43,8 @@ const (
 	RecordPackingString    RecordPacking = "string"
 
 	SearchRetrArgVersion            SearchRetrArg = "version"
+	SearchRetrStartRecord           SearchRetrArg = "startRecord"
+	SearchMaximumRecords            SearchRetrArg = "maximumRecords"
 	SearchRetrArgRecordPacking      SearchRetrArg = "recordPacking"
 	SearchRetrArgOperation          SearchRetrArg = "operation"
 	SearchRetrArgQuery              SearchRetrArg = "query"
@@ -101,6 +103,8 @@ type SearchRetrArg string
 
 func (sra SearchRetrArg) Validate() error {
 	if sra == SearchRetrArgVersion ||
+		sra == SearchRetrStartRecord ||
+		sra == SearchMaximumRecords ||
 		sra == SearchRetrArgRecordPacking ||
 		sra == SearchRetrArgOperation ||
 		sra == SearchRetrArgQuery ||
@@ -152,11 +156,13 @@ type FCSSubHandlerV20 struct {
 }
 
 func (a *FCSSubHandlerV20) produceResponse(ctx *gin.Context, fcsResponse *FCSResponse, code int) {
+	ctx.Writer.WriteHeader(code)
+	// TODO in case an error occurs in executing of the template, how can we rewrite
+	// an already written status header? (see docs for ctx.Write)
 	if err := a.tmpl.ExecuteTemplate(ctx.Writer, "fcs-2.0.xml", fcsResponse); err != nil {
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	ctx.Writer.WriteHeader(code)
 }
 
 func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.FCSGeneralResponse) {
@@ -165,6 +171,7 @@ func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 		RecordPacking: RecordPackingXML,
 		Operation:     OperationExplain,
 	}
+
 	if fcsResponse.General.Error != nil {
 		a.produceResponse(ctx, fcsResponse, http.StatusBadRequest)
 		return

@@ -138,7 +138,7 @@ FreqsRetval freq_dist_from_conc(CorpusV corpus, ConcV conc, char* fcrit, PosInt 
 
 FreqsRetval freq_dist(const char* corpusPath, const char* subcPath, const char* query, const char* fcrit, PosInt flimit);
 
-KWICRowsRetval conc_examples(const char* corpusPath, const char*query, const char* attrs, PosInt limit);
+KWICRowsRetval conc_examples(const char* corpusPath, const char*query, const char* attrs, PosInt fromLine, PosInt limit);
 
 void conc_examples_free(KWICRowsV value, int numItems);
 

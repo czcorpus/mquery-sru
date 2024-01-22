@@ -229,7 +229,7 @@ FreqsRetval freq_dist(const char* corpusPath, const char* subcPath, const char* 
  * @param limit
  * @return KWICRowsRetval
  */
-KWICRowsRetval conc_examples(const char* corpusPath, const char* query, const char* attrs, PosInt limit) {
+KWICRowsRetval conc_examples(const char* corpusPath, const char* query, const char* attrs, PosInt fromLine, PosInt limit) {
     string cPath(corpusPath);
     try {
         Corpus* corp = new Corpus(cPath);
@@ -238,7 +238,7 @@ KWICRowsRetval conc_examples(const char* corpusPath, const char* query, const ch
         conc->sync();
         conc->shuffle();
         KWICLines* kl = new KWICLines(
-            corp, conc->RS(true, 0, 100), "-1:s", "1:s",
+            corp, conc->RS(true, fromLine, limit), "-1:s", "1:s",
 			attrs, attrs, "", "", limit, false);
         if (conc->size() < limit) {
             limit = conc->size();

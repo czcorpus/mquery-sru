@@ -174,6 +174,10 @@ func (ls *CorpusSetup) Validate(confContext string) error {
 		if err := attr.Layer.Validate(); err != nil {
 			return err
 		}
+		_, ok := layerDefaults[attr.Layer]
+		if !ok { // we must make sure items with 0 are also set, so we can validate all the attrs
+			layerDefaults[attr.Layer] = 0
+		}
 		if attr.IsLayerDefault {
 			layerDefaults[attr.Layer]++
 		}

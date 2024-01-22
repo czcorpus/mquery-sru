@@ -106,9 +106,10 @@ func CompileSubcFreqs(corpusPath, subcPath, attr string) error {
 	return nil
 }
 
-func GetConcExamples(corpusPath, query string, attrs []string, maxItems int) (GoConcExamples, error) {
+func GetConcExamples(corpusPath, query string, attrs []string, fromLine, maxItems int) (GoConcExamples, error) {
 	ans := C.conc_examples(
-		C.CString(corpusPath), C.CString(query), C.CString(strings.Join(attrs, ",")), C.longlong(maxItems))
+		C.CString(corpusPath), C.CString(query), C.CString(strings.Join(attrs, ",")),
+		C.longlong(fromLine), C.longlong(maxItems))
 	var ret GoConcExamples
 	ret.Lines = make([]string, 0, maxItems)
 	if ans.err != nil {

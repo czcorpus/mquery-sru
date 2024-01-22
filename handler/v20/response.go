@@ -69,9 +69,16 @@ type FCSExplain struct {
 	ExtraResponseData   bool
 }
 
+type EchoedSRRequest struct {
+	Version     string
+	StartRecord int
+	Query       string
+}
+
 type FCSSearchRetrieve struct {
-	QueryType QueryType
-	Results   []FCSSearchRow
+	QueryType       QueryType
+	Results         []FCSSearchRow
+	EchoedSRRequest EchoedSRRequest
 }
 
 type FCSResponse struct {
