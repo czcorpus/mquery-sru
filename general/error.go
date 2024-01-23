@@ -20,42 +20,45 @@ package general
 
 import "fmt"
 
+type DiagnosticType int
+type DiagnosticCode int
+
 // from appendix A FCS 2.0 documentation
 const (
-	TypePersistent                            = 1  // generally non-fatal, with code fatal?
-	TypeResourceSetTooLarge                   = 2  // non-fatal
-	TypeResourceSetTooLargeCannotPerformQuery = 3  // fatal
-	TypeRequestedDataViewNotValid             = 4  // non-fatal
-	TypeGeneralQuerySyntaxError               = 10 // fatal, return only this one
-	TypeQueryTooComplex                       = 11 // fatal, return only this one
-	TypeQueryWasRewritten                     = 12 // non-fatal, only advanced query with `x-fcs-rewrites-allowed`
-	TypeGeneralProcessingHint                 = 14 // non-fatal, only advanced query
+	DTPersistent                            DiagnosticType = 1  // generally non-fatal, with code fatal?
+	DTResourceSetTooLarge                   DiagnosticType = 2  // non-fatal
+	DTResourceSetTooLargeCannotPerformQuery DiagnosticType = 3  // fatal
+	DTRequestedDataViewNotValid             DiagnosticType = 4  // non-fatal
+	DTGeneralQuerySyntaxError               DiagnosticType = 10 // fatal, return only this one
+	DTQueryTooComplex                       DiagnosticType = 11 // fatal, return only this one
+	DTQueryWasRewritten                     DiagnosticType = 12 // non-fatal, only advanced query with `x-fcs-rewrites-allowed`
+	DTGeneralProcessingHint                 DiagnosticType = 14 // non-fatal, only advanced query
 )
 
 // https://www.loc.gov/standards/sru/diagnostics/diagnosticsList.html
-// used with type 1
+// used with diagnostic type 1
 const (
 	// General diagnostics
-	CodeGeneralSystemError            = 1
-	CodeSystemTemporarilyUnavailable  = 2
-	CodeAuthenticationError           = 3
-	CodeUnsupportedOperation          = 4
-	CodeUnsupportedVersion            = 5
-	CodeUnsupportedParameterValue     = 6
-	CodeMandatoryParameterNotSupplied = 7
-	CodeUnsupportedParameter          = 8
-	CodeDatabaseDoesNotExist          = 235
+	DCGeneralSystemError            DiagnosticCode = 1
+	DCSystemTemporarilyUnavailable  DiagnosticCode = 2
+	DCAuthenticationError           DiagnosticCode = 3
+	DCUnsupportedOperation          DiagnosticCode = 4
+	DCUnsupportedVersion            DiagnosticCode = 5
+	DCUnsupportedParameterValue     DiagnosticCode = 6
+	DCMandatoryParameterNotSupplied DiagnosticCode = 7
+	DCUnsupportedParameter          DiagnosticCode = 8
+	DCDatabaseDoesNotExist          DiagnosticCode = 235
 	// CQL related diagnostics
-	CodeQuerySyntaxError        = 10
-	CodeQueryCannotProcess      = 47
-	CodeQueryFeatureUnsupported = 48
+	DCQuerySyntaxError        DiagnosticCode = 10
+	DCQueryCannotProcess      DiagnosticCode = 47
+	DCQueryFeatureUnsupported DiagnosticCode = 48
 	// Records related diagnostics
-	CodeUnsupportedRecordPacking = 71
+	DCUnsupportedRecordPacking DiagnosticCode = 71
 )
 
 type FCSError struct {
-	Type    int
-	Code    int
+	Type    DiagnosticType
+	Code    DiagnosticCode
 	Ident   string
 	Message string
 }
@@ -65,9 +68,9 @@ func (fe FCSError) Error() string {
 }
 
 func (fe FCSError) IsFatal() bool {
-	return fe.Type == TypeResourceSetTooLargeCannotPerformQuery || fe.Type == TypeGeneralQuerySyntaxError || fe.Type == TypeQueryTooComplex || fe.Code > 0
+	return fe.Type == DTResourceSetTooLargeCannotPerformQuery || fe.Type == DTGeneralQuerySyntaxError || fe.Type == DTQueryTooComplex || fe.Code > 0
 }
 
 func (fe FCSError) Overthrow() bool {
-	return fe.Type == TypeGeneralQuerySyntaxError || fe.Type == TypeQueryTooComplex
+	return fe.Type == DTGeneralQuerySyntaxError || fe.Type == DTQueryTooComplex
 }

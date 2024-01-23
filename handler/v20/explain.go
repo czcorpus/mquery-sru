@@ -31,7 +31,7 @@ func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 	for key, _ := range ctx.Request.URL.Query() {
 		if err := ExplainArg(key).Validate(); err != nil {
 			fcsResponse.General.AddError(general.FCSError{
-				Code:    general.CodeUnsupportedParameter,
+				Code:    general.DCUnsupportedParameter,
 				Ident:   key,
 				Message: err.Error(),
 			})

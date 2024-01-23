@@ -65,7 +65,7 @@ func (a *FCSHandler) FCSHandler(ctx *gin.Context) {
 	handler, ok := a.versions[fcsGeneralResponse.Version]
 	if !ok {
 		fcsGeneralResponse.AddError(general.FCSError{
-			Code:    general.CodeUnsupportedVersion,
+			Code:    general.DCUnsupportedVersion,
 			Ident:   DefaultVersion,
 			Message: "Unsupported version " + fcsGeneralResponse.Version,
 		})

@@ -180,7 +180,7 @@ func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 	recordPacking := getTypedArg(ctx, "recordPacking", fcsResponse.RecordPacking)
 	if err := recordPacking.Validate(); err != nil {
 		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.CodeUnsupportedRecordPacking,
+			Code:    general.DCUnsupportedRecordPacking,
 			Ident:   "recordPacking",
 			Message: err.Error(),
 		})
@@ -203,7 +203,7 @@ func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 	}
 	if err := operation.Validate(); err != nil {
 		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.CodeUnsupportedOperation,
+			Code:    general.DCUnsupportedOperation,
 			Ident:   "operation",
 			Message: fmt.Sprintf("Unsupported operation: %s", operation),
 		})

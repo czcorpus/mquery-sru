@@ -52,7 +52,7 @@ func (a *FCSSubHandlerV20) translateQuery(
 		)
 		if err != nil {
 			fcsErr = &general.FCSError{
-				Code:    general.CodeQuerySyntaxError,
+				Code:    general.DCQuerySyntaxError,
 				Ident:   query,
 				Message: fmt.Sprintf("Invalid query syntax: %s", err),
 			}
@@ -66,7 +66,7 @@ func (a *FCSSubHandlerV20) translateQuery(
 		)
 		if err != nil {
 			fcsErr = &general.FCSError{
-				Code:    general.CodeQuerySyntaxError,
+				Code:    general.DCQuerySyntaxError,
 				Ident:   query,
 				Message: fmt.Sprintf("Invalid query syntax: %s", err),
 			}
@@ -74,7 +74,7 @@ func (a *FCSSubHandlerV20) translateQuery(
 
 	default:
 		fcsErr = &general.FCSError{
-			Code:    general.CodeUnsupportedParameterValue,
+			Code:    general.DCUnsupportedParameterValue,
 			Ident:   queryType.String(),
 			Message: "Unsupported queryType value",
 		}
@@ -117,7 +117,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	for key, _ := range ctx.Request.URL.Query() {
 		if err := SearchRetrArg(key).Validate(); err != nil {
 			fcsResponse.General.AddError(general.FCSError{
-				Code:    general.CodeUnsupportedParameter,
+				Code:    general.DCUnsupportedParameter,
 				Ident:   key,
 				Message: err.Error(),
 			})
@@ -128,7 +128,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	fcsQuery := ctx.Query("query")
 	if len(fcsQuery) == 0 {
 		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.CodeMandatoryParameterNotSupplied,
+			Code:    general.DCMandatoryParameterNotSupplied,
 			Ident:   "fcs_query",
 			Message: "Mandatory parameter not supplied",
 		})
@@ -140,7 +140,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	startRecord, err := strconv.Atoi(xStartRecord)
 	if err != nil {
 		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.CodeUnsupportedParameterValue,
+			Code:    general.DCUnsupportedParameterValue,
 			Ident:   SearchRetrStartRecord.String(),
 			Message: "Invalid parameter value",
 		})
@@ -148,7 +148,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	}
 	if startRecord < 1 {
 		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.CodeUnsupportedParameterValue,
+			Code:    general.DCUnsupportedParameterValue,
 			Ident:   SearchRetrStartRecord.String(),
 			Message: "Invalid parameter value",
 		})
@@ -160,7 +160,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	maximumRecords, err := strconv.Atoi(xMaximumRecords)
 	if err != nil {
 		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.CodeUnsupportedParameterValue,
+			Code:    general.DCUnsupportedParameterValue,
 			Ident:   SearchMaximumRecords.String(),
 			Message: "Invalid parameter value",
 		})
@@ -168,7 +168,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	}
 	if maximumRecords < 1 {
 		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.CodeUnsupportedParameterValue,
+			Code:    general.DCUnsupportedParameterValue,
 			Ident:   SearchMaximumRecords.String(),
 			Message: "Invalid parameter value",
 		})
@@ -186,7 +186,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			_, ok := a.corporaConf.Resources[v]
 			if !ok {
 				fcsResponse.General.AddError(general.FCSError{
-					Code:    general.CodeUnsupportedParameterValue,
+					Code:    general.DCUnsupportedParameterValue,
 					Ident:   SearchRetrArgFCSContext.String(),
 					Message: "Unknown context " + v,
 				})
@@ -196,7 +196,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 
 	} else {
 		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.CodeUnsupportedParameterValue,
+			Code:    general.DCUnsupportedParameterValue,
 			Ident:   SearchRetrArgFCSContext.String(),
 			Message: "Empty context",
 		})
@@ -221,7 +221,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		query := ast.Generate()
 		if len(ast.Errors()) > 0 {
 			fcsResponse.General.AddError(general.FCSError{
-				Code:    general.CodeQueryCannotProcess,
+				Code:    general.DCQueryCannotProcess,
 				Ident:   SearchRetrArgQuery.String(),
 				Message: ast.Errors()[0].Error(),
 			})
@@ -236,7 +236,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		})
 		if err != nil {
 			fcsResponse.General.AddError(general.FCSError{
-				Code:    general.CodeGeneralSystemError,
+				Code:    general.DCGeneralSystemError,
 				Ident:   err.Error(),
 				Message: "General system error",
 			})
@@ -248,7 +248,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		})
 		if err != nil {
 			fcsResponse.General.AddError(general.FCSError{
-				Code:    general.CodeGeneralSystemError,
+				Code:    general.DCGeneralSystemError,
 				Ident:   err.Error(),
 				Message: "General system error",
 			})
@@ -264,7 +264,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		result, err := rdb.DeserializeConcExampleResult(rawResult)
 		if err != nil {
 			fcsResponse.General.AddError(general.FCSError{
-				Code:    general.CodeGeneralSystemError,
+				Code:    general.DCGeneralSystemError,
 				Ident:   err.Error(),
 				Message: "General system error",
 			})
@@ -272,7 +272,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		}
 		if err := result.Err(); err != nil {
 			fcsResponse.General.AddError(general.FCSError{
-				Code:    general.CodeGeneralSystemError,
+				Code:    general.DCGeneralSystemError,
 				Ident:   err.Error(),
 				Message: "General system error",
 			})
