@@ -22,6 +22,7 @@ package v12
 import (
 	"encoding/json"
 	"fcs/general"
+	"fcs/mango"
 	"fcs/query/compiler"
 	"fcs/query/parser/simple"
 	"fcs/rdb"
@@ -110,7 +111,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		ast, fcsErr := a.translateQuery(corpusName, fcsQuery)
 		if fcsErr != nil {
 			fcsResponse.General.Error = fcsErr
-			return http.StatusInternalServerError
+			return general.ConformantUnprocessableEntity
 		}
 		query := ast.Generate()
 		if len(ast.Errors()) > 0 {
@@ -119,7 +120,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 				Ident:   SearchRetrArgQuery.String(),
 				Message: ast.Errors()[0].Error(),
 			}
-			return http.StatusInternalServerError
+			return general.ConformantUnprocessableEntity
 		}
 		args, err := json.Marshal(rdb.ConcExampleArgs{
 			CorpusPath: a.corporaConf.GetRegistryPath(corpusName),
@@ -163,11 +164,15 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			}
 			return http.StatusInternalServerError
 		}
+
 		if err := result.Err(); err != nil {
 			fcsResponse.General.Error = &general.FCSError{
 				Code:    general.CodeGeneralSystemError,
 				Ident:   err.Error(),
 				Message: "General system error",
+			}
+			if err.Error() == mango.ErrRowsRangeOutOfConc.Error() {
+				return general.ConformantUnprocessableEntity
 			}
 			return http.StatusInternalServerError
 		}

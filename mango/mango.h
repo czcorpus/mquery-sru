@@ -99,6 +99,7 @@ typedef struct KWICRowsRetval {
     KWICRowsV value;
     PosInt size;
     const char * err;
+    int errorCode;
 } KWICRowsRetval;
 
 

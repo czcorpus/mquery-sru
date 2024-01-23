@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"fcs/corpus"
 	"fcs/general"
+	"fcs/mango"
 	"fcs/query/compiler"
 	"fcs/query/parser/fcsql"
 	"fcs/query/parser/simple"
@@ -215,7 +216,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		ast, fcsErr := a.translateQuery(corpusName, fcsQuery, queryType)
 		if fcsErr != nil {
 			fcsResponse.General.Error = fcsErr
-			return http.StatusInternalServerError
+			return general.ConformantUnprocessableEntity
 		}
 
 		query := ast.Generate()
@@ -225,7 +226,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 				Ident:   SearchRetrArgQuery.String(),
 				Message: ast.Errors()[0].Error(),
 			}
-			return http.StatusInternalServerError
+			return general.ConformantUnprocessableEntity
 		}
 		args, err := json.Marshal(rdb.ConcExampleArgs{
 			CorpusPath: a.corporaConf.GetRegistryPath(corpusName),
@@ -257,8 +258,9 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		waits[i] = wait
 	}
 
-	// gather results
-	results := make([]results.ConcExample, len(corpora))
+	// using fromResource, we will cycle through available resources' results and their lines
+	fromResource := results.NewRoundRobinLineSel(corpora...)
+
 	for i, wait := range waits {
 		rawResult := <-wait
 		result, err := rdb.DeserializeConcExampleResult(rawResult)
@@ -271,52 +273,66 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			return http.StatusInternalServerError
 		}
 		if err := result.Err(); err != nil {
-			fcsResponse.General.Error = &general.FCSError{
-				Code:    general.CodeGeneralSystemError,
-				Ident:   err.Error(),
-				Message: "General system error",
+			if err.Error() == mango.ErrRowsRangeOutOfConc.Error() {
+				fromResource.RscSetErrorAt(i, err)
+
+			} else {
+				fcsResponse.General.Error = &general.FCSError{
+					Code:    general.CodeGeneralSystemError,
+					Ident:   err.Error(),
+					Message: "General system error",
+				}
+				return http.StatusInternalServerError
 			}
-			return http.StatusInternalServerError
 		}
-		results[i] = result
+		fromResource.SetRscLines(corpora[i], result)
+	}
+
+	if fromResource.HasFatalError() {
+		fcsResponse.General.Error = &general.FCSError{
+			Code:    general.CodeGeneralSystemError,
+			Ident:   fromResource.GetFirstError().Error(),
+			Message: "General system error",
+		}
+		return general.ConformantUnprocessableEntity // TODO how can we infer the code from the error?
 	}
 
 	// transform results
-	fcsResponse.SearchRetrieve.Results = make([]FCSSearchRow, 0, 100)
+	fcsResponse.SearchRetrieve.Results = make([]FCSSearchRow, 0, maximumRecords)
 	commonLayers := a.corporaConf.Resources.GetCommonLayers()
 	commonPosAttrs := a.corporaConf.Resources.GetCommonPosAttrs(corpora...)
-	for i, r := range results {
-		for _, l := range r.Lines {
-			segmentPos := 1
-			row := FCSSearchRow{
-				LayerAttrs: a.corporaConf.Resources[corpora[i]].GetDefinedLayers().ToOrderedSlice(),
-				Position:   len(fcsResponse.SearchRetrieve.Results) + 1,
-				PID:        corpora[i],
-				Web:        "TODO",
-				Ref:        "TODO",
-			}
-			for j, t := range l.Text {
-				token := Token{
-					Text: t.Word,
-					Hit:  t.Strong,
-					Segment: Segment{
-						ID:    fmt.Sprintf("s%d", j),
-						Start: segmentPos,
-						End:   segmentPos + len(t.Word) - 1,
-					},
-					Layers: a.exportAttrsByLayers(
-						t.Word,
-						t.Attrs,
-						commonLayers,
-						commonPosAttrs,
-					),
-				}
-				segmentPos += len(t.Word) + 1 // with space between words
-				row.Tokens = append(row.Tokens, token)
 
-			}
-			fcsResponse.SearchRetrieve.Results = append(fcsResponse.SearchRetrieve.Results, row)
+	for len(fcsResponse.SearchRetrieve.Results) < maximumRecords && fromResource.Next() {
+		segmentPos := 1
+		row := FCSSearchRow{
+			LayerAttrs: a.corporaConf.Resources[fromResource.CurrRscName()].GetDefinedLayers().ToOrderedSlice(),
+			Position:   len(fcsResponse.SearchRetrieve.Results) + 1,
+			PID:        fromResource.CurrRscName(),
+			Web:        "TODO",
+			Ref:        "TODO",
 		}
+		item := fromResource.CurrLine()
+		for j, t := range item.Text {
+			token := Token{
+				Text: t.Word,
+				Hit:  t.Strong,
+				Segment: Segment{
+					ID:    fmt.Sprintf("s%d", j),
+					Start: segmentPos,
+					End:   segmentPos + len(t.Word) - 1,
+				},
+				Layers: a.exportAttrsByLayers(
+					t.Word,
+					t.Attrs,
+					commonLayers,
+					commonPosAttrs,
+				),
+			}
+			segmentPos += len(t.Word) + 1 // with space between words
+			row.Tokens = append(row.Tokens, token)
+
+		}
+		fcsResponse.SearchRetrieve.Results = append(fcsResponse.SearchRetrieve.Results, row)
 	}
 	return http.StatusOK
 }
