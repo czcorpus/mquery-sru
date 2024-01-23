@@ -229,16 +229,30 @@ FreqsRetval freq_dist(const char* corpusPath, const char* subcPath, const char* 
  * @param limit
  * @return KWICRowsRetval
  */
-KWICRowsRetval conc_examples(const char* corpusPath, const char* query, const char* attrs, PosInt fromLine, PosInt limit) {
+KWICRowsRetval conc_examples(
+    const char* corpusPath, const char* query, const char* attrs, PosInt fromLine, PosInt limit) {
+
     string cPath(corpusPath);
     try {
         Corpus* corp = new Corpus(cPath);
         Concordance* conc = new Concordance(
             corp, corp->filter_query(eval_cqpquery(query, corp)));
         conc->sync();
+        if (conc->size() < fromLine || conc->size() < fromLine+limit-1) {
+            const char* msg = "line range out of result size";
+            char* dynamicStr = static_cast<char*>(malloc(strlen(msg) + 1));
+            strcpy(dynamicStr, msg);
+            KWICRowsRetval ans {
+                nullptr,
+                0,
+                dynamicStr,
+                1
+            };
+            return ans;
+        }
         conc->shuffle();
         KWICLines* kl = new KWICLines(
-            corp, conc->RS(true, fromLine, limit), "-1:s", "1:s",
+            corp, conc->RS(true, fromLine, fromLine+limit-1), "-1:s", "1:s",
 			attrs, attrs, "", "", limit, false);
         if (conc->size() < limit) {
             limit = conc->size();
@@ -275,12 +289,20 @@ KWICRowsRetval conc_examples(const char* corpusPath, const char* query, const ch
                 break;
             }
         }
+        // We've allocated memory for `limit` rows,
+        // but it's possible that there is less rows
+        // available so here we fill the remaining items
+        // with empty strings.
+        for (int i2 = i; i2 < limit; i2++) {
+            lines[i2] = strdup("");
+        }
         delete conc;
         delete corp;
         KWICRowsRetval ans {
             lines,
             limit,
-            nullptr
+            nullptr,
+            0
         };
         return ans;
 
@@ -288,7 +310,8 @@ KWICRowsRetval conc_examples(const char* corpusPath, const char* query, const ch
         KWICRowsRetval ans {
             nullptr,
             0,
-            strdup(e.what())
+            strdup(e.what()),
+            0
         };
         return ans;
     }

@@ -21,5 +21,5 @@
 <sruResponse:echoedSearchRetrieveRequest>
   <sruResponse:version>2.0</sruResponse:version>
   <sruResponse:query>{{ .EchoedSRRequest.Query }}</sruResponse:query>
-  <sruResponse:startRecord>1</sruResponse:startRecord>
+  <sruResponse:startRecord>{{ .EchoedSRRequest.StartRecord }}</sruResponse:startRecord>
 </sruResponse:echoedSearchRetrieveRequest>

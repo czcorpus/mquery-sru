@@ -24,12 +24,17 @@ package mango
 import "C"
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"unicode"
 	"unsafe"
 
 	"github.com/czcorpus/cnc-gokit/maths"
+)
+
+var (
+	ErrRowsRangeOutOfConc = errors.New("rows range is out of concordance size")
 )
 
 type GoVector struct {
@@ -115,6 +120,9 @@ func GetConcExamples(corpusPath, query string, attrs []string, fromLine, maxItem
 	if ans.err != nil {
 		err := fmt.Errorf(C.GoString(ans.err))
 		defer C.free(unsafe.Pointer(ans.err))
+		if ans.errorCode == 1 {
+			return ret, ErrRowsRangeOutOfConc
+		}
 		return ret, err
 
 	} else {

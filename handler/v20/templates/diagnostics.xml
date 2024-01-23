@@ -1,4 +1,4 @@
-<sruResponse:diagnostics xmlns:diag="http://www.loc.gov/zing/srw/diagnostic/">
+<sruResponse:diagnostics xmlns:diag="http://docs.oasis-open.org/ns/search-ws/diagnostic">
   <diag:diagnostic>
       <diag:uri>info:srw/diagnostic/1/{{ .Code }}</diag:uri>
       <diag:details>{{ .Ident }}</diag:details>

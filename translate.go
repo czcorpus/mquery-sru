@@ -35,7 +35,7 @@ func repl(translate func(string)) {
 		fmt.Print("> ")
 		input, err := reader.ReadString('\n')
 		if err != nil {
-			fmt.Printf("Error: %w, Bye.\n", err)
+			fmt.Printf("Error: %s, Bye.\n", err)
 			return
 		}
 		input = strings.TrimSpace(input)
@@ -77,7 +77,7 @@ func translateBasicQuery(input string) {
 	)
 
 	if err != nil {
-		fmt.Printf("parsing error: %w\n", err)
+		fmt.Printf("parsing error: %s\n", err)
 		os.Exit(1)
 	}
 	outQuery := ast.Generate()
@@ -122,7 +122,7 @@ func translateFCSQuery(input string) {
 	)
 
 	if err != nil {
-		fmt.Printf("parsing error: %w\n", err)
+		fmt.Printf("parsing error: %s\n", err)
 		os.Exit(1)
 	}
 	outQuery := ast.Generate()
