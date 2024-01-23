@@ -104,11 +104,20 @@ func (r *RoundRobinLineSel) GetFirstError() error {
 	return nil
 }
 
+func (r *RoundRobinLineSel) IsEmpty() bool {
+	for _, v := range r.items {
+		if len(v.Lines.Lines) > 0 {
+			return false
+		}
+	}
+	return true
+}
+
 // Next prepares next line from the multi-resource result.
 // Please note that to obtain the first item Next() must be
 // called too.
 func (r *RoundRobinLineSel) Next() bool {
-	if len(r.items) == 0 {
+	if len(r.items) == 0 || r.IsEmpty() {
 		return false
 	}
 	if !r.items[r.currIdx].Started {
