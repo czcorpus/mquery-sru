@@ -238,6 +238,14 @@ KWICRowsRetval conc_examples(
         Concordance* conc = new Concordance(
             corp, corp->filter_query(eval_cqpquery(query, corp)));
         conc->sync();
+        if (conc->size() == 0 && fromLine == 0) {
+            KWICRowsRetval ans {
+                nullptr,
+                0,
+                nullptr
+            };
+            return ans;
+        }
         if (conc->size() < fromLine || conc->size() < fromLine+limit-1) {
             const char* msg = "line range out of result size";
             char* dynamicStr = static_cast<char*>(malloc(strlen(msg) + 1));
