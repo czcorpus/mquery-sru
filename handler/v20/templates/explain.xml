@@ -31,7 +31,7 @@
     </zr:schema>
   </zr:schemaInfo>
   <zr:configInfo>
-    <zr:default type="numberOfRecords">TODO</zr:default>
-    <zr:setting type="maximumRecords">TODO</zr:setting>
+    <zr:default type="numberOfRecords">{{ .NumberOfRecords }}</zr:default>
+    <zr:setting type="maximumRecords">{{ .MaximumRecords }}</zr:setting>
   </zr:configInfo>
 </zr:explain>

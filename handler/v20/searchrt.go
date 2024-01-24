@@ -77,7 +77,7 @@ func (a *FCSSubHandlerV20) translateQuery(
 		fcsErr = &general.FCSError{
 			Code:    general.DCUnsupportedParameterValue,
 			Ident:   queryType.String(),
-			Message: "Unsupported queryType value",
+			Message: general.DCUnsupportedParameterValue.AsMessage(),
 		}
 	}
 	return ast, fcsErr
@@ -131,7 +131,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		fcsResponse.General.AddError(general.FCSError{
 			Code:    general.DCMandatoryParameterNotSupplied,
 			Ident:   "fcs_query",
-			Message: "Mandatory parameter not supplied",
+			Message: general.DCMandatoryParameterNotSupplied.AsMessage(),
 		})
 		return general.ConformantStatusBadRequest
 	}
@@ -143,7 +143,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		fcsResponse.General.AddError(general.FCSError{
 			Code:    general.DCUnsupportedParameterValue,
 			Ident:   SearchRetrStartRecord.String(),
-			Message: "Invalid parameter value",
+			Message: general.DCUnsupportedParameterValue.AsMessage(),
 		})
 		return general.ConformantUnprocessableEntity
 	}
@@ -151,7 +151,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		fcsResponse.General.AddError(general.FCSError{
 			Code:    general.DCUnsupportedParameterValue,
 			Ident:   SearchRetrStartRecord.String(),
-			Message: "Invalid parameter value",
+			Message: general.DCUnsupportedParameterValue.AsMessage(),
 		})
 		return general.ConformantUnprocessableEntity
 	}
@@ -163,7 +163,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		fcsResponse.General.AddError(general.FCSError{
 			Code:    general.DCUnsupportedParameterValue,
 			Ident:   SearchMaximumRecords.String(),
-			Message: "Invalid parameter value",
+			Message: general.DCUnsupportedParameterValue.AsMessage(),
 		})
 		return general.ConformantUnprocessableEntity
 	}
@@ -171,7 +171,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		fcsResponse.General.AddError(general.FCSError{
 			Code:    general.DCUnsupportedParameterValue,
 			Ident:   SearchMaximumRecords.String(),
-			Message: "Invalid parameter value",
+			Message: general.DCUnsupportedParameterValue.AsMessage(),
 		})
 		return general.ConformantUnprocessableEntity
 	}
@@ -187,9 +187,9 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			_, ok := a.corporaConf.Resources[v]
 			if !ok {
 				fcsResponse.General.AddError(general.FCSError{
-					Code:    general.DCUnsupportedParameterValue,
+					Code:    general.DCUnsupportedContextSet,
 					Ident:   SearchRetrArgFCSContext.String(),
-					Message: "Unknown context " + v,
+					Message: general.DCUnsupportedContextSet.AsMessage(),
 				})
 				return general.ConformantUnprocessableEntity
 			}
@@ -197,9 +197,9 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 
 	} else {
 		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.DCUnsupportedParameterValue,
+			Code:    general.DCUnsupportedContextSet,
 			Ident:   SearchRetrArgFCSContext.String(),
-			Message: "Empty context",
+			Message: general.DCUnsupportedContextSet.AsMessage(),
 		})
 		return general.ConformantStatusBadRequest
 	}
@@ -239,7 +239,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			fcsResponse.General.AddError(general.FCSError{
 				Code:    general.DCGeneralSystemError,
 				Ident:   err.Error(),
-				Message: "General system error",
+				Message: general.DCGeneralSystemError.AsMessage(),
 			})
 			return http.StatusInternalServerError
 		}
@@ -251,7 +251,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			fcsResponse.General.AddError(general.FCSError{
 				Code:    general.DCGeneralSystemError,
 				Ident:   err.Error(),
-				Message: "General system error",
+				Message: general.DCGeneralSystemError.AsMessage(),
 			})
 			return http.StatusInternalServerError
 		}
@@ -268,7 +268,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			fcsResponse.General.AddError(general.FCSError{
 				Code:    general.DCGeneralSystemError,
 				Ident:   err.Error(),
-				Message: "General system error",
+				Message: general.DCGeneralSystemError.AsMessage(),
 			})
 			return http.StatusInternalServerError
 		}
@@ -280,21 +280,28 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 				fcsResponse.General.AddError(general.FCSError{
 					Code:    general.DCQueryCannotProcess,
 					Ident:   err.Error(),
-					Message: "General system error",
+					Message: general.DCQueryCannotProcess.AsMessage(),
 				})
 				return http.StatusInternalServerError
 			}
 		}
 		fromResource.SetRscLines(corpora[i], result)
 	}
+	if fromResource.AllHasOutOfRangeError() {
+		fcsResponse.General.AddError(general.FCSError{
+			Code:    general.DCFirstRecordPosOutOfRange,
+			Ident:   fromResource.GetFirstError().Error(),
+			Message: general.DCFirstRecordPosOutOfRange.AsMessage(),
+		})
+		return general.ConformantUnprocessableEntity
 
-	if fromResource.HasFatalError() {
+	} else if fromResource.HasFatalError() {
 		fcsResponse.General.AddError(general.FCSError{
 			Code:    general.DCQueryCannotProcess,
 			Ident:   fromResource.GetFirstError().Error(),
-			Message: "General system error",
+			Message: general.DCQueryCannotProcess.AsMessage(),
 		})
-		return general.ConformantUnprocessableEntity // TODO how can we infer the code from the error?
+		return general.ConformandGeneralServerError
 	}
 
 	// transform results

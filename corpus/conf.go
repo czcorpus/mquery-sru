@@ -26,6 +26,7 @@ import (
 
 	"github.com/czcorpus/cnc-gokit/collections"
 	"github.com/czcorpus/cnc-gokit/fs"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -37,6 +38,10 @@ const (
 	LayerTypePhonetic LayerType = "phonetic"
 
 	DefaultLayerType = LayerTypeText
+
+	dfltMaxRecords      = 50
+	dfltNumberOfRecords = 25
+	totalMaxRecords     = 1000 // this is limited by our current manatee.cc wrapper
 )
 
 // LayerType is a layer above positional attributes
@@ -158,14 +163,13 @@ func (cs *CorpusSetup) GetDefinedLayers() *collections.Set[LayerType] {
 	return ans
 }
 
-// GetDefinedLayersAsString provides all the layers
+// GetDefinedLayersAsRefString provides all the layers
 // defined for the corpus formatted as a single string
 // (this is required in SRU XML)
-func (cs *CorpusSetup) GetDefinedLayersAsString() string {
-	layers := cs.GetDefinedLayers().ToOrderedSlice()
-	ans := make([]string, len(layers))
-	for i, v := range layers {
-		ans[i] = string(v)
+func (cs *CorpusSetup) GetDefinedLayersAsRefString() string {
+	ans := make([]string, 0, len(cs.PosAttrs))
+	for _, item := range cs.PosAttrs {
+		ans = append(ans, item.ID)
 	}
 	return strings.Join(ans, " ")
 }
@@ -313,8 +317,23 @@ func (sr SrchResources) Validate(confContext string) error {
 // CorporaSetup defines mquery application configuration related
 // to a corpus
 type CorporaSetup struct {
-	RegistryDir string        `json:"registryDir"`
-	Resources   SrchResources `json:"resources"`
+
+	// RegistryDir specifies a root directory where all the
+	// required corpora registry (= configuration) files are
+	// located.
+	RegistryDir string `json:"registryDir"`
+
+	// MaximumRecords specifies how many records are we willing
+	// to provide on a single search (via maximumRecords URL arg;
+	// otherwise, a dk)
+	MaximumRecords int `json:"maximumRecords"`
+
+	// NumberOfRecords is a default number of records provided
+	// as a response to a query
+	NumberOfRecords int `json:"numberOfRecords"`
+
+	// Resources is a description of configured corpora/resources
+	Resources SrchResources `json:"resources"`
 }
 
 func (cs *CorporaSetup) GetRegistryPath(corpusID string) string {
@@ -334,6 +353,24 @@ func (cs *CorporaSetup) ValidateAndDefaults(confContext string) error {
 	}
 	if !isDir {
 		return fmt.Errorf("`%s.registryDir` is not a directory", confContext)
+	}
+	if cs.MaximumRecords == 0 {
+		cs.MaximumRecords = dfltMaxRecords
+		log.Warn().
+			Int("value", dfltMaxRecords).
+			Msgf("%s.maximumRecords not set, using default", confContext)
+
+	} else if cs.MaximumRecords > totalMaxRecords {
+		return fmt.Errorf("`%s.maximumRecords must be at most %d", confContext, totalMaxRecords)
+	}
+	if cs.NumberOfRecords == 0 {
+		cs.NumberOfRecords = dfltNumberOfRecords
+		log.Warn().
+			Int("value", dfltNumberOfRecords).
+			Msgf("%s.numberOfRecords not set, using default", confContext)
+
+	} else if cs.NumberOfRecords > cs.MaximumRecords {
+		return fmt.Errorf("`%s.numberOfRecords is too high, must be at most %d", confContext, cs.MaximumRecords)
 	}
 	return cs.Resources.Validate("resources")
 }

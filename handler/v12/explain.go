@@ -47,6 +47,8 @@ func (a *FCSSubHandlerV12) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 		DatabaseTitle:       a.serverInfo.DatabaseTitle,
 		DatabaseDescription: a.serverInfo.DatabaseDescription,
 		PrimaryLanguage:     a.serverInfo.PrimaryLanguage,
+		MaximumRecords:      a.corporaConf.MaximumRecords,
+		NumberOfRecords:     a.corporaConf.NumberOfRecords,
 	}
 	if ctx.Query(ExplainArgFCSEndpointDescription.String()) == "true" {
 		fcsResponse.Explain.ExtraResponseData = true

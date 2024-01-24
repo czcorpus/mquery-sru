@@ -68,6 +68,8 @@ type FCSExplain struct {
 	PosAttrs            []corpus.PosAttr
 	Resources           []FCSResourceInfo
 	ExtraResponseData   bool
+	MaximumRecords      int
+	NumberOfRecords     int
 }
 
 type EchoedSRRequest struct {
