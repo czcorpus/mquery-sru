@@ -2,9 +2,6 @@
 {{ if eq .Operation "explain" }}
 <sru:explainResponse xmlns:sru="http://www.loc.gov/zing/srw/">
   <sru:version>1.2</sru:version>
-  {{ if gt ( len .General.Errors ) 0 }}
-    {{ template "diagnostics.xml" .General.Errors }}
-  {{ end }}
   {{ if .Explain }}
     <sru:record>
       <sru:recordSchema>http://explain.z3950.org/dtd/2.0/</sru:recordSchema>
@@ -19,16 +16,19 @@
       </sru:extraResponseData>
     {{ end }}
   {{ end }}
+  {{ if gt ( len .General.Errors ) 0 }}
+    {{ template "diagnostics.xml" .General.Errors }}
+  {{ end }}
 </sru:explainResponse>
 {{ else }}{{ if eq .Operation "searchRetrieve" }}
 <sru:searchRetrieveResponse xmlns:sru="http://www.loc.gov/zing/srw/">
   <sru:version>1.2</sru:version>
   <sru:numberOfRecords>{{ .SearchRetrieve.Results | len }}</sru:numberOfRecords>
-  {{ if gt ( len .General.Errors ) 0 }}
-    {{ template "diagnostics.xml" .General.Errors }}
-  {{ end }}
   {{ if not .General.Fatal }}
     {{ template "searchret.xml" . }}
+  {{ end }}
+  {{ if gt ( len .General.Errors ) 0 }}
+    {{ template "diagnostics.xml" .General.Errors }}
   {{ end }}
 </sru:searchRetrieveResponse>
 {{ end }}{{ end }}
