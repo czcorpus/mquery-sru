@@ -27,6 +27,18 @@ import (
 )
 
 func (a *FCSSubHandlerV12) explain(ctx *gin.Context, fcsResponse *FCSResponse) int {
+	// prepare response data
+	fcsResponse.Explain = &FCSExplain{
+		ServerName:          a.serverInfo.ServerName,
+		ServerPort:          a.serverInfo.ServerPort,
+		Database:            a.serverInfo.Database,
+		DatabaseTitle:       a.serverInfo.DatabaseTitle,
+		DatabaseDescription: a.serverInfo.DatabaseDescription,
+		PrimaryLanguage:     a.serverInfo.PrimaryLanguage,
+		MaximumRecords:      a.corporaConf.MaximumRecords,
+		NumberOfRecords:     a.corporaConf.NumberOfRecords,
+	}
+
 	// check if all parameters are supported
 	for key, _ := range ctx.Request.URL.Query() {
 		if err := ExplainArg(key).Validate(); err != nil {
@@ -39,17 +51,7 @@ func (a *FCSSubHandlerV12) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 		}
 	}
 
-	// prepare response data
-	fcsResponse.Explain = FCSExplain{
-		ServerName:          a.serverInfo.ServerName,
-		ServerPort:          a.serverInfo.ServerPort,
-		Database:            a.serverInfo.Database,
-		DatabaseTitle:       a.serverInfo.DatabaseTitle,
-		DatabaseDescription: a.serverInfo.DatabaseDescription,
-		PrimaryLanguage:     a.serverInfo.PrimaryLanguage,
-		MaximumRecords:      a.corporaConf.MaximumRecords,
-		NumberOfRecords:     a.corporaConf.NumberOfRecords,
-	}
+	// get resources
 	if ctx.Query(ExplainArgFCSEndpointDescription.String()) == "true" {
 		fcsResponse.Explain.ExtraResponseData = true
 		for _, corpusConf := range a.corporaConf.Resources {
