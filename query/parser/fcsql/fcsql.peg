@@ -103,7 +103,7 @@ MainQuery <-
 
 // 2b
 QuantifiedQuery <-
-    query:SimpleQuery quant:(Ws* Quantifier)? {
+    query:BasicQuery quant:(Ws* Quantifier)? {
         ans := new(quantifiedQuery)
         if quant != nil {
             sliceQuant, ok := quant.([]any)
@@ -117,24 +117,24 @@ QuantifiedQuery <-
             }
             ans.quantifier = tQuant
         }
-        tQuery, ok := query.(*simpleQuery)
+        tQuery, ok := query.(*basicQuery)
         if !ok {
-            return ans, fmt.Errorf("invalid value passed to query:SimpleQuery in QuantifiedQuery: %v", query)
+            return ans, fmt.Errorf("invalid value passed to query:BasicQuery in QuantifiedQuery: %v", query)
         }
-        ans.simpleQuery = tQuery
+        ans.basicQuery = tQuery
         return ans, nil
     }
 
 // 3
-SimpleQuery <-
+BasicQuery <-
     '(' q:MainQuery ')' {  // grouping
-        return &simpleQuery{value: q}, nil
+        return &basicQuery{value: q}, nil
     }
     / q:ImplicitQuery {
-        return &simpleQuery{value: q}, nil
+        return &basicQuery{value: q}, nil
     }
     / q:SegmentQuery {
-        return &simpleQuery{value: q}, nil
+        return &basicQuery{value: q}, nil
     }
 
 // 4

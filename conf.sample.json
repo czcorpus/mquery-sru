@@ -33,14 +33,14 @@
                         "name": "word",
                         "id": "attr1",
                         "layer": "text",
-                        "isSimpleSearchAttr": true,
+                        "isBasicSearchAttr": true,
                         "isLayerDefault": true
                     },
                     {
                         "name": "lemma",
                         "id": "attr2",
                         "layer": "lemma",
-                        "isSimpleSearchAttr": true
+                        "isBasicSearchAttr": true
                     },
                     {
                         "name": "pos",

@@ -24,7 +24,7 @@ import (
 	"fcs/general"
 	"fcs/mango"
 	"fcs/query/compiler"
-	"fcs/query/parser/simple"
+	"fcs/query/parser/basic"
 	"fcs/rdb"
 	"fcs/results"
 	"net/http"
@@ -37,7 +37,7 @@ func (a *FCSSubHandlerV12) translateQuery(
 	corpusName, query string,
 ) (compiler.AST, *general.FCSError) {
 	var fcsErr *general.FCSError
-	ast, err := simple.ParseQuery(
+	ast, err := basic.ParseQuery(
 		query,
 		a.corporaConf.Resources[corpusName].PosAttrs,
 		a.corporaConf.Resources[corpusName].StructureMapping,

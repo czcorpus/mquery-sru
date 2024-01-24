@@ -18,7 +18,7 @@
 //  along with MQUERY.  If not, see <https://www.gnu.org/licenses/>.
 
 //go:generate pigeon -o query/parser/fcsql/fcsql.go query/parser/fcsql/fcsql.peg
-//go:generate pigeon -o query/parser/simple/simple.go query/parser/simple/simple.peg
+//go:generate pigeon -o query/parser/basic/basic.go query/parser/basic/basic.peg
 
 package main
 

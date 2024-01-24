@@ -87,9 +87,9 @@ type PosAttr struct {
 	// is configured and supported in MQuery-FCS)
 	Layer LayerType `json:"layer"`
 
-	// IsSimpleSearchAttr defines whether the attribute is
-	// used as a search attr in simple query
-	IsSimpleSearchAttr bool `json:"isSimpleSearchAttr"`
+	// IsBasicSearchAttr defines whether the attribute is
+	// used as a search attr in basic query
+	IsBasicSearchAttr bool `json:"isBasicSearchAttr"`
 
 	// IsLayerDefault defines whether the attribute is
 	// used as a default one when querying its layer.
@@ -127,11 +127,11 @@ type CorpusSetup struct {
 	StructureMapping StructureMapping `json:"structureMapping"`
 }
 
-// GetSimpleSearchAttrs provides all simple search attrs
-func (cs *CorpusSetup) GetSimpleSearchAttrs() []string {
+// GetBasicSearchAttrs provides all the basic search attrs
+func (cs *CorpusSetup) GetBasicSearchAttrs() []string {
 	searchAttrs := make([]string, 0, 5)
 	for _, item := range cs.PosAttrs {
-		if item.IsSimpleSearchAttr {
+		if item.IsBasicSearchAttr {
 			searchAttrs = append(searchAttrs, item.Name)
 		}
 	}
@@ -192,7 +192,7 @@ func (ls *CorpusSetup) Validate(confContext string) error {
 		return fmt.Errorf("missing configuration section `%s.layers`", confContext)
 	}
 	layerDefaults := make(map[LayerType]int)
-	var simpleSrchAttrs int
+	var basicSrchAttrs int
 	for _, attr := range ls.PosAttrs {
 		if err := attr.Layer.Validate(); err != nil {
 			return err
@@ -204,8 +204,8 @@ func (ls *CorpusSetup) Validate(confContext string) error {
 		if attr.IsLayerDefault {
 			layerDefaults[attr.Layer]++
 		}
-		if attr.IsSimpleSearchAttr {
-			simpleSrchAttrs++
+		if attr.IsBasicSearchAttr {
+			basicSrchAttrs++
 		}
 	}
 	for layer, num := range layerDefaults {
@@ -217,7 +217,7 @@ func (ls *CorpusSetup) Validate(confContext string) error {
 			)
 		}
 	}
-	if simpleSrchAttrs == 0 {
+	if basicSrchAttrs == 0 {
 		return fmt.Errorf("no positional attributes are set to be used in basic search query")
 	}
 

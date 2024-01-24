@@ -121,15 +121,15 @@ func (q *Query) Generate() string {
 // ----
 
 type quantifiedQuery struct {
-	simpleQuery *simpleQuery
-	quantifier  string
+	basicQuery *basicQuery
+	quantifier string
 }
 
 func (qq *quantifiedQuery) Generate(ast compiler.AST) string {
 	if qq.quantifier != "" {
-		return fmt.Sprintf("%s%s", qq.simpleQuery.Generate(ast), qq.quantifier)
+		return fmt.Sprintf("%s%s", qq.basicQuery.Generate(ast), qq.quantifier)
 	}
-	return qq.simpleQuery.Generate(ast)
+	return qq.basicQuery.Generate(ast)
 }
 
 // -----
@@ -300,11 +300,11 @@ func (wp *segmentQuery) Generate(ast compiler.AST) string {
 
 // -------
 
-type simpleQuery struct {
+type basicQuery struct {
 	value any
 }
 
-func (sq *simpleQuery) Generate(ast compiler.AST) string {
+func (sq *basicQuery) Generate(ast compiler.AST) string {
 	if sq.GetInnerQuery() != nil {
 		return fmt.Sprintf("(%s)", sq.GetInnerQuery().Generate(ast))
 
@@ -317,7 +317,7 @@ func (sq *simpleQuery) Generate(ast compiler.AST) string {
 	return "??"
 }
 
-func (sq *simpleQuery) GetInnerQuery() *mainQuery {
+func (sq *basicQuery) GetInnerQuery() *mainQuery {
 	v, ok := sq.value.(*mainQuery)
 	if !ok {
 		return nil
@@ -325,7 +325,7 @@ func (sq *simpleQuery) GetInnerQuery() *mainQuery {
 	return v
 }
 
-func (sq *simpleQuery) GetImplicitQuery() *implicitQuery {
+func (sq *basicQuery) GetImplicitQuery() *implicitQuery {
 	v, ok := sq.value.(*implicitQuery)
 	if !ok {
 		return nil
@@ -333,7 +333,7 @@ func (sq *simpleQuery) GetImplicitQuery() *implicitQuery {
 	return v
 }
 
-func (sq *simpleQuery) GetSegmentQuery() *segmentQuery {
+func (sq *basicQuery) GetSegmentQuery() *segmentQuery {
 	v, ok := sq.value.(*segmentQuery)
 	if !ok {
 		return nil

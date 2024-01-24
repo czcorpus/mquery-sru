@@ -16,7 +16,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with MQUERY.  If not, see <https://www.gnu.org/licenses/>.
 
-package simple
+package basic
 
 import (
 	"errors"
@@ -35,7 +35,7 @@ type Query struct {
 func (q *Query) getDefaultAttrsExp(word string) string {
 	var ans strings.Builder
 	for i, p := range q.posAttrs {
-		if p.IsSimpleSearchAttr {
+		if p.IsBasicSearchAttr {
 			if i > 0 {
 				ans.WriteString(fmt.Sprintf(` | %s="%s"`, p.Name, word))
 

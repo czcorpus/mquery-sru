@@ -25,8 +25,8 @@ import (
 	"fcs/general"
 	"fcs/mango"
 	"fcs/query/compiler"
+	"fcs/query/parser/basic"
 	"fcs/query/parser/fcsql"
-	"fcs/query/parser/simple"
 	"fcs/rdb"
 	"fcs/results"
 	"fmt"
@@ -46,7 +46,7 @@ func (a *FCSSubHandlerV20) translateQuery(
 	switch queryType {
 	case QueryTypeCQL:
 		var err error
-		ast, err = simple.ParseQuery(
+		ast, err = basic.ParseQuery(
 			query,
 			a.corporaConf.Resources[corpusName].PosAttrs,
 			a.corporaConf.Resources[corpusName].StructureMapping,
