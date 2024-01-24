@@ -20,6 +20,7 @@ package results
 
 import (
 	"fcs/corpus/conc"
+	"fcs/mango"
 	"fmt"
 )
 
@@ -93,6 +94,18 @@ func (r *RoundRobinLineSel) HasFatalError() bool {
 		}
 	}
 	return true
+}
+
+// AllHasOutOfRangeError means that there was not a single
+// resource able to provide lines with a required offset
+func (r *RoundRobinLineSel) AllHasOutOfRangeError() bool {
+	var numMatch int
+	for _, v := range r.items {
+		if v.Err.Error() == mango.ErrRowsRangeOutOfConc.Error() {
+			numMatch++
+		}
+	}
+	return numMatch == len(r.items)
 }
 
 func (r *RoundRobinLineSel) GetFirstError() error {

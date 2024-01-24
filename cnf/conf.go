@@ -36,8 +36,9 @@ const (
 	dfltLanguage               = "en"
 	dfltMaxNumConcurrentJobs   = 4
 	dfltVertMaxNumErrors       = 100
-	dfltTimeZone               = "Europe/Prague"
-	dfltSourcesRootDir         = "."
+
+	dfltTimeZone       = "Europe/Prague"
+	dfltSourcesRootDir = "."
 )
 
 type ServerInfo struct {

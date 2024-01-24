@@ -21,7 +21,44 @@ package general
 import "fmt"
 
 type DiagnosticType int
+
 type DiagnosticCode int
+
+func (dc DiagnosticCode) AsMessage() string {
+	switch dc {
+	case DCGeneralSystemError:
+		return "General system error"
+	case DCSystemTemporarilyUnavailable:
+		return "System temporarily unavailable"
+	case DCAuthenticationError:
+		return "Authentication error"
+	case DCUnsupportedOperation:
+		return "Unsupported operation"
+	case DCUnsupportedVersion:
+		return "Unsupported version"
+	case DCUnsupportedParameterValue:
+		return "Unsupported parameter value"
+	case DCMandatoryParameterNotSupplied:
+		return "Mandatory parameter not supplied"
+	case DCUnsupportedParameter:
+		return "Unsupported Parameter"
+	case DCUnsupportedContextSet:
+		return "Unsupported context set"
+	case DCDatabaseDoesNotExist:
+		return "Database does not exist"
+	case DCQuerySyntaxError:
+		return "Query syntax error"
+	case DCQueryCannotProcess:
+		return "Cannot process query; reason unknown"
+	case DCQueryFeatureUnsupported:
+		return "Query feature unsupported"
+	case DCFirstRecordPosOutOfRange:
+		return "First record position out of range"
+	case DCUnsupportedRecordPacking:
+		return "Unsupported record packing"
+	}
+	return "??"
+}
 
 // from appendix A FCS 2.0 documentation
 const (
@@ -49,9 +86,11 @@ const (
 	DCUnsupportedParameter          DiagnosticCode = 8
 	DCDatabaseDoesNotExist          DiagnosticCode = 235
 	// CQL related diagnostics
-	DCQuerySyntaxError        DiagnosticCode = 10
-	DCQueryCannotProcess      DiagnosticCode = 47
-	DCQueryFeatureUnsupported DiagnosticCode = 48
+	DCQuerySyntaxError         DiagnosticCode = 10
+	DCUnsupportedContextSet    DiagnosticCode = 15
+	DCQueryCannotProcess       DiagnosticCode = 47
+	DCQueryFeatureUnsupported  DiagnosticCode = 48
+	DCFirstRecordPosOutOfRange DiagnosticCode = 61
 	// Records related diagnostics
 	DCUnsupportedRecordPacking DiagnosticCode = 71
 )

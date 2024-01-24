@@ -128,6 +128,7 @@ func GetConcExamples(corpusPath, query string, attrs []string, fromLine, maxItem
 	} else {
 		defer C.conc_examples_free(ans.value, C.int(ans.size))
 	}
+	// TODO the number 1000 here is limiting our max. result size
 	tmp := (*[1000]*C.char)(unsafe.Pointer(ans.value))
 	for i := 0; i < int(ans.size); i++ {
 		ret.Lines = append(ret.Lines, C.GoString(tmp[i]))

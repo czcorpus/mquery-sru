@@ -47,6 +47,8 @@ func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 		DatabaseTitle:       a.serverInfo.DatabaseTitle,
 		DatabaseDescription: a.serverInfo.DatabaseDescription,
 		PrimaryLanguage:     a.serverInfo.PrimaryLanguage,
+		MaximumRecords:      a.corporaConf.MaximumRecords,
+		NumberOfRecords:     a.corporaConf.NumberOfRecords,
 		PosAttrs:            a.corporaConf.Resources.GetCommonPosAttrs(a.corporaConf.Resources.GetCorpora()...),
 	}
 	if ctx.Query(ExplainArgFCSEndpointDescription.String()) == "true" {
@@ -60,7 +62,7 @@ func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 					Description:     corpusConf.Description,
 					URI:             corpusConf.URI,
 					Languages:       corpusConf.Languages,
-					AvailableLayers: corpusConf.GetDefinedLayersAsString(),
+					AvailableLayers: corpusConf.GetDefinedLayersAsRefString(),
 				},
 			)
 		}
