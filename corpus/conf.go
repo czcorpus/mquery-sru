@@ -185,11 +185,12 @@ func (ls *CorpusSetup) Validate(confContext string) error {
 		return fmt.Errorf("missing required configuration for `%s.fullName.en`", confContext)
 	}
 
-	if ls.Description != nil {
-		_, ok := ls.Description["en"]
-		if !ok {
-			return fmt.Errorf("missing required configuration for `%s.description.en`", confContext)
-		}
+	if ls.Description == nil {
+		return fmt.Errorf("missing configuration section `%s.description`", confContext)
+	}
+	_, ok = ls.Description["en"]
+	if !ok {
+		return fmt.Errorf("missing required configuration for `%s.description.en`", confContext)
 	}
 
 	if ls.Languages == nil {
