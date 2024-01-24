@@ -1,10 +1,11 @@
 {{ $lastPosition := 0 }}
 <sruResponse:records>
-  {{ $queryType := .QueryType }}
-  {{ range .Results }}
+  {{ $recordXMLEscaping := .RecordXMLEscaping -}}
+  {{ $queryType := .SearchRetrieve.QueryType -}}
+  {{ range .SearchRetrieve.Results }}
     <sruResponse:record>
       <sruResponse:recordSchema>http://clarin.eu/fcs/resource</sruResponse:recordSchema>
-      <sruResponse:recordXMLEscaping>xml</sruResponse:recordXMLEscaping>
+      <sruResponse:recordXMLEscaping>{{ $recordXMLEscaping }}</sruResponse:recordXMLEscaping>
       <sruResponse:recordData>
         <fcs:Resource xmlns:fcs="http://clarin.eu/fcs/resource" pid="{{ .PID }}"{{ if .Web }} ref="{{ .Web }}"{{ end }}>
           <fcs:ResourceFragment>
