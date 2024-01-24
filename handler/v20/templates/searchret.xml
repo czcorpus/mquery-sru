@@ -23,6 +23,6 @@
 {{ end }}
 <sruResponse:echoedSearchRetrieveRequest>
   <sruResponse:version>2.0</sruResponse:version>
-  <sruResponse:query>{{ .EchoedSRRequest.Query }}</sruResponse:query>
-  <sruResponse:startRecord>{{ .EchoedSRRequest.StartRecord }}</sruResponse:startRecord>
+  <sruResponse:query>{{ .SearchRetrieve.EchoedSRRequest.Query }}</sruResponse:query>
+  <sruResponse:startRecord>{{ .SearchRetrieve.EchoedSRRequest.StartRecord }}</sruResponse:startRecord>
 </sruResponse:echoedSearchRetrieveRequest>
