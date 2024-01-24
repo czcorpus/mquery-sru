@@ -53,7 +53,7 @@ func (a *FCSSubHandlerV20) translateQuery(
 		)
 		if err != nil {
 			fcsErr = &general.FCSError{
-				Code:    general.CodeQuerySyntaxError,
+				Code:    general.DCQuerySyntaxError,
 				Ident:   query,
 				Message: fmt.Sprintf("Invalid query syntax: %s", err),
 			}
@@ -67,7 +67,7 @@ func (a *FCSSubHandlerV20) translateQuery(
 		)
 		if err != nil {
 			fcsErr = &general.FCSError{
-				Code:    general.CodeQuerySyntaxError,
+				Code:    general.DCQuerySyntaxError,
 				Ident:   query,
 				Message: fmt.Sprintf("Invalid query syntax: %s", err),
 			}
@@ -75,7 +75,7 @@ func (a *FCSSubHandlerV20) translateQuery(
 
 	default:
 		fcsErr = &general.FCSError{
-			Code:    general.CodeUnsupportedParameterValue,
+			Code:    general.DCUnsupportedParameterValue,
 			Ident:   queryType.String(),
 			Message: "Unsupported queryType value",
 		}
@@ -117,22 +117,22 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	// check if all parameters are supported
 	for key, _ := range ctx.Request.URL.Query() {
 		if err := SearchRetrArg(key).Validate(); err != nil {
-			fcsResponse.General.Error = &general.FCSError{
-				Code:    general.CodeUnsupportedParameter,
+			fcsResponse.General.AddError(general.FCSError{
+				Code:    general.DCUnsupportedParameter,
 				Ident:   key,
 				Message: err.Error(),
-			}
+			})
 			return general.ConformantStatusBadRequest
 		}
 	}
 
 	fcsQuery := ctx.Query("query")
 	if len(fcsQuery) == 0 {
-		fcsResponse.General.Error = &general.FCSError{
-			Code:    general.CodeMandatoryParameterNotSupplied,
+		fcsResponse.General.AddError(general.FCSError{
+			Code:    general.DCMandatoryParameterNotSupplied,
 			Ident:   "fcs_query",
 			Message: "Mandatory parameter not supplied",
-		}
+		})
 		return general.ConformantStatusBadRequest
 	}
 	fcsResponse.SearchRetrieve.EchoedSRRequest.Query = fcsQuery
@@ -140,19 +140,19 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	xStartRecord := ctx.DefaultQuery(SearchRetrStartRecord.String(), "1")
 	startRecord, err := strconv.Atoi(xStartRecord)
 	if err != nil {
-		fcsResponse.General.Error = &general.FCSError{
-			Code:    general.CodeUnsupportedParameterValue,
+		fcsResponse.General.AddError(general.FCSError{
+			Code:    general.DCUnsupportedParameterValue,
 			Ident:   SearchRetrStartRecord.String(),
 			Message: "Invalid parameter value",
-		}
+		})
 		return general.ConformantUnprocessableEntity
 	}
 	if startRecord < 1 {
-		fcsResponse.General.Error = &general.FCSError{
-			Code:    general.CodeUnsupportedParameterValue,
+		fcsResponse.General.AddError(general.FCSError{
+			Code:    general.DCUnsupportedParameterValue,
 			Ident:   SearchRetrStartRecord.String(),
 			Message: "Invalid parameter value",
-		}
+		})
 		return general.ConformantUnprocessableEntity
 	}
 	fcsResponse.SearchRetrieve.EchoedSRRequest.StartRecord = startRecord
@@ -160,19 +160,19 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	xMaximumRecords := ctx.DefaultQuery(SearchMaximumRecords.String(), "100")
 	maximumRecords, err := strconv.Atoi(xMaximumRecords)
 	if err != nil {
-		fcsResponse.General.Error = &general.FCSError{
-			Code:    general.CodeUnsupportedParameterValue,
+		fcsResponse.General.AddError(general.FCSError{
+			Code:    general.DCUnsupportedParameterValue,
 			Ident:   SearchMaximumRecords.String(),
 			Message: "Invalid parameter value",
-		}
+		})
 		return general.ConformantUnprocessableEntity
 	}
 	if maximumRecords < 1 {
-		fcsResponse.General.Error = &general.FCSError{
-			Code:    general.CodeUnsupportedParameterValue,
+		fcsResponse.General.AddError(general.FCSError{
+			Code:    general.DCUnsupportedParameterValue,
 			Ident:   SearchMaximumRecords.String(),
 			Message: "Invalid parameter value",
-		}
+		})
 		return general.ConformantUnprocessableEntity
 	}
 
@@ -186,21 +186,21 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		for _, v := range corpora {
 			_, ok := a.corporaConf.Resources[v]
 			if !ok {
-				fcsResponse.General.Error = &general.FCSError{
-					Code:    general.CodeUnsupportedParameterValue,
+				fcsResponse.General.AddError(general.FCSError{
+					Code:    general.DCUnsupportedParameterValue,
 					Ident:   SearchRetrArgFCSContext.String(),
 					Message: "Unknown context " + v,
-				}
+				})
 				return general.ConformantUnprocessableEntity
 			}
 		}
 
 	} else {
-		fcsResponse.General.Error = &general.FCSError{
-			Code:    general.CodeUnsupportedParameterValue,
+		fcsResponse.General.AddError(general.FCSError{
+			Code:    general.DCUnsupportedParameterValue,
 			Ident:   SearchRetrArgFCSContext.String(),
 			Message: "Empty context",
-		}
+		})
 		return general.ConformantStatusBadRequest
 	}
 
@@ -215,17 +215,17 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 
 		ast, fcsErr := a.translateQuery(corpusName, fcsQuery, queryType)
 		if fcsErr != nil {
-			fcsResponse.General.Error = fcsErr
+			fcsResponse.General.AddError(*fcsErr)
 			return general.ConformantUnprocessableEntity
 		}
 
 		query := ast.Generate()
 		if len(ast.Errors()) > 0 {
-			fcsResponse.General.Error = &general.FCSError{
-				Code:    general.CodeQueryCannotProcess,
+			fcsResponse.General.AddError(general.FCSError{
+				Code:    general.DCQueryCannotProcess,
 				Ident:   SearchRetrArgQuery.String(),
 				Message: ast.Errors()[0].Error(),
-			}
+			})
 			return general.ConformantUnprocessableEntity
 		}
 		args, err := json.Marshal(rdb.ConcExampleArgs{
@@ -236,11 +236,11 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			MaxItems:   maximumRecords,
 		})
 		if err != nil {
-			fcsResponse.General.Error = &general.FCSError{
-				Code:    general.CodeGeneralSystemError,
+			fcsResponse.General.AddError(general.FCSError{
+				Code:    general.DCGeneralSystemError,
 				Ident:   err.Error(),
 				Message: "General system error",
-			}
+			})
 			return http.StatusInternalServerError
 		}
 		wait, err := a.radapter.PublishQuery(rdb.Query{
@@ -248,11 +248,11 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			Args: args,
 		})
 		if err != nil {
-			fcsResponse.General.Error = &general.FCSError{
-				Code:    general.CodeGeneralSystemError,
+			fcsResponse.General.AddError(general.FCSError{
+				Code:    general.DCGeneralSystemError,
 				Ident:   err.Error(),
 				Message: "General system error",
-			}
+			})
 			return http.StatusInternalServerError
 		}
 		waits[i] = wait
@@ -265,11 +265,11 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		rawResult := <-wait
 		result, err := rdb.DeserializeConcExampleResult(rawResult)
 		if err != nil {
-			fcsResponse.General.Error = &general.FCSError{
-				Code:    general.CodeGeneralSystemError,
+			fcsResponse.General.AddError(general.FCSError{
+				Code:    general.DCGeneralSystemError,
 				Ident:   err.Error(),
 				Message: "General system error",
-			}
+			})
 			return http.StatusInternalServerError
 		}
 		if err := result.Err(); err != nil {
@@ -277,11 +277,11 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 				fromResource.RscSetErrorAt(i, err)
 
 			} else {
-				fcsResponse.General.Error = &general.FCSError{
-					Code:    general.CodeGeneralSystemError,
+				fcsResponse.General.AddError(general.FCSError{
+					Code:    general.DCQueryCannotProcess,
 					Ident:   err.Error(),
 					Message: "General system error",
-				}
+				})
 				return http.StatusInternalServerError
 			}
 		}
@@ -289,11 +289,11 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	}
 
 	if fromResource.HasFatalError() {
-		fcsResponse.General.Error = &general.FCSError{
-			Code:    general.CodeGeneralSystemError,
+		fcsResponse.General.AddError(general.FCSError{
+			Code:    general.DCQueryCannotProcess,
 			Ident:   fromResource.GetFirstError().Error(),
 			Message: "General system error",
-		}
+		})
 		return general.ConformantUnprocessableEntity // TODO how can we infer the code from the error?
 	}
 
