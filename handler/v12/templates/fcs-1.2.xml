@@ -5,7 +5,7 @@
   {{ if gt ( len .General.Errors ) 0 }}
     {{ template "diagnostics.xml" .General.Errors }}
   {{ end }}
-  {{ if not .General.Fatal }}
+  {{ if .Explain }}
     <sru:record>
       <sru:recordSchema>http://explain.z3950.org/dtd/2.0/</sru:recordSchema>
       <sru:recordPacking>{{ .RecordPacking }}</sru:recordPacking>
@@ -13,9 +13,11 @@
         {{ template "explain.xml" .Explain }}
       </sru:recordData>
     </sru:record>
-    <sru:extraResponseData>
-      {{ template "description.xml" .Explain.Resources }}
-    </sru:extraResponseData>
+    {{ if .Explain.ExtraResponseData }}
+      <sru:extraResponseData>
+        {{ template "description.xml" .Explain.Resources }}
+      </sru:extraResponseData>
+    {{ end }}
   {{ end }}
 </sru:explainResponse>
 {{ else }}{{ if eq .Operation "searchRetrieve" }}

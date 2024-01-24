@@ -89,6 +89,6 @@ type FCSResponse struct {
 	RecordXMLEscaping RecordXMLEscaping
 	Operation         Operation
 
-	Explain        FCSExplain
+	Explain        *FCSExplain
 	SearchRetrieve FCSSearchRetrieve
 }

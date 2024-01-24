@@ -67,6 +67,6 @@ type FCSResponse struct {
 	RecordPacking RecordPacking
 	Operation     Operation
 
-	Explain        FCSExplain
+	Explain        *FCSExplain
 	SearchRetrieve FCSSearchRetrieve
 }

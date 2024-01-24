@@ -3,12 +3,9 @@
 <sruResponse:explainResponse xmlns:sruResponse="http://docs.oasis-open.org/ns/search-ws/sruResponse">
   <sruResponse:version>2.0</sruResponse:version>
   {{ if gt ( len .General.Errors ) 0 }}
-    <sruResponse:recordData>
-        {{ template "explain.xml" .Explain }}
-    </sruResponse:recordData>
     {{ template "diagnostics.xml" .General.Errors }}
   {{ end }}
-  {{ if not .General.Fatal }}
+  {{ if .Explain }}
     <sruResponse:record>
       <sruResponse:recordSchema>http://explain.z3950.org/dtd/2.0/</sruResponse:recordSchema>
       <sruResponse:recordXMLEscaping>{{ .RecordXMLEscaping }}</sruResponse:recordXMLEscaping>
@@ -17,9 +14,9 @@
       </sruResponse:recordData>
     </sruResponse:record>
     {{ if .Explain.ExtraResponseData }}
-    <sruResponse:extraResponseData>
-      {{ template "description.xml" . }}
-    </sruResponse:extraResponseData>
+      <sruResponse:extraResponseData>
+        {{ template "description.xml" . }}
+      </sruResponse:extraResponseData>
     {{ end }}
   {{ end }}
 </sruResponse:explainResponse>
