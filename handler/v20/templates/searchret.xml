@@ -1,4 +1,5 @@
 {{ $lastPosition := 0 }}
+{{ if gt (len .SearchRetrieve.Results) 0 }}
 <sruResponse:records>
   {{ $recordXMLEscaping := .RecordXMLEscaping -}}
   {{ $queryType := .SearchRetrieve.QueryType -}}
@@ -19,6 +20,7 @@
   {{ end }}
 </sruResponse:records>
 <sruResponse:nextRecordPosition>{{ add $lastPosition 1 }}</sruResponse:nextRecordPosition>
+{{ end }}
 <sruResponse:echoedSearchRetrieveRequest>
   <sruResponse:version>2.0</sruResponse:version>
   <sruResponse:query>{{ .EchoedSRRequest.Query }}</sruResponse:query>

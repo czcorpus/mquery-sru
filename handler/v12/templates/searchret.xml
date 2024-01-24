@@ -1,3 +1,4 @@
+{{ if gt (len .SearchRetrieve.Results) 0 }}
 <sru:records>
   {{ $recordPacking := .RecordPacking -}}
   {{ range .SearchRetrieve.Results }}
@@ -15,3 +16,4 @@
     </sru:record>
   {{ end }}
 </sru:records>
+{{ end }}
