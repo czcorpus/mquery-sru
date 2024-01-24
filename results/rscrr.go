@@ -101,7 +101,7 @@ func (r *RoundRobinLineSel) HasFatalError() bool {
 func (r *RoundRobinLineSel) AllHasOutOfRangeError() bool {
 	var numMatch int
 	for _, v := range r.items {
-		if v.Err.Error() == mango.ErrRowsRangeOutOfConc.Error() {
+		if v.Err != nil && v.Err.Error() == mango.ErrRowsRangeOutOfConc.Error() {
 			numMatch++
 		}
 	}
