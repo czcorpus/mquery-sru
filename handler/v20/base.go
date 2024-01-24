@@ -178,18 +178,6 @@ func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 		return
 	}
 
-	recordXMLEscaping := getTypedArg(ctx, "recordXMLEscaping", fcsResponse.RecordXMLEscaping)
-	if err := recordXMLEscaping.Validate(); err != nil {
-		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.DCUnsupportedRecordPacking,
-			Ident:   "recordXMLEscaping",
-			Message: err.Error(),
-		})
-		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
-		return
-	}
-	fcsResponse.RecordXMLEscaping = recordXMLEscaping
-
 	var operation Operation = OperationExplain
 	if ctx.Request.URL.Query().Has("operation") {
 		operation = getTypedArg(ctx, "operation", fcsResponse.Operation)
@@ -207,6 +195,18 @@ func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 		return
 	}
 	fcsResponse.Operation = operation
+
+	recordXMLEscaping := getTypedArg(ctx, "recordXMLEscaping", fcsResponse.RecordXMLEscaping)
+	if err := recordXMLEscaping.Validate(); err != nil {
+		fcsResponse.General.AddError(general.FCSError{
+			Code:    general.DCUnsupportedRecordPacking,
+			Ident:   "recordXMLEscaping",
+			Message: err.Error(),
+		})
+		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
+		return
+	}
+	fcsResponse.RecordXMLEscaping = recordXMLEscaping
 
 	code := http.StatusOK
 	switch fcsResponse.Operation {
