@@ -22,8 +22,8 @@ package main
 import (
 	"bufio"
 	"fcs/corpus"
+	"fcs/query/parser/basic"
 	"fcs/query/parser/fcsql"
-	"fcs/query/parser/simple"
 	"fmt"
 	"os"
 	"strings"
@@ -44,21 +44,21 @@ func repl(translate func(string)) {
 }
 
 func translateBasicQuery(input string) {
-	ast, err := simple.ParseQuery(
+	ast, err := basic.ParseQuery(
 		input,
 		[]corpus.PosAttr{
 			{
-				ID:                 "id1",
-				Name:               "word",
-				Layer:              "text",
-				IsLayerDefault:     true,
-				IsSimpleSearchAttr: true,
+				ID:                "id1",
+				Name:              "word",
+				Layer:             "text",
+				IsLayerDefault:    true,
+				IsBasicSearchAttr: true,
 			},
 			{
-				ID:                 "id2",
-				Name:               "lemma",
-				Layer:              "lemma",
-				IsSimpleSearchAttr: true,
+				ID:                "id2",
+				Name:              "lemma",
+				Layer:             "lemma",
+				IsBasicSearchAttr: true,
 			},
 			{
 				ID:    "id3",

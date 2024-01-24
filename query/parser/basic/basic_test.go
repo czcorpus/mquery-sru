@@ -16,30 +16,32 @@
 //  You should have received a copy of the GNU General Public License
 //  along with MQUERY.  If not, see <https://www.gnu.org/licenses/>.
 
-package simple
+package basic
 
 import (
-	"fcs/corpus"
 	"fmt"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-// ParseQuery parses FCS-QL and returns an abstract syntax
-// tree which can be used to generate CQL.
-func ParseQuery(
-	q string,
-	posAttrs []corpus.PosAttr,
-	smapping corpus.StructureMapping,
-) (*Query, error) {
-	ans, err := Parse("query", []byte(q)) // Debug(true))
-	if err != nil {
-		return nil, err
+func TestBasicParser(t *testing.T) {
+	queries := []string{
+		`cat`,
+		`"cat"`,
+		`cat AND dog`,
+		`"grumpy cat"`,
+		`"grumpy cat" AND dog`,
+		`"grumpy cat" OR "lazy dog"`,
+		`cat AND (mouse OR "lazy dog")`,
 	}
-	tAns, ok := ans.(*Query)
-	if !ok {
-		return nil, fmt.Errorf("invalid AST type produced by parser")
+
+	for i, q := range queries {
+		ans, err := Parse(fmt.Sprintf("test_%d", i), []byte(q)) // Debug(true))
+		assert.NoError(t, err)
+		if ans != nil {
+			fmt.Printf("ans = %#v\n", ans.(*Query).Generate())
+		}
+
 	}
-	tAns.
-		SetStructureMapping(smapping).
-		SetPosAttrs(posAttrs)
-	return tAns, nil
 }
