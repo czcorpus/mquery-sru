@@ -35,5 +35,20 @@ const (
 
 type FCSGeneralResponse struct {
 	Version string
-	Error   *FCSError
+	Errors  []FCSError
+	Fatal   bool
+}
+
+func (r *FCSGeneralResponse) AddError(fcsError FCSError) {
+	if fcsError.IsFatal() {
+		r.Fatal = true
+		if fcsError.Overthrow() {
+			r.Errors = r.Errors[0:0]
+		}
+	}
+	r.Errors = append(r.Errors, fcsError)
+}
+
+func (r *FCSGeneralResponse) HasFatalError() bool {
+	return len(r.Errors) > 0 && r.Fatal
 }
