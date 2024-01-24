@@ -34,18 +34,18 @@ import (
 )
 
 const (
-	OperationExplain       Operation     = "explain"
-	OperationScan          Operation     = "scan"
-	OperationSearchRetrive Operation     = "searchRetrieve"
-	QueryTypeCQL           QueryType     = "cql"
-	QueryTypeFCS           QueryType     = "fcs"
-	RecordPackingXML       RecordPacking = "xml"
-	RecordPackingString    RecordPacking = "string"
+	OperationExplain        Operation         = "explain"
+	OperationScan           Operation         = "scan"
+	OperationSearchRetrive  Operation         = "searchRetrieve"
+	QueryTypeCQL            QueryType         = "cql"
+	QueryTypeFCS            QueryType         = "fcs"
+	RecordXMLEscapingXML    RecordXMLEscaping = "xml"
+	RecordXMLEscapingString RecordXMLEscaping = "string" // TODO for now unsupported
 
 	SearchRetrArgVersion            SearchRetrArg = "version"
 	SearchRetrStartRecord           SearchRetrArg = "startRecord"
 	SearchMaximumRecords            SearchRetrArg = "maximumRecords"
-	SearchRetrArgRecordPacking      SearchRetrArg = "recordPacking"
+	SearchRetrArgRecordXMLEscaping  SearchRetrArg = "recordXMLEscaping"
 	SearchRetrArgOperation          SearchRetrArg = "operation"
 	SearchRetrArgQuery              SearchRetrArg = "query"
 	SearchRetrArgQueryType          SearchRetrArg = "queryType"
@@ -54,7 +54,7 @@ const (
 	SearchRetrArgFCSRewritesAllowed SearchRetrArg = "x-fcs-rewrites-allowed"
 
 	ExplainArgVersion                ExplainArg = "version"
-	ExplainArgRecordPacking          ExplainArg = "recordPacking"
+	ExplainArgRecordXMLEscaping      ExplainArg = "recordXMLEscaping"
 	ExplainArgOperation              ExplainArg = "operation"
 	ExplainArgFCSEndpointDescription ExplainArg = "x-fcs-endpoint-description"
 
@@ -88,13 +88,13 @@ func (qt QueryType) String() string {
 
 // ----
 
-type RecordPacking string
+type RecordXMLEscaping string
 
-func (rp RecordPacking) Validate() error {
-	if rp == RecordPackingString || rp == RecordPackingXML {
+func (rp RecordXMLEscaping) Validate() error {
+	if rp == RecordXMLEscapingXML {
 		return nil
 	}
-	return fmt.Errorf("unknown record packing: %s", rp)
+	return fmt.Errorf("unsupported record XML escaping: %s", rp)
 }
 
 // ----
@@ -105,7 +105,7 @@ func (sra SearchRetrArg) Validate() error {
 	if sra == SearchRetrArgVersion ||
 		sra == SearchRetrStartRecord ||
 		sra == SearchMaximumRecords ||
-		sra == SearchRetrArgRecordPacking ||
+		sra == SearchRetrArgRecordXMLEscaping ||
 		sra == SearchRetrArgOperation ||
 		sra == SearchRetrArgQuery ||
 		sra == SearchRetrArgQueryType ||
@@ -127,7 +127,7 @@ type ExplainArg string
 
 func (arg ExplainArg) Validate() error {
 	if arg == ExplainArgVersion ||
-		arg == ExplainArgRecordPacking ||
+		arg == ExplainArgRecordXMLEscaping ||
 		arg == ExplainArgOperation ||
 		arg == ExplainArgFCSEndpointDescription {
 		return nil
@@ -163,13 +163,14 @@ func (a *FCSSubHandlerV20) produceResponse(ctx *gin.Context, fcsResponse *FCSRes
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
+	ctx.Writer.Header().Set("Content-Type", "application/xml")
 }
 
 func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.FCSGeneralResponse) {
 	fcsResponse := &FCSResponse{
-		General:       fcsGeneralResponse,
-		RecordPacking: RecordPackingXML,
-		Operation:     OperationExplain,
+		General:           fcsGeneralResponse,
+		RecordXMLEscaping: RecordXMLEscapingXML,
+		Operation:         OperationExplain,
 	}
 
 	if fcsResponse.General.HasFatalError() {
@@ -177,22 +178,17 @@ func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 		return
 	}
 
-	recordPacking := getTypedArg(ctx, "recordPacking", fcsResponse.RecordPacking)
-	if err := recordPacking.Validate(); err != nil {
+	recordXMLEscaping := getTypedArg(ctx, "recordXMLEscaping", fcsResponse.RecordXMLEscaping)
+	if err := recordXMLEscaping.Validate(); err != nil {
 		fcsResponse.General.AddError(general.FCSError{
 			Code:    general.DCUnsupportedRecordPacking,
-			Ident:   "recordPacking",
+			Ident:   "recordXMLEscaping",
 			Message: err.Error(),
 		})
 		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
 		return
 	}
-	if recordPacking == "xml" {
-		ctx.Writer.Header().Set("Content-Type", "application/xml")
-	} else if recordPacking == "string" {
-		ctx.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	}
-	fcsResponse.RecordPacking = recordPacking
+	fcsResponse.RecordXMLEscaping = recordXMLEscaping
 
 	var operation Operation = OperationExplain
 	if ctx.Request.URL.Query().Has("operation") {

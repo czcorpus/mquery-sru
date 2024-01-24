@@ -1,8 +1,9 @@
 <sru:records>
-  {{ range .Results }}
+  {{ $recordPacking := .RecordPacking -}}
+  {{ range .SearchRetrieve.Results }}
     <sru:record>
       <sru:recordSchema>http://clarin.eu/fcs/resource</sru:recordSchema>
-      <sru:recordPacking>xml</sru:recordPacking>
+      <sru:recordPacking>{{ $recordPacking }}</sru:recordPacking>
       <sru:recordData>
         <fcs:Resource xmlns:fcs="http://clarin.eu/fcs/resource" pid="{{ .PID }}"{{ if .Web }} ref="{{ .Web }}"{{ end }}>
           <fcs:ResourceFragment>

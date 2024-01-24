@@ -85,9 +85,9 @@ type FCSSearchRetrieve struct {
 }
 
 type FCSResponse struct {
-	General       general.FCSGeneralResponse
-	RecordPacking RecordPacking
-	Operation     Operation
+	General           general.FCSGeneralResponse
+	RecordXMLEscaping RecordXMLEscaping
+	Operation         Operation
 
 	Explain        FCSExplain
 	SearchRetrieve FCSSearchRetrieve

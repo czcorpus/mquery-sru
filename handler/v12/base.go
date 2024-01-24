@@ -38,7 +38,7 @@ const (
 	OperationScan          Operation     = "scan"
 	OperationSearchRetrive Operation     = "searchRetrieve"
 	RecordPackingXML       RecordPacking = "xml"
-	RecordPackingString    RecordPacking = "string"
+	RecordPackingString    RecordPacking = "string" // TODO for now unsupported
 
 	SearchRetrArgVersion       SearchRetrArg = "version"
 	SearchRetrArgRecordPacking SearchRetrArg = "recordPacking"
@@ -68,10 +68,10 @@ func (op Operation) Validate() error {
 type RecordPacking string
 
 func (rp RecordPacking) Validate() error {
-	if rp == RecordPackingString || rp == RecordPackingXML {
+	if rp == RecordPackingXML {
 		return nil
 	}
-	return fmt.Errorf("unknown record packing: %s", rp)
+	return fmt.Errorf("unsupported record packing: %s", rp)
 }
 
 // ----
@@ -136,6 +136,7 @@ func (a *FCSSubHandlerV12) produceResponse(ctx *gin.Context, fcsResponse *FCSRes
 		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
+	ctx.Writer.Header().Set("Content-Type", "application/xml")
 }
 
 func (a *FCSSubHandlerV12) Handle(ctx *gin.Context, fcsGeneralResponse general.FCSGeneralResponse) {
@@ -158,11 +159,6 @@ func (a *FCSSubHandlerV12) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 		})
 		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
 		return
-	}
-	if recordPacking == "xml" {
-		ctx.Writer.Header().Set("Content-Type", "application/xml")
-	} else if recordPacking == "string" {
-		ctx.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	}
 	fcsResponse.RecordPacking = recordPacking
 
