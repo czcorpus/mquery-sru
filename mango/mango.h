@@ -98,6 +98,7 @@ typedef struct CollsRetVal {
 typedef struct KWICRowsRetval {
     KWICRowsV value;
     PosInt size;
+    PosInt concSize;
     const char * err;
     int errorCode;
 } KWICRowsRetval;

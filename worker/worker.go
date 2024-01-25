@@ -150,6 +150,10 @@ func (w *Worker) concExample(args rdb.ConcExampleArgs) *results.ConcExample {
 		ans.Error = err.Error()
 		return &ans
 	}
+	log.Debug().
+		Str("query", args.Query).
+		Int("concSize", concEx.ConcSize).
+		Msg("obtained concordance result")
 	parser := conc.NewLineParser(args.Attrs)
 	ans.Lines = parser.Parse(concEx)
 	ans.ConcSize = concEx.ConcSize

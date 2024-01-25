@@ -136,10 +136,12 @@ func (r *RoundRobinLineSel) Next() bool {
 	}
 	if !r.items[r.currIdx].Started {
 		r.items[r.currIdx].Started = true
-		return true
+		if len(r.items[r.currIdx].Lines.Lines) > 0 {
+			return true
+		}
 	}
 
-	foundNext := r.nextRsc()
+	foundNext := r.setNextAvailRsc()
 	if !foundNext {
 		return false
 	}
@@ -151,7 +153,7 @@ func (r *RoundRobinLineSel) Next() bool {
 	}
 	if r.items[r.currIdx].CurrLine >= len(r.items[r.currIdx].Lines.Lines) {
 		r.setCurrDepleted()
-		r.Next()
+		return r.Next()
 	}
 	return true
 }
@@ -162,7 +164,7 @@ func (r *RoundRobinLineSel) initEmpty() {
 	}
 }
 
-func (r *RoundRobinLineSel) nextRsc() bool {
+func (r *RoundRobinLineSel) setNextAvailRsc() bool {
 	r.initEmpty()
 	if r.AllDepleted() {
 		return false
