@@ -57,9 +57,10 @@ type FCSHandler struct {
 
 func (a *FCSHandler) FCSHandler(ctx *gin.Context) {
 	fcsGeneralResponse := general.FCSGeneralResponse{
-		Version: ctx.DefaultQuery("version", DefaultVersion),
-		Fatal:   false,
-		Errors:  make([]general.FCSError, 0, 10),
+		Version:        ctx.DefaultQuery("version", DefaultVersion),
+		Fatal:          false,
+		Errors:         make([]general.FCSError, 0, 10),
+		DiagXMLContext: "sruResponse",
 	}
 
 	handler, ok := a.versions[fcsGeneralResponse.Version]

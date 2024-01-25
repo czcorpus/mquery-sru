@@ -18,7 +18,9 @@
 
 package general
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type DiagnosticType int
 
@@ -44,6 +46,8 @@ func (dc DiagnosticCode) AsMessage() string {
 		return "Unsupported Parameter"
 	case DCUnsupportedContextSet:
 		return "Unsupported context set"
+	case DCUnsupportedIndex:
+		return "Unsupported index"
 	case DCDatabaseDoesNotExist:
 		return "Database does not exist"
 	case DCQuerySyntaxError:
@@ -88,6 +92,7 @@ const (
 	// CQL related diagnostics
 	DCQuerySyntaxError         DiagnosticCode = 10
 	DCUnsupportedContextSet    DiagnosticCode = 15
+	DCUnsupportedIndex         DiagnosticCode = 16
 	DCQueryCannotProcess       DiagnosticCode = 47
 	DCQueryFeatureUnsupported  DiagnosticCode = 48
 	DCFirstRecordPosOutOfRange DiagnosticCode = 61

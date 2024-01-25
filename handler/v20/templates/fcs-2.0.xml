@@ -17,7 +17,7 @@
     {{ end }}
   {{ end }}
   {{ if gt ( len .General.Errors ) 0 }}
-    {{ template "diagnostics.xml" .General.Errors }}
+    {{ template "diagnostics.xml" .General }}
   {{ end }}
 </sruResponse:explainResponse>
 {{ else }}{{ if eq .Operation "searchRetrieve" }}
@@ -28,8 +28,15 @@
     {{ template "searchret.xml" . }}
   {{ end }}
   {{ if gt ( len .General.Errors ) 0 }}
-    {{ template "diagnostics.xml" .General.Errors }}
+    {{ template "diagnostics.xml" .General }}
   {{ end }}
   <sruResponse:resultCountPrecision>info:srw/vocabulary/resultCountPrecision/1/exact</sruResponse:resultCountPrecision>
 </sruResponse:searchRetrieveResponse>
+{{ end }}{{ if eq .Operation "scan" }}
+<scan:scanResponse xmlns:scan="http://docs.oasis-open.org/ns/search-ws/scan">
+  <scan:version>2.0</scan:version>
+  {{ if gt ( len .General.Errors ) 0 }}
+    {{ template "diagnostics.xml" .General }}
+  {{ end }}
+</scan:scanResponse>
 {{ end }}{{ end }}
