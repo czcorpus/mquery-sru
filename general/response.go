@@ -43,6 +43,13 @@ type FCSGeneralResponse struct {
 	Version string
 	Errors  []FCSError
 	Fatal   bool
+
+	// Context allows us to inject the diagnostic xml
+	// into different responses, e.g.:
+	// <scan:diagnostics>....
+	// vs.
+	// <sruResponse:diagnostics>
+	DiagXMLContext string
 }
 
 func (r *FCSGeneralResponse) AddError(fcsError FCSError) {

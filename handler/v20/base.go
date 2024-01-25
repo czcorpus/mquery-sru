@@ -54,6 +54,10 @@ const (
 	SearchRetrArgFCSDataViews       SearchRetrArg = "x-fcs-dataviews"
 	SearchRetrArgFCSRewritesAllowed SearchRetrArg = "x-fcs-rewrites-allowed"
 
+	ScanArgScanClause       ScanArg = "scanClause"
+	ScanArgMaximumTerms     ScanArg = "maximumTerms"
+	ScanArgResponsePosition ScanArg = "responsePosition"
+
 	ExplainArgVersion                ExplainArg = "version"
 	ExplainArgRecordXMLEscaping      ExplainArg = "recordXMLEscaping"
 	ExplainArgOperation              ExplainArg = "operation"
@@ -122,6 +126,23 @@ func (sra SearchRetrArg) String() string {
 	return string(sra)
 }
 
+// -----
+
+type ScanArg string
+
+func (sa ScanArg) String() string {
+	return string(sa)
+}
+
+func (sa ScanArg) Validate() error {
+	if sa == ScanArgScanClause ||
+		sa == ScanArgMaximumTerms ||
+		sa == ScanArgResponsePosition {
+		return nil
+	}
+	return fmt.Errorf("unknown scan argument: %s", sa)
+}
+
 // ----
 
 type ExplainArg string
@@ -183,8 +204,11 @@ func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 	if ctx.Request.URL.Query().Has("operation") {
 		operation = getTypedArg(ctx, "operation", fcsResponse.Operation)
 
-	} else if ctx.Request.URL.Query().Has("query") {
+	} else if ctx.Request.URL.Query().Has(SearchRetrArgQuery.String()) {
 		operation = OperationSearchRetrive
+
+	} else if ctx.Request.URL.Query().Has(ScanArgScanClause.String()) {
+		operation = OperationScan
 	}
 	if err := operation.Validate(); err != nil {
 		fcsResponse.General.AddError(general.FCSError{
@@ -215,6 +239,8 @@ func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 		code = a.explain(ctx, fcsResponse)
 	case OperationSearchRetrive:
 		code = a.searchRetrieve(ctx, fcsResponse)
+	case OperationScan:
+		code = a.scan(ctx, fcsResponse)
 	}
 	a.produceResponse(ctx, fcsResponse, code)
 }
