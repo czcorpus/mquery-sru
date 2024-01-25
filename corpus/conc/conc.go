@@ -19,6 +19,7 @@
 package conc
 
 import (
+	"html"
 	"regexp"
 	"strings"
 
@@ -95,8 +96,9 @@ func (lp *LineParser) normalizeTokens(tokens []string) []string {
 	return ans
 }
 
+// parseRawLine
 func (lp *LineParser) parseRawLine(line string) ConcordanceLine {
-	items := lp.normalizeTokens(splitPatt.Split(line, -1))
+	items := lp.normalizeTokens(splitPatt.Split(html.EscapeString(line), -1))
 	if len(items)%4 != 0 {
 		log.Error().
 			Str("origLine", line).
@@ -110,6 +112,8 @@ func (lp *LineParser) parseRawLine(line string) ConcordanceLine {
 	return ConcordanceLine{Text: tokens}
 }
 
+// Parse converts Manatee-encoded concordance lines into MQuery format.
+// It also escapes strings to make them usable in XML documents.
 func (lp *LineParser) Parse(data mango.GoConcExamples) []ConcordanceLine {
 	pLines := make([]ConcordanceLine, len(data.Lines))
 	for i, line := range data.Lines {
