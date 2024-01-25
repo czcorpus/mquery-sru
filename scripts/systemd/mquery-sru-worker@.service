@@ -1,0 +1,17 @@
+[Unit]
+Description=MQuery-SRU worker num. %i
+After=network.target
+PartOf=mquery-sru-worker-all.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/mquery-sru
+ExecStart=/opt/mquery-sru/mquery-sru worker /opt/mquery-sru/conf.json
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+Restart=always
+Environment="WORKER_ID=%i"
+
+[Install]
+WantedBy=multi-user.target

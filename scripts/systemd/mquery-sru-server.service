@@ -1,0 +1,12 @@
+[Unit]
+Description=MQuery-SRU - a Clarin FCS endpoint
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/opt/mquery-sru/mquery-sru server /opt/mquery-sru/conf.json
+User=www-data
+Group=www-data
+
+[Install]
+WantedBy=multi-user.target
