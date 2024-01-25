@@ -19,8 +19,9 @@
 package results
 
 import (
-	"fcs/corpus/conc"
 	"testing"
+
+	"github.com/czcorpus/mquery-sru/corpus/conc"
 
 	"github.com/stretchr/testify/assert"
 )

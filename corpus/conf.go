@@ -48,7 +48,7 @@ const (
 // combining similar attribute types (e.g. annotation).
 // In Manatee, no such thing is defined but it is
 // nevertheless supported via configuration of corpora
-// in MQuery-FCS where each positional attribute belongs
+// in MQuery-SRU where each positional attribute belongs
 // to a specific layer.
 type LayerType string
 
@@ -89,7 +89,7 @@ type PosAttr struct {
 
 	// Layer defines a layer the attribute is attached to
 	// (this is not supported directly by Manatee so it
-	// is configured and supported in MQuery-FCS)
+	// is configured and supported in MQuery-SRU)
 	Layer LayerType `json:"layer"`
 
 	// IsBasicSearchAttr defines whether the attribute is
@@ -116,7 +116,7 @@ type StructureMapping struct {
 }
 
 // CorpusSetup is a complete corpus configuration
-// (it is part of MQuery-FCS configuration)
+// (it is part of MQuery-SRU configuration)
 type CorpusSetup struct {
 	PID string `json:"pid"`
 

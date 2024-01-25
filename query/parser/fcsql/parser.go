@@ -19,8 +19,9 @@
 package fcsql
 
 import (
-	"fcs/corpus"
 	"fmt"
+
+	"github.com/czcorpus/mquery-sru/corpus"
 )
 
 // ParseQuery parses FCS-QL and returns an abstract syntax

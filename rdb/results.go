@@ -20,8 +20,9 @@ package rdb
 
 import (
 	"encoding/json"
-	"fcs/results"
 	"fmt"
+
+	"github.com/czcorpus/mquery-sru/results"
 )
 
 type WorkerResult struct {

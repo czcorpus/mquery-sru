@@ -19,9 +19,10 @@
 package results
 
 import (
-	"fcs/corpus/conc"
-	"fcs/mango"
 	"fmt"
+
+	"github.com/czcorpus/mquery-sru/corpus/conc"
+	"github.com/czcorpus/mquery-sru/mango"
 )
 
 type item struct {

@@ -20,15 +20,16 @@
 package v20
 
 import (
-	"fcs/cnf"
-	"fcs/corpus"
-	"fcs/general"
-	"fcs/handler/common"
-	"fcs/rdb"
 	"fmt"
 	"net/http"
 	"path/filepath"
 	"text/template"
+
+	"github.com/czcorpus/mquery-sru/cnf"
+	"github.com/czcorpus/mquery-sru/corpus"
+	"github.com/czcorpus/mquery-sru/general"
+	"github.com/czcorpus/mquery-sru/handler/common"
+	"github.com/czcorpus/mquery-sru/rdb"
 
 	"github.com/gin-gonic/gin"
 )

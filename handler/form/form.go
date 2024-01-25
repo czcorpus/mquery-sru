@@ -1,9 +1,10 @@
 package form
 
 import (
-	"fcs/corpus"
 	"net/http"
 	"path/filepath"
+
+	"github.com/czcorpus/mquery-sru/corpus"
 
 	"text/template"
 

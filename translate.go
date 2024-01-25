@@ -21,12 +21,13 @@ package main
 
 import (
 	"bufio"
-	"fcs/corpus"
-	"fcs/query/parser/basic"
-	"fcs/query/parser/fcsql"
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/czcorpus/mquery-sru/corpus"
+	"github.com/czcorpus/mquery-sru/query/parser/basic"
+	"github.com/czcorpus/mquery-sru/query/parser/fcsql"
 )
 
 func repl(translate func(string)) {

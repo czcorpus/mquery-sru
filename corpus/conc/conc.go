@@ -19,9 +19,10 @@
 package conc
 
 import (
-	"fcs/mango"
 	"regexp"
 	"strings"
+
+	"github.com/czcorpus/mquery-sru/mango"
 
 	"github.com/rs/zerolog/log"
 )

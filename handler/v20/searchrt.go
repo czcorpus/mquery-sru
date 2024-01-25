@@ -21,18 +21,19 @@ package v20
 
 import (
 	"encoding/json"
-	"fcs/corpus"
-	"fcs/general"
-	"fcs/mango"
-	"fcs/query/compiler"
-	"fcs/query/parser/basic"
-	"fcs/query/parser/fcsql"
-	"fcs/rdb"
-	"fcs/results"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/czcorpus/mquery-sru/corpus"
+	"github.com/czcorpus/mquery-sru/general"
+	"github.com/czcorpus/mquery-sru/mango"
+	"github.com/czcorpus/mquery-sru/query/compiler"
+	"github.com/czcorpus/mquery-sru/query/parser/basic"
+	"github.com/czcorpus/mquery-sru/query/parser/fcsql"
+	"github.com/czcorpus/mquery-sru/rdb"
+	"github.com/czcorpus/mquery-sru/results"
 
 	"github.com/gin-gonic/gin"
 )

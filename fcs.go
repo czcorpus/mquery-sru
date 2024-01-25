@@ -39,13 +39,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
-	"fcs/cnf"
-	"fcs/general"
-	"fcs/handler"
-	"fcs/handler/form"
-	"fcs/monitoring"
-	"fcs/rdb"
-	"fcs/worker"
+	"github.com/czcorpus/mquery-sru/cnf"
+	"github.com/czcorpus/mquery-sru/general"
+	"github.com/czcorpus/mquery-sru/handler"
+	"github.com/czcorpus/mquery-sru/handler/form"
+	"github.com/czcorpus/mquery-sru/monitoring"
+	"github.com/czcorpus/mquery-sru/rdb"
+	"github.com/czcorpus/mquery-sru/worker"
 )
 
 var (
@@ -146,10 +146,10 @@ func main() {
 	}
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "CNC-FCS - A specialized corpus querying server\n\n")
+		fmt.Fprintf(os.Stderr, "MQuery-SRU - A Manatee-open based SRU endpoint.\n\n")
 		fmt.Fprintf(os.Stderr, "Usage:\n\t%s [options] server [config.json]\n\t", filepath.Base(os.Args[0]))
 		fmt.Fprintf(os.Stderr, "Usage:\n\t%s [options] worker [config.json]\n\t", filepath.Base(os.Args[0]))
-		fmt.Fprintf(os.Stderr, "Usage:\n\t%s transform [basic/advanced]\n\t", filepath.Base(os.Args[0]))
+		fmt.Fprintf(os.Stderr, "Usage:\n\t%s translate [basic/advanced]\n\t", filepath.Base(os.Args[0]))
 		fmt.Fprintf(os.Stderr, "%s [options] version\n", filepath.Base(os.Args[0]))
 		flag.PrintDefaults()
 	}
@@ -157,9 +157,9 @@ func main() {
 	action := flag.Arg(0)
 	switch action {
 	case "version":
-		fmt.Printf("cnc-fcs %s\nbuild date: %s\nlast commit: %s\n", version.Version, version.BuildDate, version.GitCommit)
+		fmt.Printf("MQuery-SRU %s\nbuild date: %s\nlast commit: %s\n", version.Version, version.BuildDate, version.GitCommit)
 		return
-	case "transform":
+	case "translate":
 		switch flag.Arg(1) {
 		case "basic":
 			repl(translateBasicQuery)
@@ -189,7 +189,7 @@ func main() {
 	} else {
 		logging.SetupLogging(conf.LogFile, conf.LogLevel)
 	}
-	log.Info().Msg("Starting CNC-FCS")
+	log.Info().Msg("Starting MQuery-SRU")
 	cnf.ValidateAndDefaults(conf)
 	syscallChan := make(chan os.Signal, 1)
 	signal.Notify(syscallChan, os.Interrupt)

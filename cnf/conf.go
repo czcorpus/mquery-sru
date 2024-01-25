@@ -21,11 +21,12 @@ package cnf
 import (
 	"encoding/json"
 	"errors"
-	"fcs/corpus"
-	"fcs/rdb"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/czcorpus/mquery-sru/corpus"
+	"github.com/czcorpus/mquery-sru/rdb"
 
 	"github.com/czcorpus/cnc-gokit/logging"
 	"github.com/rs/zerolog/log"

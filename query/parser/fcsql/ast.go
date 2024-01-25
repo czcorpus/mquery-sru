@@ -19,10 +19,11 @@
 package fcsql
 
 import (
-	"fcs/corpus"
-	"fcs/query/compiler"
 	"fmt"
 	"strings"
+
+	"github.com/czcorpus/mquery-sru/corpus"
+	"github.com/czcorpus/mquery-sru/query/compiler"
 
 	"github.com/rs/zerolog/log"
 )
