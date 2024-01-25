@@ -1,6 +1,6 @@
 # MQuery-SRU
 
-MQuery-SRU is an easy to setup endpoint for Clarin FCS (Federated Content Search) based on
+MQuery-SRU is an easy to setup endpoint for Clarin FCS 2.0 (Federated Content Search) based on
 Manatee-open corpus search engine.
 
 ## Features
