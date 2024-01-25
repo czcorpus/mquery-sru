@@ -50,6 +50,7 @@ const (
 	SearchRetrArgOperation          SearchRetrArg = "operation"
 	SearchRetrArgQuery              SearchRetrArg = "query"
 	SearchRetrArgQueryType          SearchRetrArg = "queryType"
+	SearchRetrArgRecordSchema       SearchRetrArg = "recordSchema"
 	SearchRetrArgFCSContext         SearchRetrArg = "x-fcs-context"
 	SearchRetrArgFCSDataViews       SearchRetrArg = "x-fcs-dataviews"
 	SearchRetrArgFCSRewritesAllowed SearchRetrArg = "x-fcs-rewrites-allowed"
@@ -114,6 +115,7 @@ func (sra SearchRetrArg) Validate() error {
 		sra == SearchRetrArgOperation ||
 		sra == SearchRetrArgQuery ||
 		sra == SearchRetrArgQueryType ||
+		sra == SearchRetrArgRecordSchema ||
 		sra == SearchRetrArgFCSContext ||
 		sra == SearchRetrArgFCSDataViews ||
 		sra == SearchRetrArgFCSRewritesAllowed {
