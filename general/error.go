@@ -58,6 +58,8 @@ func (dc DiagnosticCode) AsMessage() string {
 		return "Query feature unsupported"
 	case DCFirstRecordPosOutOfRange:
 		return "First record position out of range"
+	case DCUnknownSchemaForRetrieval:
+		return "Unknown schema for retrieval"
 	case DCUnsupportedRecordPacking:
 		return "Unsupported record packing"
 	}
@@ -90,12 +92,13 @@ const (
 	DCUnsupportedParameter          DiagnosticCode = 8
 	DCDatabaseDoesNotExist          DiagnosticCode = 235
 	// CQL related diagnostics
-	DCQuerySyntaxError         DiagnosticCode = 10
-	DCUnsupportedContextSet    DiagnosticCode = 15
-	DCUnsupportedIndex         DiagnosticCode = 16
-	DCQueryCannotProcess       DiagnosticCode = 47
-	DCQueryFeatureUnsupported  DiagnosticCode = 48
-	DCFirstRecordPosOutOfRange DiagnosticCode = 61
+	DCQuerySyntaxError          DiagnosticCode = 10
+	DCUnsupportedContextSet     DiagnosticCode = 15
+	DCUnsupportedIndex          DiagnosticCode = 16
+	DCQueryCannotProcess        DiagnosticCode = 47
+	DCQueryFeatureUnsupported   DiagnosticCode = 48
+	DCFirstRecordPosOutOfRange  DiagnosticCode = 61
+	DCUnknownSchemaForRetrieval DiagnosticCode = 66
 	// Records related diagnostics
 	DCUnsupportedRecordPacking DiagnosticCode = 71
 )

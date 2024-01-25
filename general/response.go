@@ -37,6 +37,8 @@ const (
 	// states but to keep in line with the SRU specification,
 	// 200 is expected
 	ConformandGeneralServerError = 200
+
+	RecordSchema = "http://clarin.eu/fcs/resource"
 )
 
 type FCSGeneralResponse struct {

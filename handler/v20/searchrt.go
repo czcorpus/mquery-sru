@@ -158,6 +158,16 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	}
 	fcsResponse.SearchRetrieve.EchoedSRRequest.StartRecord = startRecord
 
+	recordSchema := ctx.DefaultQuery(SearchRetrArgRecordSchema.String(), general.RecordSchema)
+	if recordSchema != general.RecordSchema {
+		fcsResponse.General.AddError(general.FCSError{
+			Code:    general.DCUnknownSchemaForRetrieval,
+			Ident:   SearchMaximumRecords.String(),
+			Message: general.DCUnknownSchemaForRetrieval.AsMessage(),
+		})
+		return general.ConformantUnprocessableEntity
+	}
+
 	xMaximumRecords := ctx.DefaultQuery(SearchMaximumRecords.String(), "100")
 	maximumRecords, err := strconv.Atoi(xMaximumRecords)
 	if err != nil {
