@@ -21,14 +21,15 @@ package v12
 
 import (
 	"encoding/json"
-	"fcs/general"
-	"fcs/mango"
-	"fcs/query/compiler"
-	"fcs/query/parser/basic"
-	"fcs/rdb"
-	"fcs/results"
 	"net/http"
 	"strings"
+
+	"github.com/czcorpus/mquery-sru/general"
+	"github.com/czcorpus/mquery-sru/mango"
+	"github.com/czcorpus/mquery-sru/query/compiler"
+	"github.com/czcorpus/mquery-sru/query/parser/basic"
+	"github.com/czcorpus/mquery-sru/rdb"
+	"github.com/czcorpus/mquery-sru/results"
 
 	"github.com/gin-gonic/gin"
 )

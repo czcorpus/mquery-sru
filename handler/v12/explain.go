@@ -20,8 +20,9 @@
 package v12
 
 import (
-	"fcs/general"
 	"net/http"
+
+	"github.com/czcorpus/mquery-sru/general"
 
 	"github.com/gin-gonic/gin"
 )

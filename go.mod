@@ -1,4 +1,4 @@
-module fcs
+module github.com/czcorpus/mquery-sru
 
 go 1.20
 

@@ -19,8 +19,8 @@
 package v12
 
 import (
-	"fcs/corpus"
-	"fcs/general"
+	"github.com/czcorpus/mquery-sru/corpus"
+	"github.com/czcorpus/mquery-sru/general"
 )
 
 type FCSResourceInfo struct {

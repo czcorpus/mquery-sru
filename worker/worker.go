@@ -20,15 +20,16 @@ package worker
 
 import (
 	"encoding/json"
-	"fcs/corpus/conc"
-	"fcs/mango"
-	"fcs/rdb"
-	"fcs/results"
 	"fmt"
 	"math/rand"
 	"os"
 	"os/exec"
 	"time"
+
+	"github.com/czcorpus/mquery-sru/corpus/conc"
+	"github.com/czcorpus/mquery-sru/mango"
+	"github.com/czcorpus/mquery-sru/rdb"
+	"github.com/czcorpus/mquery-sru/results"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"

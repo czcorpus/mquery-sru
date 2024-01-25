@@ -19,12 +19,12 @@
 package handler
 
 import (
-	"fcs/cnf"
-	"fcs/corpus"
-	"fcs/general"
-	v12 "fcs/handler/v12"
-	v20 "fcs/handler/v20"
-	"fcs/rdb"
+	"github.com/czcorpus/mquery-sru/cnf"
+	"github.com/czcorpus/mquery-sru/corpus"
+	"github.com/czcorpus/mquery-sru/general"
+	v12 "github.com/czcorpus/mquery-sru/handler/v12"
+	v20 "github.com/czcorpus/mquery-sru/handler/v20"
+	"github.com/czcorpus/mquery-sru/rdb"
 
 	"github.com/gin-gonic/gin"
 )

@@ -21,8 +21,9 @@ package monitoring
 
 import (
 	"database/sql"
-	"fcs/results"
 	"time"
+
+	"github.com/czcorpus/mquery-sru/results"
 )
 
 type WorkersLoad map[string]float64

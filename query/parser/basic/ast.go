@@ -20,9 +20,10 @@ package basic
 
 import (
 	"errors"
-	"fcs/corpus"
 	"fmt"
 	"strings"
+
+	"github.com/czcorpus/mquery-sru/corpus"
 )
 
 type Query struct {

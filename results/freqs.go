@@ -20,7 +20,8 @@ package results
 
 import (
 	"errors"
-	"fcs/corpus/conc"
+
+	"github.com/czcorpus/mquery-sru/corpus/conc"
 )
 
 const (

@@ -22,9 +22,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fcs/results"
 	"fmt"
 	"time"
+
+	"github.com/czcorpus/mquery-sru/results"
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
