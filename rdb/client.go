@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/czcorpus/mquery-sru/results"
 
 	"github.com/google/uuid"
@@ -62,7 +63,7 @@ type ConcExampleArgs struct {
 }
 
 func (q Query) ToJSON() (string, error) {
-	ans, err := json.Marshal(q)
+	ans, err := sonic.Marshal(q)
 	if err != nil {
 		return "", err
 	}
@@ -71,7 +72,7 @@ func (q Query) ToJSON() (string, error) {
 
 func DecodeQuery(q string) (Query, error) {
 	var ans Query
-	err := json.Unmarshal([]byte(q), &ans)
+	err := sonic.Unmarshal([]byte(q), &ans)
 	return ans, err
 }
 
@@ -180,7 +181,7 @@ func (a *Adapter) PublishQuery(query Query) (<-chan *WorkerResult, error) {
 					)
 
 				} else {
-					err := json.Unmarshal([]byte(cmd.Val()), &result)
+					err := sonic.Unmarshal([]byte(cmd.Val()), &result)
 					if err != nil {
 						result.AttachValue(&results.ErrorResult{Error: err.Error()})
 					}
@@ -228,7 +229,7 @@ func (a *Adapter) PublishResult(channelName string, value *WorkerResult) error {
 		Str("channel", channelName).
 		Str("resultType", value.ResultType.String()).
 		Msg("publishing result")
-	data, err := json.Marshal(value)
+	data, err := sonic.Marshal(value)
 	if err != nil {
 		return fmt.Errorf("failed to serialize result: %w", err)
 	}

@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/bytedance/sonic"
 	"github.com/czcorpus/mquery-sru/results"
 )
 
@@ -32,7 +33,7 @@ type WorkerResult struct {
 }
 
 func (wr *WorkerResult) AttachValue(value results.SerializableResult) error {
-	rawValue, err := json.Marshal(value)
+	rawValue, err := sonic.Marshal(value)
 	if err != nil {
 		return err
 	}
@@ -41,7 +42,7 @@ func (wr *WorkerResult) AttachValue(value results.SerializableResult) error {
 }
 
 func CreateWorkerResult(value results.SerializableResult) (*WorkerResult, error) {
-	rawValue, err := json.Marshal(value)
+	rawValue, err := sonic.Marshal(value)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +51,7 @@ func CreateWorkerResult(value results.SerializableResult) (*WorkerResult, error)
 
 func DeserializeConcExampleResult(w *WorkerResult) (results.ConcExample, error) {
 	var ans results.ConcExample
-	err := json.Unmarshal(w.Value, &ans)
+	err := sonic.Unmarshal(w.Value, &ans)
 	if err != nil {
 		return ans, fmt.Errorf("failed to deserialize ConcExample: %w", err)
 	}

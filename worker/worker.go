@@ -19,13 +19,13 @@
 package worker
 
 import (
-	"encoding/json"
 	"fmt"
 	"math/rand"
 	"os"
 	"os/exec"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/czcorpus/mquery-sru/corpus/conc"
 	"github.com/czcorpus/mquery-sru/mango"
 	"github.com/czcorpus/mquery-sru/rdb"
@@ -104,7 +104,7 @@ func (w *Worker) tryNextQuery() error {
 	switch query.Func {
 	case "concExample":
 		var args rdb.ConcExampleArgs
-		if err := json.Unmarshal(query.Args, &args); err != nil {
+		if err := sonic.Unmarshal(query.Args, &args); err != nil {
 			return err
 		}
 		ans := w.concExample(args)
