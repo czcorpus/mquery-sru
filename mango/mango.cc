@@ -242,6 +242,7 @@ KWICRowsRetval conc_examples(
             KWICRowsRetval ans {
                 nullptr,
                 0,
+                0,
                 nullptr
             };
             return ans;
@@ -253,12 +254,14 @@ KWICRowsRetval conc_examples(
             KWICRowsRetval ans {
                 nullptr,
                 0,
+                0,
                 dynamicStr,
                 1
             };
             return ans;
         }
         conc->shuffle();
+        PosInt concSize = conc->size();
         KWICLines* kl = new KWICLines(
             corp, conc->RS(true, fromLine, fromLine+limit-1), "-1:s", "1:s",
 			attrs, attrs, "", "", limit, false);
@@ -309,6 +312,7 @@ KWICRowsRetval conc_examples(
         KWICRowsRetval ans {
             lines,
             limit,
+            concSize,
             nullptr,
             0
         };
@@ -317,6 +321,7 @@ KWICRowsRetval conc_examples(
     } catch (std::exception &e) {
         KWICRowsRetval ans {
             nullptr,
+            0,
             0,
             strdup(e.what()),
             0

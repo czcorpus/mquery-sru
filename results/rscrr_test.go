@@ -46,13 +46,29 @@ func createResource() *RoundRobinLineSel {
 	return r
 }
 
+func createResourceWithSomeEmpty() *RoundRobinLineSel {
+	r := NewRoundRobinLineSel("corp1", "corp2", "corp3")
+	r.SetRscLines("corp1", ConcExample{Lines: []conc.ConcordanceLine{}})
+	r.SetRscLines("corp2", ConcExample{Lines: []conc.ConcordanceLine{
+		{Text: conc.TokenSlice{&conc.Token{Word: "bar1"}}},
+		{Text: conc.TokenSlice{&conc.Token{Word: "bar2"}}},
+		{Text: conc.TokenSlice{&conc.Token{Word: "bar3"}}},
+	}})
+	r.SetRscLines("corp3", ConcExample{Lines: []conc.ConcordanceLine{
+		{Text: conc.TokenSlice{&conc.Token{Word: "baz1"}}},
+		{Text: conc.TokenSlice{&conc.Token{Word: "baz2"}}},
+		{Text: conc.TokenSlice{&conc.Token{Word: "baz3"}}},
+	}})
+	return r
+}
+
 func firstWord(line conc.ConcordanceLine) string {
 	return line.Text[0].Word
 }
 
 func TestEmptyWithoutFactory(t *testing.T) {
 	r := new(RoundRobinLineSel)
-	hasNext := r.nextRsc()
+	hasNext := r.setNextAvailRsc()
 	assert.False(t, hasNext)
 }
 
@@ -70,4 +86,14 @@ func TestAllDepletedWorks(t *testing.T) {
 	}
 	r.Next()
 	assert.True(t, r.AllDepleted())
+}
+
+// TestWithSomeEmpty reflects problem reported
+// in https://github.com/czcorpus/mquery-sru/issues/23
+func TestWithSomeEmpty(t *testing.T) {
+	r := createResourceWithSomeEmpty()
+	hasNext := r.Next()
+	assert.True(t, hasNext)
+	ft := firstWord(r.items[r.currIdx].Lines.Lines[0])
+	assert.Equal(t, "bar1", ft)
 }

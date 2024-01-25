@@ -117,6 +117,7 @@ func GetConcExamples(corpusPath, query string, attrs []string, fromLine, maxItem
 		C.longlong(fromLine), C.longlong(maxItems))
 	var ret GoConcExamples
 	ret.Lines = make([]string, 0, maxItems)
+	ret.ConcSize = int(ans.concSize)
 	if ans.err != nil {
 		err := fmt.Errorf(C.GoString(ans.err))
 		defer C.free(unsafe.Pointer(ans.err))
