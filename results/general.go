@@ -19,8 +19,9 @@
 package results
 
 import (
-	"encoding/json"
 	"time"
+
+	"github.com/bytedance/sonic"
 )
 
 const (
@@ -36,7 +37,7 @@ type JobLog struct {
 }
 
 func (jl *JobLog) ToJSON() (string, error) {
-	ans, err := json.Marshal(jl)
+	ans, err := sonic.Marshal(jl)
 	if err != nil {
 		return "", err
 	}

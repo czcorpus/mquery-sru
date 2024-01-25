@@ -20,12 +20,12 @@
 package v20
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/bytedance/sonic"
 	"github.com/czcorpus/mquery-sru/corpus"
 	"github.com/czcorpus/mquery-sru/general"
 	"github.com/czcorpus/mquery-sru/mango"
@@ -229,7 +229,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			})
 			return general.ConformantUnprocessableEntity
 		}
-		args, err := json.Marshal(rdb.ConcExampleArgs{
+		args, err := sonic.Marshal(rdb.ConcExampleArgs{
 			CorpusPath: a.corporaConf.GetRegistryPath(corpusName),
 			Query:      query,
 			Attrs:      retrieveAttrs,
