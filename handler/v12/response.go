@@ -57,8 +57,15 @@ type FCSExplain struct {
 	NumberOfRecords     int
 }
 
+type EchoedSRRequest struct {
+	Version     string
+	StartRecord int
+	Query       string
+}
+
 type FCSSearchRetrieve struct {
-	Results []FCSSearchRow
+	Results         []FCSSearchRow
+	EchoedSRRequest EchoedSRRequest
 }
 
 type FCSResponse struct {

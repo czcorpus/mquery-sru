@@ -17,3 +17,8 @@
   {{ end }}
 </sru:records>
 {{ end }}
+<sru:echoedSearchRetrieveRequest>
+  <sru:version>1.2</sru:version>
+  <sru:query>{{ .SearchRetrieve.EchoedSRRequest.Query }}</sru:query>
+  <sru:startRecord>{{ .SearchRetrieve.EchoedSRRequest.StartRecord }}</sru:startRecord>
+</sru:echoedSearchRetrieveRequest>
