@@ -38,9 +38,8 @@ type Token struct {
 
 type FCSSearchRow struct {
 	Position int
-	PID      string
-	Web      string
-	Ref      string
+	PID      string // persistent identifier of original data
+	Ref      string // url reference to original data
 	Tokens   []Token
 }
 
