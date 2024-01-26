@@ -76,6 +76,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		})
 		return general.ConformantStatusBadRequest
 	}
+	fcsResponse.SearchRetrieve.EchoedSRRequest.Query = fcsQuery
 
 	xStartRecord := ctx.DefaultQuery(SearchRetrStartRecord.String(), "1")
 	startRecord, err := strconv.Atoi(xStartRecord)
@@ -95,6 +96,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		})
 		return general.ConformantUnprocessableEntity
 	}
+	fcsResponse.SearchRetrieve.EchoedSRRequest.StartRecord = startRecord
 
 	xMaximumRecords := ctx.DefaultQuery(SearchMaximumRecords.String(), "100")
 	maximumRecords, err := strconv.Atoi(xMaximumRecords)
