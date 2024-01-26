@@ -194,8 +194,9 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		waits[i] = wait
 	}
 
-	// gather results
-	results := make([]results.ConcExample, len(corpora))
+	// using fromResource, we will cycle through available resources' results and their lines
+	fromResource := results.NewRoundRobinLineSel(corpora...)
+
 	for i, wait := range waits {
 		rawResult := <-wait
 		result, err := rdb.DeserializeConcExampleResult(rawResult)
@@ -203,44 +204,63 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			fcsResponse.General.AddError(general.FCSError{
 				Code:    general.DCGeneralSystemError,
 				Ident:   err.Error(),
-				Message: "General system error",
+				Message: general.DCGeneralSystemError.AsMessage(),
 			})
 			return http.StatusInternalServerError
 		}
-
 		if err := result.Err(); err != nil {
-			fcsResponse.General.AddError(general.FCSError{
-				Code:    general.DCGeneralSystemError,
-				Ident:   err.Error(),
-				Message: "General system error",
-			})
 			if err.Error() == mango.ErrRowsRangeOutOfConc.Error() {
-				return general.ConformantUnprocessableEntity
+				fromResource.RscSetErrorAt(i, err)
+
+			} else {
+				fcsResponse.General.AddError(general.FCSError{
+					Code:    general.DCQueryCannotProcess,
+					Ident:   err.Error(),
+					Message: general.DCQueryCannotProcess.AsMessage(),
+				})
+				return http.StatusInternalServerError
 			}
-			return http.StatusInternalServerError
 		}
-		results[i] = result
+		fromResource.SetRscLines(corpora[i], result)
+	}
+	if fromResource.AllHasOutOfRangeError() {
+		fcsResponse.General.AddError(general.FCSError{
+			Code:    general.DCFirstRecordPosOutOfRange,
+			Ident:   fromResource.GetFirstError().Error(),
+			Message: general.DCFirstRecordPosOutOfRange.AsMessage(),
+		})
+		return general.ConformantUnprocessableEntity
+
+	} else if fromResource.HasFatalError() {
+		fcsResponse.General.AddError(general.FCSError{
+			Code:    general.DCQueryCannotProcess,
+			Ident:   fromResource.GetFirstError().Error(),
+			Message: general.DCQueryCannotProcess.AsMessage(),
+		})
+		return general.ConformandGeneralServerError
 	}
 
 	// transform results
-	fcsResponse.SearchRetrieve.Results = make([]FCSSearchRow, 0, 100)
-	for i, r := range results {
-		for _, l := range r.Lines {
-			row := FCSSearchRow{
-				Position: len(fcsResponse.SearchRetrieve.Results) + 1,
-				PID:      corpora[i],
-				Ref:      a.corporaConf.Resources[corpora[i]].URI,
-			}
-			for _, t := range l.Text {
-				token := Token{
-					Text: t.Word,
-					Hit:  t.Strong,
-				}
-				row.Tokens = append(row.Tokens, token)
+	fcsResponse.SearchRetrieve.Results = make([]FCSSearchRow, 0, maximumRecords)
 
-			}
-			fcsResponse.SearchRetrieve.Results = append(fcsResponse.SearchRetrieve.Results, row)
+	for len(fcsResponse.SearchRetrieve.Results) < maximumRecords && fromResource.Next() {
+		segmentPos := 1
+		row := FCSSearchRow{
+			Position: len(fcsResponse.SearchRetrieve.Results) + 1,
+			PID:      fromResource.CurrRscName(),
+			Ref:      a.corporaConf.Resources[fromResource.CurrRscName()].URI,
 		}
+		item := fromResource.CurrLine()
+		for _, t := range item.Text {
+			token := Token{
+				Text: t.Word,
+				Hit:  t.Strong,
+			}
+			segmentPos += len(t.Word) + 1 // with space between words
+			row.Tokens = append(row.Tokens, token)
+
+		}
+		fcsResponse.SearchRetrieve.Results = append(fcsResponse.SearchRetrieve.Results, row)
 	}
 	return http.StatusOK
 }
