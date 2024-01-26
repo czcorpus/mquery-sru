@@ -21,6 +21,7 @@ package v12
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/bytedance/sonic"
@@ -76,6 +77,44 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return general.ConformantStatusBadRequest
 	}
 
+	xStartRecord := ctx.DefaultQuery(SearchRetrStartRecord.String(), "1")
+	startRecord, err := strconv.Atoi(xStartRecord)
+	if err != nil {
+		fcsResponse.General.AddError(general.FCSError{
+			Code:    general.DCUnsupportedParameterValue,
+			Ident:   SearchRetrStartRecord.String(),
+			Message: general.DCUnsupportedParameterValue.AsMessage(),
+		})
+		return general.ConformantUnprocessableEntity
+	}
+	if startRecord < 1 {
+		fcsResponse.General.AddError(general.FCSError{
+			Code:    general.DCUnsupportedParameterValue,
+			Ident:   SearchRetrStartRecord.String(),
+			Message: general.DCUnsupportedParameterValue.AsMessage(),
+		})
+		return general.ConformantUnprocessableEntity
+	}
+
+	xMaximumRecords := ctx.DefaultQuery(SearchMaximumRecords.String(), "100")
+	maximumRecords, err := strconv.Atoi(xMaximumRecords)
+	if err != nil {
+		fcsResponse.General.AddError(general.FCSError{
+			Code:    general.DCUnsupportedParameterValue,
+			Ident:   SearchMaximumRecords.String(),
+			Message: general.DCUnsupportedParameterValue.AsMessage(),
+		})
+		return general.ConformantUnprocessableEntity
+	}
+	if maximumRecords < 1 {
+		fcsResponse.General.AddError(general.FCSError{
+			Code:    general.DCUnsupportedParameterValue,
+			Ident:   SearchMaximumRecords.String(),
+			Message: general.DCUnsupportedParameterValue.AsMessage(),
+		})
+		return general.ConformantUnprocessableEntity
+	}
+
 	corpora := a.corporaConf.Resources.GetCorpora()
 	if ctx.Request.URL.Query().Has(ctx.Query(SearchRetrArgFCSContext.String())) {
 		corpora = strings.Split(ctx.Query(SearchRetrArgFCSContext.String()), ",")
@@ -127,7 +166,8 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			CorpusPath: a.corporaConf.GetRegistryPath(corpusName),
 			Query:      query,
 			Attrs:      retrieveAttrs,
-			MaxItems:   10,
+			StartLine:  startRecord - 1,
+			MaxItems:   maximumRecords,
 		})
 		if err != nil {
 			fcsResponse.General.AddError(general.FCSError{

@@ -42,11 +42,17 @@ const (
 	RecordPackingString    RecordPacking = "string" // TODO for now unsupported
 
 	SearchRetrArgVersion       SearchRetrArg = "version"
+	SearchRetrStartRecord      SearchRetrArg = "startRecord"
+	SearchMaximumRecords       SearchRetrArg = "maximumRecords"
 	SearchRetrArgRecordPacking SearchRetrArg = "recordPacking"
 	SearchRetrArgOperation     SearchRetrArg = "operation"
 	SearchRetrArgQuery         SearchRetrArg = "query"
 	SearchRetrArgFCSContext    SearchRetrArg = "x-fcs-context"
 	SearchRetrArgFCSDataViews  SearchRetrArg = "x-fcs-dataviews"
+
+	ScanArgScanClause       ScanArg = "scanClause"
+	ScanArgMaximumTerms     ScanArg = "maximumTerms"
+	ScanArgResponsePosition ScanArg = "responsePosition"
 
 	ExplainArgVersion                ExplainArg = "version"
 	ExplainArgRecordPacking          ExplainArg = "recordPacking"
@@ -81,6 +87,8 @@ type SearchRetrArg string
 
 func (sra SearchRetrArg) Validate() error {
 	if sra == SearchRetrArgVersion ||
+		sra == SearchRetrStartRecord ||
+		sra == SearchMaximumRecords ||
 		sra == SearchRetrArgRecordPacking ||
 		sra == SearchRetrArgOperation ||
 		sra == SearchRetrArgQuery ||
@@ -93,6 +101,23 @@ func (sra SearchRetrArg) Validate() error {
 
 func (sra SearchRetrArg) String() string {
 	return string(sra)
+}
+
+// -----
+
+type ScanArg string
+
+func (sa ScanArg) String() string {
+	return string(sa)
+}
+
+func (sa ScanArg) Validate() error {
+	if sa == ScanArgScanClause ||
+		sa == ScanArgMaximumTerms ||
+		sa == ScanArgResponsePosition {
+		return nil
+	}
+	return fmt.Errorf("unknown scan argument: %s", sa)
 }
 
 // ----
@@ -155,6 +180,27 @@ func (a *FCSSubHandlerV12) Handle(
 		return
 	}
 
+	var operation Operation = OperationExplain
+	if ctx.Request.URL.Query().Has("operation") {
+		operation = getTypedArg(ctx, "operation", fcsResponse.Operation)
+
+	} else if ctx.Request.URL.Query().Has(SearchRetrArgQuery.String()) {
+		operation = OperationSearchRetrive
+
+	} else if ctx.Request.URL.Query().Has(ScanArgScanClause.String()) {
+		operation = OperationScan
+	}
+	if err := operation.Validate(); err != nil {
+		fcsResponse.General.AddError(general.FCSError{
+			Code:    general.DCUnsupportedOperation,
+			Ident:   "operation",
+			Message: fmt.Sprintf("Unsupported operation: %s", operation),
+		})
+		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
+		return
+	}
+	fcsResponse.Operation = operation
+
 	recordPacking := getTypedArg(ctx, "recordPacking", fcsResponse.RecordPacking)
 	if err := recordPacking.Validate(); err != nil {
 		fcsResponse.General.AddError(general.FCSError{
@@ -167,24 +213,14 @@ func (a *FCSSubHandlerV12) Handle(
 	}
 	fcsResponse.RecordPacking = recordPacking
 
-	operation := getTypedArg(ctx, "operation", fcsResponse.Operation)
-	if err := operation.Validate(); err != nil {
-		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.DCUnsupportedOperation,
-			Ident:   "operation",
-			Message: fmt.Sprintf("Unsupported operation: %s", operation),
-		})
-		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
-		return
-	}
-	fcsResponse.Operation = operation
-
 	code := http.StatusOK
 	switch fcsResponse.Operation {
 	case OperationExplain:
 		code = a.explain(ctx, fcsResponse)
 	case OperationSearchRetrive:
 		code = a.searchRetrieve(ctx, fcsResponse)
+	case OperationScan:
+		code = a.scan(ctx, fcsResponse)
 	}
 	a.produceResponse(ctx, fcsResponse, code)
 }
