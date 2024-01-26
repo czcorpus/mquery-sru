@@ -1,13 +1,13 @@
 all: test build
 
 build:
-	manabuild fcs
+	manabuild mquery-sru
 
 install:
-	cp ./fcs /usr/local/bin
+	cp ./mquery-sru /usr/local/bin
 
 clean:
-	rm fcs
+	rm mquery-sru
 
 test:
 	go test ./...
