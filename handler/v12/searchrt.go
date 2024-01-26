@@ -187,8 +187,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			row := FCSSearchRow{
 				Position: len(fcsResponse.SearchRetrieve.Results) + 1,
 				PID:      corpora[i],
-				Web:      "TODO",
-				Ref:      "TODO",
+				Ref:      a.corporaConf.Resources[corpora[i]].URI,
 			}
 			for _, t := range l.Text {
 				token := Token{

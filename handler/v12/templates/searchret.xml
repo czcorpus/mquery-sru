@@ -6,7 +6,7 @@
       <sru:recordSchema>http://clarin.eu/fcs/resource</sru:recordSchema>
       <sru:recordPacking>{{ $recordPacking }}</sru:recordPacking>
       <sru:recordData>
-        <fcs:Resource xmlns:fcs="http://clarin.eu/fcs/resource" pid="{{ .PID }}"{{ if .Web }} ref="{{ .Web }}"{{ end }}>
+        <fcs:Resource xmlns:fcs="http://clarin.eu/fcs/resource" pid="{{ .PID }}"{{ if .Ref }} ref="{{ .Ref }}"{{ end }}>
           <fcs:ResourceFragment>
             {{ template "basicDataView.xml" . }}
           </fcs:ResourceFragment>

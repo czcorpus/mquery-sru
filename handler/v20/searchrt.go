@@ -326,8 +326,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			LayerAttrs: a.corporaConf.Resources[fromResource.CurrRscName()].GetDefinedLayers().ToOrderedSlice(),
 			Position:   len(fcsResponse.SearchRetrieve.Results) + 1,
 			PID:        fromResource.CurrRscName(),
-			Web:        "TODO",
-			Ref:        "TODO",
+			Ref:        a.corporaConf.Resources[fromResource.CurrRscName()].URI,
 		}
 		item := fromResource.CurrLine()
 		for j, t := range item.Text {
