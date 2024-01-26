@@ -42,6 +42,8 @@ const (
 	RecordPackingString    RecordPacking = "string" // TODO for now unsupported
 
 	SearchRetrArgVersion       SearchRetrArg = "version"
+	SearchRetrStartRecord      SearchRetrArg = "startRecord"
+	SearchMaximumRecords       SearchRetrArg = "maximumRecords"
 	SearchRetrArgRecordPacking SearchRetrArg = "recordPacking"
 	SearchRetrArgOperation     SearchRetrArg = "operation"
 	SearchRetrArgQuery         SearchRetrArg = "query"
@@ -81,6 +83,8 @@ type SearchRetrArg string
 
 func (sra SearchRetrArg) Validate() error {
 	if sra == SearchRetrArgVersion ||
+		sra == SearchRetrStartRecord ||
+		sra == SearchMaximumRecords ||
 		sra == SearchRetrArgRecordPacking ||
 		sra == SearchRetrArgOperation ||
 		sra == SearchRetrArgQuery ||
