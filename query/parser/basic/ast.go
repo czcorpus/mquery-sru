@@ -33,15 +33,29 @@ type Query struct {
 	errors              []error
 }
 
-func (q *Query) getDefaultAttrsExp(word string) string {
+func (q *Query) getDefaultAttrsExp(word string, negated bool) string {
 	var ans strings.Builder
-	for i, p := range q.posAttrs {
-		if p.IsBasicSearchAttr {
-			if i > 0 {
-				ans.WriteString(fmt.Sprintf(` | %s="%s"`, p.Name, word))
+	if negated {
+		for i, p := range q.posAttrs {
+			if p.IsBasicSearchAttr {
+				if i > 0 {
+					ans.WriteString(fmt.Sprintf(` & %s!="%s"`, p.Name, word))
 
-			} else {
-				ans.WriteString(fmt.Sprintf(`%s="%s"`, p.Name, word))
+				} else {
+					ans.WriteString(fmt.Sprintf(`%s!="%s"`, p.Name, word))
+				}
+			}
+		}
+
+	} else {
+		for i, p := range q.posAttrs {
+			if p.IsBasicSearchAttr {
+				if i > 0 {
+					ans.WriteString(fmt.Sprintf(` | %s="%s"`, p.Name, word))
+
+				} else {
+					ans.WriteString(fmt.Sprintf(`%s="%s"`, p.Name, word))
+				}
 			}
 		}
 	}
@@ -104,7 +118,7 @@ func (q *Query) Errors() []error {
 }
 
 func (q *Query) Generate() string {
-	return q.binaryOperatorQuery.Generate(q)
+	return q.binaryOperatorQuery.Generate(q, false)
 }
 
 // -----
@@ -130,16 +144,19 @@ func (boq *binaryOperatorQuery) operatorAt(idx int) string {
 	return ""
 }
 
-func (boq *binaryOperatorQuery) Generate(ast *Query) string {
+func (boq *binaryOperatorQuery) Generate(ast *Query, isNegated bool) string {
 	var rest strings.Builder
 	for _, v := range boq.rest {
 		rest.WriteString(" " + v.nonRecursiveQuery.Generate(ast))
 	}
 	if boq.operatorAt(0) == "AND" {
 		return fmt.Sprintf(
-			"(%s within ([]{0,10} %s []{0,10} within <%s />))",
+			"((%s within ([]{0,10} %s []{0,10} within <%s />)) | (%s within ([]{0,10} %s []{0,10} within <%s />)))",
 			boq.nonRecursiveQuery.Generate(ast),
 			rest.String(),
+			ast.structureMapping.SentenceStruct,
+			rest.String(),
+			boq.nonRecursiveQuery.Generate(ast),
 			ast.structureMapping.SentenceStruct,
 		)
 
@@ -165,25 +182,17 @@ func (boq *binaryOperatorQuery) Generate(ast *Query) string {
 // ----
 
 type nonRecursiveQuery struct {
-	parenthesisExpr     *parenthesisExpr
-	unaryOperator       string
-	binaryOperatorQuery *binaryOperatorQuery
-	term                *term
+	parenthesisExpr *parenthesisExpr
+	term            *term
+	termNegation    bool
 }
 
 func (nrq *nonRecursiveQuery) Generate(ast *Query) string {
 	if nrq.parenthesisExpr != nil {
 		return nrq.parenthesisExpr.Generate(ast)
 	}
-	if nrq.binaryOperatorQuery != nil {
-		return fmt.Sprintf(
-			"%s %s",
-			nrq.unaryOperator,
-			nrq.binaryOperatorQuery.Generate(ast),
-		)
-	}
 	if nrq.term != nil {
-		return nrq.term.Generate(ast)
+		return nrq.term.Generate(ast, nrq.termNegation)
 	}
 	ast.AddError(errors.New("invalid nonRecursiveQuery state"))
 	return "??"
@@ -200,7 +209,7 @@ func (pe *parenthesisExpr) Generate(ast *Query) string {
 	// ans the only contained non-terminal is binaryOperatorQuery
 	// and it always produces an expression in parentheses.
 	// And we don't want double ones.
-	return pe.binaryOperatorQuery.Generate(ast)
+	return pe.binaryOperatorQuery.Generate(ast, false)
 }
 
 // ---
@@ -210,12 +219,12 @@ type term struct {
 	quotedText *quotedText
 }
 
-func (t *term) Generate(ast *Query) string {
+func (t *term) Generate(ast *Query, negated bool) string {
 	if t.text != nil {
-		return t.text.Generate(ast)
+		return t.text.Generate(ast, negated)
 	}
 	if t.quotedText != nil {
-		return t.quotedText.Generate(ast)
+		return t.quotedText.Generate(ast, negated)
 	}
 	ast.AddError(errors.New("invalid term state"))
 	return "??"
@@ -227,10 +236,10 @@ type quotedText struct {
 	words []*word
 }
 
-func (qt *quotedText) Generate(ast *Query) string {
+func (qt *quotedText) Generate(ast *Query, negated bool) string {
 	var ans strings.Builder
 	for _, v := range qt.words {
-		ans.WriteString(" " + ast.getDefaultAttrsExp(v.Generate(ast)))
+		ans.WriteString(" " + ast.getDefaultAttrsExp(v.Generate(ast), negated))
 	}
 	return ans.String()
 }
@@ -245,8 +254,8 @@ type text struct {
 	word *word
 }
 
-func (t *text) Generate(ast *Query) string {
-	return ast.getDefaultAttrsExp(t.word.Generate(ast))
+func (t *text) Generate(ast *Query, negated bool) string {
+	return ast.getDefaultAttrsExp(t.word.Generate(ast), negated)
 }
 
 // ------
