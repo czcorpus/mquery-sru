@@ -1,0 +1,85 @@
+{
+    "listenAddress" : "0.0.0.0",
+    "listenPort": 8989,
+    "serverReadTimeoutSecs": 600,
+    "serverWriteTimeoutSecs": 60,
+    "serverInfo": {
+        "serverName": "my",
+        "serverPort": "80",
+        "database": "fcs",
+        "databaseTitle": {
+            "en": "CNC FCS"
+        },
+        "databaseDescription": {
+            "en": "CNC API for FCS"
+        },
+        "primaryLanguage": "en"
+    },
+    "corpora": {
+        "registryDir": "/var/lib/manatee/registry",
+        "layers": {
+            "text": "word",
+            "lemma": "lemma",
+            "pos": "pos"
+        },
+        "resources": {
+            "syn2020": {
+                "pid": "syn2020",
+                "fullName": {"en": "syn2020", "cs": "syn2020"},
+                "description": {
+                    "en": "A synchronous representative and reference corpus of contemporary written Czech, containing 100 million text words.",
+                    "cs": "Synchronní reprezentativní a referenční korpus současné psané češtiny, obsahující 100 milionů textových slov."
+                },
+                "languages": ["ces"],
+                "uri": "http://wiki.korpus.cz/doku.php/cnk:syn2020",
+                "posAttrs": [
+                    {
+                        "name": "word",
+                        "id": "attr1",
+                        "layer": "text",
+                        "isBasicSearchAttr": true,
+                        "isLayerDefault": true
+                    },
+                    {
+                        "name": "lemma",
+                        "id": "attr2",
+                        "layer": "lemma",
+                        "isBasicSearchAttr": true,
+                        "isLayerDefault": true
+                    },
+                    {
+                        "name": "pos",
+                        "id": "attr3",
+                        "layer": "pos",
+                        "isLayerDefault": true
+                    },
+                    {
+                        "name": "tag",
+                        "id": "attr4",
+                        "layer": "pos"
+                    }
+                ],
+                "structureMapping": {
+
+                }
+            }
+        }
+    },
+    "redis": {
+        "host": "mquery-sru_redis_1",
+        "port": 6379,
+        "db": 7,
+        "cachePath": "/var/lib/manatee/cache.masm",
+        "queryAnswerTimeoutSecs": 600
+    },
+    "db": {
+        "host": "kontext_mariadb_1:3306",
+        "user": "kontext",
+        "password": "kontext-secret",
+        "name": "kontext",
+        "corpusTable": "kontext_corpus"
+    },
+    "logFile": "dev.log",
+    "logLevel": "debug",
+    "jobLogsDir": "job-logs"
+}
