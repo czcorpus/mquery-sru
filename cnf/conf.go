@@ -40,6 +40,7 @@ const (
 
 	dfltTimeZone       = "Europe/Prague"
 	dfltSourcesRootDir = "."
+	dfltAssetsURLPath  = "/"
 )
 
 type ServerInfo struct {
@@ -86,6 +87,7 @@ type Conf struct {
 	// SourcesRootDir is mainly used to locate html/xml templates and other
 	// assets so we can refer them in a relative way inside the code
 	SourcesRootDir string               `json:"sourcesRootDir"`
+	AssetsURLPath  string               `json:"assetsURLPath"`
 	ServerInfo     *ServerInfo          `json:"serverInfo"`
 	CorporaSetup   *corpus.CorporaSetup `json:"corpora"`
 	Redis          *rdb.Conf            `json:"redis"`
@@ -177,5 +179,12 @@ func ValidateAndDefaults(conf *Conf) {
 		log.Warn().
 			Str("sourcesRootDir", dfltSourcesRootDir).
 			Msg("sources root directory not specified, using default")
+		conf.SourcesRootDir = dfltSourcesRootDir
+	}
+	if conf.AssetsURLPath == "" {
+		log.Warn().
+			Str("assetsURLPath", dfltAssetsURLPath).
+			Msg("URL path of assets not set, using default (this is needed only for UI features)")
+		conf.AssetsURLPath = dfltAssetsURLPath
 	}
 }

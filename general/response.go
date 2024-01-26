@@ -52,6 +52,10 @@ type FCSGeneralResponse struct {
 	// vs.
 	// <sruResponse:diagnostics>
 	DiagXMLContext string
+
+	// XSLT is an optional path of a XSL template
+	// for outputting formatted (typically HTML) result
+	XSLT string
 }
 
 func (r *FCSGeneralResponse) AddError(fcsError FCSError) {

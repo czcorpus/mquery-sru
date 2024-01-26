@@ -88,6 +88,14 @@ func runApiServer(
 	engine.GET("/", FCSActions.FCSHandler)
 	engine.HEAD("/", FCSActions.FCSHandler)
 
+	viewHandler := handler.NewViewHandler(FCSActions, conf.AssetsURLPath)
+	engine.GET("/ui/view", viewHandler.Handle)
+
+	engine.StaticFS(
+		"/ui/assets",
+		gin.Dir(filepath.Join(conf.SourcesRootDir, "assets"), false),
+	)
+
 	uIActions := form.NewFormHandler(conf.CorporaSetup, conf.SourcesRootDir)
 	engine.GET("/ui/form", uIActions.Handle)
 

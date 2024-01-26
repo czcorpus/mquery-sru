@@ -38,7 +38,11 @@ const (
 )
 
 type FCSSubHandler interface {
-	Handle(ctx *gin.Context, fcsResponse general.FCSGeneralResponse)
+	Handle(
+		ctx *gin.Context,
+		fcsResponse general.FCSGeneralResponse,
+		xslt map[string]string,
+	)
 }
 
 type FCSHandler struct {
@@ -56,23 +60,29 @@ type FCSHandler struct {
 }
 
 func (a *FCSHandler) FCSHandler(ctx *gin.Context) {
-	fcsGeneralResponse := general.FCSGeneralResponse{
+	a.handleWithXSLT(
+		ctx,
+		map[string]string{},
+	)
+}
+
+func (a *FCSHandler) handleWithXSLT(ctx *gin.Context, xslt map[string]string) {
+	resp := general.FCSGeneralResponse{
 		Version:        ctx.DefaultQuery("version", DefaultVersion),
 		Fatal:          false,
 		Errors:         make([]general.FCSError, 0, 10),
 		DiagXMLContext: "sruResponse",
 	}
-
-	handler, ok := a.versions[fcsGeneralResponse.Version]
+	handler, ok := a.versions[resp.Version]
 	if !ok {
-		fcsGeneralResponse.AddError(general.FCSError{
+		resp.AddError(general.FCSError{
 			Code:    general.DCUnsupportedVersion,
 			Ident:   DefaultVersion,
-			Message: "Unsupported version " + fcsGeneralResponse.Version,
+			Message: "Unsupported version " + resp.Version,
 		})
-		fcsGeneralResponse.Version = DefaultVersion
+		resp.Version = DefaultVersion
 	}
-	handler.Handle(ctx, fcsGeneralResponse)
+	handler.Handle(ctx, resp, xslt)
 }
 
 func NewFCSHandler(
