@@ -140,7 +140,11 @@ func (a *FCSSubHandlerV12) produceResponse(ctx *gin.Context, fcsResponse *FCSRes
 	ctx.Writer.Header().Set("Content-Type", "application/xml")
 }
 
-func (a *FCSSubHandlerV12) Handle(ctx *gin.Context, fcsGeneralResponse general.FCSGeneralResponse) {
+func (a *FCSSubHandlerV12) Handle(
+	ctx *gin.Context,
+	fcsGeneralResponse general.FCSGeneralResponse,
+	xslt map[string]string,
+) {
 	fcsResponse := &FCSResponse{
 		General:       fcsGeneralResponse,
 		RecordPacking: RecordPackingXML,

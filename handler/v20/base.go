@@ -69,6 +69,10 @@ const (
 
 type Operation string
 
+func (op Operation) String() string {
+	return string(op)
+}
+
 func (op Operation) Validate() error {
 	if op == OperationExplain || op == OperationScan ||
 		op == OperationSearchRetrive {
@@ -190,7 +194,11 @@ func (a *FCSSubHandlerV20) produceResponse(ctx *gin.Context, fcsResponse *FCSRes
 	ctx.Writer.Header().Set("Content-Type", "application/xml")
 }
 
-func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.FCSGeneralResponse) {
+func (a *FCSSubHandlerV20) Handle(
+	ctx *gin.Context,
+	fcsGeneralResponse general.FCSGeneralResponse,
+	xslt map[string]string,
+) {
 	fcsResponse := &FCSResponse{
 		General:           fcsGeneralResponse,
 		RecordXMLEscaping: RecordXMLEscapingXML,
@@ -222,6 +230,7 @@ func (a *FCSSubHandlerV20) Handle(ctx *gin.Context, fcsGeneralResponse general.F
 		return
 	}
 	fcsResponse.Operation = operation
+	fcsResponse.General.XSLT = xslt[operation.String()]
 
 	recordXMLEscaping := getTypedArg(ctx, "recordXMLEscaping", fcsResponse.RecordXMLEscaping)
 	if err := recordXMLEscaping.Validate(); err != nil {
