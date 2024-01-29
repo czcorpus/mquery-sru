@@ -26,7 +26,6 @@ import (
 )
 
 func (a *FCSSubHandlerV12) scan(ctx *gin.Context, fcsResponse *FCSResponse) int {
-	fcsResponse.General.DiagXMLContext = "scan"
 	for key, _ := range ctx.Request.URL.Query() {
 		if err := ScanArg(key).Validate(); err != nil {
 			fcsResponse.General.AddError(general.FCSError{

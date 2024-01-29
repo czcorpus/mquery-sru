@@ -55,9 +55,12 @@ const (
 	SearchRetrArgFCSDataViews       SearchRetrArg = "x-fcs-dataviews"
 	SearchRetrArgFCSRewritesAllowed SearchRetrArg = "x-fcs-rewrites-allowed"
 
-	ScanArgScanClause       ScanArg = "scanClause"
-	ScanArgMaximumTerms     ScanArg = "maximumTerms"
-	ScanArgResponsePosition ScanArg = "responsePosition"
+	ScanArgVersion           ScanArg = "version"
+	ScanArgOperation         ScanArg = "operation"
+	ScanArgRecordXMLEscaping ScanArg = "recordXMLEscaping"
+	ScanArgScanClause        ScanArg = "scanClause"
+	ScanArgMaximumTerms      ScanArg = "maximumTerms"
+	ScanArgResponsePosition  ScanArg = "responsePosition"
 
 	ExplainArgVersion                ExplainArg = "version"
 	ExplainArgRecordXMLEscaping      ExplainArg = "recordXMLEscaping"
@@ -141,7 +144,10 @@ func (sa ScanArg) String() string {
 }
 
 func (sa ScanArg) Validate() error {
-	if sa == ScanArgScanClause ||
+	if sa == ScanArgVersion ||
+		sa == ScanArgOperation ||
+		sa == ScanArgRecordXMLEscaping ||
+		sa == ScanArgScanClause ||
 		sa == ScanArgMaximumTerms ||
 		sa == ScanArgResponsePosition {
 		return nil
@@ -199,6 +205,7 @@ func (a *FCSSubHandlerV20) Handle(
 	fcsGeneralResponse general.FCSGeneralResponse,
 	xslt map[string]string,
 ) {
+	fcsGeneralResponse.DiagXMLContext = "sruResponse"
 	fcsResponse := &FCSResponse{
 		General:           fcsGeneralResponse,
 		RecordXMLEscaping: RecordXMLEscapingXML,

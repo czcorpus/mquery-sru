@@ -50,6 +50,9 @@ const (
 	SearchRetrArgFCSContext    SearchRetrArg = "x-fcs-context"
 	SearchRetrArgFCSDataViews  SearchRetrArg = "x-fcs-dataviews"
 
+	ScanArgVersion          ScanArg = "version"
+	ScanArgOperation        ScanArg = "operation"
+	ScanArgRecordPacking    ScanArg = "recordPacking"
 	ScanArgScanClause       ScanArg = "scanClause"
 	ScanArgMaximumTerms     ScanArg = "maximumTerms"
 	ScanArgResponsePosition ScanArg = "responsePosition"
@@ -61,6 +64,10 @@ const (
 )
 
 type Operation string
+
+func (op Operation) String() string {
+	return string(op)
+}
 
 func (op Operation) Validate() error {
 	if op == OperationExplain || op == OperationScan ||
@@ -112,7 +119,10 @@ func (sa ScanArg) String() string {
 }
 
 func (sa ScanArg) Validate() error {
-	if sa == ScanArgScanClause ||
+	if sa == ScanArgVersion ||
+		sa == ScanArgOperation ||
+		sa == ScanArgRecordPacking ||
+		sa == ScanArgScanClause ||
 		sa == ScanArgMaximumTerms ||
 		sa == ScanArgResponsePosition {
 		return nil
@@ -170,6 +180,7 @@ func (a *FCSSubHandlerV12) Handle(
 	fcsGeneralResponse general.FCSGeneralResponse,
 	xslt map[string]string,
 ) {
+	fcsGeneralResponse.DiagXMLContext = "sru"
 	fcsResponse := &FCSResponse{
 		General:       fcsGeneralResponse,
 		RecordPacking: RecordPackingXML,
@@ -200,6 +211,7 @@ func (a *FCSSubHandlerV12) Handle(
 		return
 	}
 	fcsResponse.Operation = operation
+	fcsResponse.General.XSLT = xslt[operation.String()]
 
 	recordPacking := getTypedArg(ctx, "recordPacking", fcsResponse.RecordPacking)
 	if err := recordPacking.Validate(); err != nil {

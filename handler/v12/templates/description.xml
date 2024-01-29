@@ -14,7 +14,9 @@
         {{ range $lang, $desc := .Description }}
           <ed:Description xml:lang="{{ $lang }}">{{ $desc }}</ed:Description>
         {{ end }}
+        {{ if .URI }}
         <ed:LandingPageURI>{{ .URI }}</ed:LandingPageURI>
+        {{ end }}
         <ed:Languages>
           {{ range .Languages }}
             <ed:Language>{{ . }}</ed:Language>
