@@ -74,12 +74,13 @@ func (a *FCSHandler) handleWithXSLT(ctx *gin.Context, xslt map[string]string) {
 	}
 	handler, ok := a.versions[resp.Version]
 	if !ok {
+		handler = a.versions[DefaultVersion]
+		resp.Version = DefaultVersion
 		resp.AddError(general.FCSError{
 			Code:    general.DCUnsupportedVersion,
 			Ident:   DefaultVersion,
 			Message: "Unsupported version " + resp.Version,
 		})
-		resp.Version = DefaultVersion
 	}
 	handler.Handle(ctx, resp, xslt)
 }
