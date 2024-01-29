@@ -50,6 +50,9 @@ const (
 	SearchRetrArgFCSContext    SearchRetrArg = "x-fcs-context"
 	SearchRetrArgFCSDataViews  SearchRetrArg = "x-fcs-dataviews"
 
+	ScanArgVersion          ScanArg = "version"
+	ScanArgOperation        ScanArg = "operation"
+	ScanArgRecordPacking    ScanArg = "recordPacking"
 	ScanArgScanClause       ScanArg = "scanClause"
 	ScanArgMaximumTerms     ScanArg = "maximumTerms"
 	ScanArgResponsePosition ScanArg = "responsePosition"
@@ -112,7 +115,10 @@ func (sa ScanArg) String() string {
 }
 
 func (sa ScanArg) Validate() error {
-	if sa == ScanArgScanClause ||
+	if sa == ScanArgVersion ||
+		sa == ScanArgOperation ||
+		sa == ScanArgRecordPacking ||
+		sa == ScanArgScanClause ||
 		sa == ScanArgMaximumTerms ||
 		sa == ScanArgResponsePosition {
 		return nil
