@@ -68,10 +68,9 @@ func (a *FCSHandler) FCSHandler(ctx *gin.Context) {
 
 func (a *FCSHandler) handleWithXSLT(ctx *gin.Context, xslt map[string]string) {
 	resp := general.FCSGeneralResponse{
-		Version:        ctx.DefaultQuery("version", DefaultVersion),
-		Fatal:          false,
-		Errors:         make([]general.FCSError, 0, 10),
-		DiagXMLContext: "sruResponse",
+		Version: ctx.DefaultQuery("version", DefaultVersion),
+		Fatal:   false,
+		Errors:  make([]general.FCSError, 0, 10),
 	}
 	handler, ok := a.versions[resp.Version]
 	if !ok {

@@ -65,6 +65,10 @@ const (
 
 type Operation string
 
+func (op Operation) String() string {
+	return string(op)
+}
+
 func (op Operation) Validate() error {
 	if op == OperationExplain || op == OperationScan ||
 		op == OperationSearchRetrive {
@@ -176,6 +180,7 @@ func (a *FCSSubHandlerV12) Handle(
 	fcsGeneralResponse general.FCSGeneralResponse,
 	xslt map[string]string,
 ) {
+	fcsGeneralResponse.DiagXMLContext = "sru"
 	fcsResponse := &FCSResponse{
 		General:       fcsGeneralResponse,
 		RecordPacking: RecordPackingXML,
@@ -206,6 +211,7 @@ func (a *FCSSubHandlerV12) Handle(
 		return
 	}
 	fcsResponse.Operation = operation
+	fcsResponse.General.XSLT = xslt[operation.String()]
 
 	recordPacking := getTypedArg(ctx, "recordPacking", fcsResponse.RecordPacking)
 	if err := recordPacking.Validate(); err != nil {

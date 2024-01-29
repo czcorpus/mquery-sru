@@ -205,6 +205,7 @@ func (a *FCSSubHandlerV20) Handle(
 	fcsGeneralResponse general.FCSGeneralResponse,
 	xslt map[string]string,
 ) {
+	fcsGeneralResponse.DiagXMLContext = "sruResponse"
 	fcsResponse := &FCSResponse{
 		General:           fcsGeneralResponse,
 		RecordXMLEscaping: RecordXMLEscapingXML,

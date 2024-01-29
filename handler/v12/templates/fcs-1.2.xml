@@ -17,7 +17,7 @@
     {{ end }}
   {{ end }}
   {{ if gt ( len .General.Errors ) 0 }}
-    {{ template "diagnostics.xml" .General.Errors }}
+    {{ template "diagnostics.xml" .General }}
   {{ end }}
 </sru:explainResponse>
 {{ end }}{{ if eq .Operation "searchRetrieve" }}
@@ -28,14 +28,14 @@
     {{ template "searchret.xml" . }}
   {{ end }}
   {{ if gt ( len .General.Errors ) 0 }}
-    {{ template "diagnostics.xml" .General.Errors }}
+    {{ template "diagnostics.xml" .General }}
   {{ end }}
 </sru:searchRetrieveResponse>
 {{ end }}{{ if eq .Operation "scan" }}
 <sru:scanResponse xmlns:scan="http://docs.oasis-open.org/ns/search-ws/scan">
   <sru:version>1.2</sru:version>
   {{ if gt ( len .General.Errors ) 0 }}
-    {{ template "diagnostics.xml" .General.Errors }}
+    {{ template "diagnostics.xml" .General }}
   {{ end }}
 </sru:scanResponse>
 {{ end }}
