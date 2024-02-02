@@ -19,6 +19,16 @@
                 color: #333;
                 background-color: #fff;
             }
+            header {
+                background-color: #333333;
+                color: #DEDEDE;
+                padding: 1em;
+                border-radius: 5px;
+                margin-bottom: 1em;
+            }
+            header p {
+                margin: 0;
+            }
             h1 {
                 text-align: center;
                 font-size: 20px;
@@ -40,11 +50,22 @@
                 padding-left: 1em;
                 padding-right: 1em;
             }
+            .code {
+                font-family: 'Courier New', Courier, monospace;
+            }
+            .hit {
+                color: rgb(226, 0, 122);
+            }
         </style>
 
     </head>
     <body>
-        <h1>query result</h1>
+        <header>
+            <h1>MQuery-SRU</h1>
+            <p class="query">
+                <xsl:apply-templates select="/sruResponse:searchRetrieveResponse/sruResponse:echoedSearchRetrieveRequest" />
+            </p>
+        </header>
         <xsl:apply-templates select="sruResponse:records" />
     </body>
 </html>
@@ -73,7 +94,11 @@
 
 
 <xsl:template match="hits:Hit">
-    <strong><xsl:value-of select="." /></strong>
+    <strong class="hit"><xsl:value-of select="." /></strong>
+</xsl:template>
+
+<xsl:template match="/sruResponse:searchRetrieveResponse/sruResponse:echoedSearchRetrieveRequest">
+    query: <span class="code"><xsl:value-of select="sruResponse:query" /></span>
 </xsl:template>
 
 </xsl:stylesheet>
