@@ -30,7 +30,7 @@ import (
 	"github.com/czcorpus/mquery-sru/query/parser/fcsql"
 )
 
-func repl(translate func(string)) {
+func repl(translate func(string) error) {
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Print("> ")
@@ -40,11 +40,13 @@ func repl(translate func(string)) {
 			return
 		}
 		input = strings.TrimSpace(input)
-		translate(input)
+		if err := translate(input); err != nil {
+			fmt.Println(err)
+		}
 	}
 }
 
-func translateBasicQuery(input string) {
+func translateBasicQuery(input string) error {
 	ast, err := basic.ParseQuery(
 		input,
 		[]corpus.PosAttr{
@@ -78,20 +80,17 @@ func translateBasicQuery(input string) {
 	)
 
 	if err != nil {
-		fmt.Printf("parsing error: %s\n", err)
-		os.Exit(1)
+		return fmt.Errorf("parsing error: %w", err)
 	}
 	outQuery := ast.Generate()
 	for i, err := range ast.Errors() {
-		fmt.Printf("semantic error[%d]: %s\n", i, err)
-	}
-	if len(ast.Errors()) > 0 {
-		os.Exit(1)
+		return fmt.Errorf("semantic error[%d]: %w", i, err)
 	}
 	println(outQuery)
+	return nil
 }
 
-func translateFCSQuery(input string) {
+func translateFCSQuery(input string) error {
 	ast, err := fcsql.ParseQuery(
 		input,
 		[]corpus.PosAttr{
@@ -123,15 +122,12 @@ func translateFCSQuery(input string) {
 	)
 
 	if err != nil {
-		fmt.Printf("parsing error: %s\n", err)
-		os.Exit(1)
+		return fmt.Errorf("parsing error: %w", err)
 	}
 	outQuery := ast.Generate()
 	for i, err := range ast.Errors() {
-		fmt.Printf("semantic error[%d]: %s\n", i, err)
-	}
-	if len(ast.Errors()) > 0 {
-		os.Exit(1)
+		return fmt.Errorf("semantic error[%d]: %w", i, err)
 	}
 	println(outQuery)
+	return nil
 }
