@@ -18,12 +18,24 @@
 
 package common
 
-import "text/template"
+import (
+	"html"
+	"text/template"
+
+	"github.com/czcorpus/cnc-gokit/strutil"
+)
 
 func GetTemplateFunctions() template.FuncMap {
 	return template.FuncMap{
 		"add": func(i, j int) int {
 			return i + j
+		},
+		"escape": html.EscapeString,
+		"smartTruncate100": func(s string) string {
+			return strutil.SmartTruncate(s, 100)
+		},
+		"smartTruncate200": func(s string) string {
+			return strutil.SmartTruncate(s, 200)
 		},
 	}
 }

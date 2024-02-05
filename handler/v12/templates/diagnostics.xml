@@ -8,7 +8,7 @@
         <diag:uri>info:srw/diagnostic/{{ .Type }}</diag:uri>
       {{ end }}
       <diag:details>{{ .Ident }}</diag:details>
-      <diag:message>{{ .Message }}</diag:message>
+      <diag:message>{{ escape (smartTruncate200 .Message) }}</diag:message>
     </diag:diagnostic>
   {{ end }}
 </{{ .DiagXMLContext }}:diagnostics>
