@@ -26,6 +26,7 @@ import (
 
 	"github.com/czcorpus/cnc-gokit/collections"
 	"github.com/czcorpus/cnc-gokit/fs"
+	"github.com/czcorpus/mquery-sru/mango"
 	"github.com/rs/zerolog/log"
 )
 
@@ -41,7 +42,6 @@ const (
 
 	dfltMaxRecords      = 50
 	dfltNumberOfRecords = 25
-	totalMaxRecords     = 1000 // this is limited by our current manatee.cc wrapper
 )
 
 // LayerType is a layer above positional attributes
@@ -361,8 +361,9 @@ func (cs *CorporaSetup) ValidateAndDefaults(confContext string) error {
 			Int("value", dfltMaxRecords).
 			Msgf("%s.maximumRecords not set, using default", confContext)
 
-	} else if cs.MaximumRecords > totalMaxRecords {
-		return fmt.Errorf("`%s.maximumRecords must be at most %d", confContext, totalMaxRecords)
+	} else if cs.MaximumRecords > mango.MaxRecordsInternalLimit {
+		return fmt.Errorf(
+			"`%s.maximumRecords must be at most %d", confContext, mango.MaxRecordsInternalLimit)
 	}
 	if cs.NumberOfRecords == 0 {
 		cs.NumberOfRecords = dfltNumberOfRecords
