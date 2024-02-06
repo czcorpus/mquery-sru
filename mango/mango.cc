@@ -43,7 +43,7 @@ KWICRowsRetval conc_examples(
             };
             return ans;
         }
-        if (conc->size() < fromLine || conc->size() < fromLine+limit-1) {
+        if (conc->size() < fromLine) {
             const char* msg = "line range out of result size";
             char* dynamicStr = static_cast<char*>(malloc(strlen(msg) + 1));
             strcpy(dynamicStr, msg);
