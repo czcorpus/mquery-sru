@@ -1,0 +1,28 @@
+version: "3"
+
+services:
+  mquery-sru-server-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    command: bash -c "./mquery-sru server conf.test.json"
+    networks:
+      - redis
+    ports:
+      - 8989:8989
+
+  mquery-sru-worker-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    command: bash -c "WORKER_ID=0 ./mquery-sru worker conf.test.json"
+    networks:
+      - redis
+
+  redis:
+    image: redis:latest
+    networks:
+      - redis
+
+networks:
+  redis: {}

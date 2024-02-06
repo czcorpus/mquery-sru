@@ -17,17 +17,12 @@
     },
     "corpora": {
         "registryDir": "/var/lib/manatee/registry",
-        "resources": [
-            {
-                "id": "syn2020",
-                "pid": "syn2020",
-                "fullName": {"en": "syn2020", "cs": "syn2020"},
-                "description": {
-                    "en": "A synchronous representative and reference corpus of contemporary written Czech, containing 100 million text words.",
-                    "cs": "Synchronní reprezentativní a referenční korpus současné psané češtiny, obsahující 100 milionů textových slov."
-                },
-                "languages": ["ces"],
-                "uri": "http://wiki.korpus.cz/doku.php/cnk:syn2020",
+        "resources": {
+            "A": {
+                "pid": "A",
+                "fullName": {"en": "A"},
+                "description": {"en": "Test corpus A"},
+                "languages": ["eng"],
                 "posAttrs": [
                     {
                         "name": "word",
@@ -44,22 +39,48 @@
                         "isLayerDefault": true
                     },
                     {
-                        "name": "pos",
-                        "id": "attr3",
+                        "name": "tag",
+                        "id": "attr4",
                         "layer": "pos",
+                        "isLayerDefault": true
+                    }
+                ],
+                "structureMapping": {
+
+                }
+            },
+            "B": {
+                "pid": "B",
+                "fullName": {"en": "B"},
+                "description": {"en": "Test corpus B"},
+                "languages": ["eng"],
+                "posAttrs": [
+                    {
+                        "name": "word",
+                        "id": "attr1",
+                        "layer": "text",
+                        "isBasicSearchAttr": true,
+                        "isLayerDefault": true
+                    },
+                    {
+                        "name": "lemma",
+                        "id": "attr2",
+                        "layer": "lemma",
+                        "isBasicSearchAttr": true,
                         "isLayerDefault": true
                     },
                     {
                         "name": "tag",
                         "id": "attr4",
-                        "layer": "pos"
+                        "layer": "pos",
+                        "isLayerDefault": true
                     }
                 ],
                 "structureMapping": {
 
                 }
             }
-        ]
+        }
     },
     "redis": {
         "host": "mquery-sru_redis_1",
@@ -75,7 +96,7 @@
         "name": "kontext",
         "corpusTable": "kontext_corpus"
     },
-    "logFile": "dev.log",
+    "logFile": "test.log",
     "logLevel": "debug",
     "jobLogsDir": "job-logs"
 }

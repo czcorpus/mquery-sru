@@ -3,7 +3,7 @@ version: "3"
 services:
   mquery-sru-server:
     build: .
-    command: bash -c "export PATH=$PATH:/usr/local/go/bin && ./mquery-sru server conf-docker.json"
+    command: bash -c "./mquery-sru server conf-docker.json"
     volumes:
       - corpora-data:/var/lib/manatee
     networks:
@@ -13,7 +13,7 @@ services:
 
   mquery-sru-worker:
     build: .
-    command: bash -c "export PATH=$PATH:/usr/local/go/bin && WORKER_ID=0 ./mquery-sru worker conf-docker.json"
+    command: bash -c "WORKER_ID=0 ./mquery-sru worker conf-docker.json"
     volumes:
       - corpora-data:/var/lib/manatee
     networks:
@@ -26,3 +26,6 @@ services:
 
 networks:
   redis: {}
+
+volumes:
+  corpora-data: {}
