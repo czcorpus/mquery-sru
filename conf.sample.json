@@ -69,15 +69,6 @@
         "channelResultPrefix": "res",
         "queryAnswerTimeoutSecs": 600
     },
-    "db" : {
-        "host": "host",
-        "name": "name",
-        "user": "user",
-        "password": "....",
-        "port": 3306,
-        "poolSize": 5,
-        "corpusTable": "kontext_corpus"
-    },
     "logFile": "",
     "logLevel": "debug",
     "language": "en",
