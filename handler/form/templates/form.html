@@ -21,9 +21,9 @@
                 width: 100%;
                 padding: 10px;
                 margin: 0 0 0 10px;
-                border: 1px solid #ccc;
+                border: 1px solid rgb(0, 158, 224);
                 border-radius: 4px;
-                background-color: #f8f8f8;
+                background-color: rgb(255, 255, 255);
                 color: #333;
                 font-size: 16px;
                 line-height: 1.5;
@@ -56,11 +56,24 @@
                 font-weight: bold;
                 color: #333;
             }
+            form .button-wrapper {
+                text-align: center;
+            }
+            form .button-wrapper button[type=submit] {
+                display: inline-block;
+                padding: 0.3em 1.2em;
+                border-radius: 3px;
+                border-width: 1px;
+                border-color: rgb(0, 158, 224);
+                color: rgb(0, 158, 224);
+                background-color: rgb(255, 255, 255);
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
         </style>
 
     </head>
     <body>
-        <h1>MQuery-SRU testing form</h1>
+        <h1>{{ enMsgFrom .ServerInfo.DatabaseTitle }}</h1>
         <section class="form-container">
             <form action="/" method="GET" class="query-form">
                 <input type="hidden" name="operation" value="searchRetrieve" />
@@ -75,6 +88,15 @@
                     {{ end }}
                 </fieldset>
                 <fieldset>
+                    <legend>options</legend>
+                    <label>
+                        <select id="query-output-type-switch">
+                            <option value="html">HTML</option>
+                            <option value="xml">XML</option>
+                        </select>
+                    </label>
+                </fieldset>
+                <fieldset>
                     <legend>query</legend>
                     <div class="input">
                         <select name="queryType">
@@ -84,12 +106,17 @@
                         <input type="text" name="query" class="query-input" />
                     </div>
                 </fieldset>
-                <button type="submit">submit</button>
+                <div class="button-wrapper">
+                    <button type="submit">submit</button>
+                </div>
             </form>
         </section>
         <script type="text/javascript">
+            const form = document.querySelector('.query-form');
             const selectedResources = {};
             const checkboxes = document.querySelectorAll("input[type=checkbox]");
+            const xmlResultURL = "/";
+            const htmlResultURL = "/ui/view";
             checkboxes.forEach((cb) => {
                 cb.addEventListener('change', function (evt) {
                     selectedResources[evt.target.value] = cb.checked;
@@ -102,7 +129,23 @@
                     inp.value = res;
                 });
             });
-            const form = document.querySelector('.query-form');
+            const outTypeSwitch = document.getElementById('query-output-type-switch');
+
+            if (outTypeSwitch.value === 'xml') {
+                form.action = xmlResultURL;
+
+            } else if (outTypeSwitch.value === 'html') {
+                form.action = htmlResultURL;
+            }
+            outTypeSwitch.addEventListener('change', (evt) => {
+                if (evt.target.value === 'xml') {
+                    form.action = xmlResultURL;
+
+                } else if (evt.target.value === 'html') {
+                    form.action = htmlResultURL;
+                }
+                console.log(">> ", evt.target.value);
+            });
             const queryInput = document.querySelector('.query-input');
             form.addEventListener('submit', function (evt) {
                 if (queryInput.value === "") {

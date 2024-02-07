@@ -37,5 +37,12 @@ func GetTemplateFunctions() template.FuncMap {
 		"smartTruncate200": func(s string) string {
 			return strutil.SmartTruncate(s, 200)
 		},
+		"enMsgFrom": func(msg map[string]string) string {
+			v, ok := msg["en"]
+			if !ok {
+				return "??"
+			}
+			return v
+		},
 	}
 }

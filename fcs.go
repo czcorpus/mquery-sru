@@ -96,7 +96,8 @@ func runApiServer(
 		gin.Dir(filepath.Join(conf.SourcesRootDir, "assets"), false),
 	)
 
-	uIActions := form.NewFormHandler(conf.CorporaSetup, conf.SourcesRootDir)
+	uIActions := form.NewFormHandler(
+		conf.ServerInfo, conf.CorporaSetup, conf.SourcesRootDir)
 	engine.GET("/ui/form", uIActions.Handle)
 
 	logger := monitoring.NewWorkerJobLogger(conf.TimezoneLocation())
