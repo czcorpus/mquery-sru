@@ -4,7 +4,8 @@
     xmlns:sruResponse="http://docs.oasis-open.org/ns/search-ws/sruResponse"
     xmlns:hits="http://clarin.eu/fcs/dataview/hits"
     xmlns:fcs="http://clarin.eu/fcs/resource"
-    xmlns:diag="http://docs.oasis-open.org/ns/search-ws/diagnostic">
+    xmlns:diag="http://docs.oasis-open.org/ns/search-ws/diagnostic"
+    xmlns:adv="http://clarin.eu/fcs/dataview/advanced">
 <xsl:template match="/sruResponse:searchRetrieveResponse">
 <html>
     <head>
@@ -45,7 +46,7 @@
                 margin-top: 0;
             }
             div.rec {
-                border: 1px solid #ababab;
+                border: 1px solid rgb(209, 236, 191);
                 border-radius: 5px;
                 margin-bottom: 0.5em;
             }
@@ -53,9 +54,9 @@
                 color: #dd1111;
             }
             h3.rec-pid {
-            	   display: flex;
-                background-color: #ababab;
-                color: #eeeeee;
+            	display: flex;
+                background-color: rgb(209, 236, 191);
+                color: #333333;
                 margin: 0;
                 padding-right: 1em;
                 font-size: 11px;
@@ -80,6 +81,32 @@
             .hit {
                 color: rgb(226, 0, 122);
             }
+            .resource-block .controls {
+                text-align: right;
+                padding-right: 1em;
+            }
+            .resource-block .controls .detail {
+                display: inline-block;
+                cursor: pointer;
+                font-size: 80%;
+                text-decoration: underline;
+                padding-top: 0.5em;
+            }
+            .resource-block .controls .detail:hover {
+                text-decoration: none;
+            }
+            .detailed-view {
+                overflow-x: auto;
+                padding: 0.2em 0.4em 0.2em 0.4em;
+            }
+            .detailed-view table.layers {
+                border-spacing: 0;
+                font-size: 12px;
+            }
+            .detailed-view table.layers td {
+                border: 1px solid #444444;
+                padding: 0.3em 0.7em;
+            }
         </style>
 
     </head>
@@ -97,6 +124,31 @@
         </header>
         <xsl:apply-templates select="sruResponse:diagnostics" />
         <xsl:apply-templates select="sruResponse:records" />
+        <script type="text/javascript">
+            <![CDATA[
+            document.addEventListener('DOMContentLoaded', function() {
+                const rsrcBlocks = document.querySelectorAll('.resource-block');
+                for (let i = 0; i < rsrcBlocks.length; i++) {
+                    rsrcBlocks[i].querySelector('.detail').addEventListener('click', (evt) => {
+                        const hitsView = rsrcBlocks[i].querySelector('.hits-view');
+                        const hitsStyle = window.getComputedStyle(hitsView);
+                        const detailedView = rsrcBlocks[i].querySelector('.detailed-view');
+                        const detailedStyle = window.getComputedStyle(detailedView);
+
+                        if (hitsStyle.display === 'none') {
+                            hitsView.style.display = 'block';
+                            detailedView.style.display = 'none';
+
+                        } else {
+                            hitsView.style.display = 'none';
+                            detailedView.style.display = 'block';
+                        }
+                    });
+                }
+
+            });
+            ]]>
+        </script>
     </body>
 </html>
 </xsl:template>
@@ -122,15 +174,40 @@
 </xsl:template>
 
 <xsl:template match="fcs:Resource">
+    <div class="resource-block">
+        <div class="controls"><a class="detail">toggle view</a></div>
+        <xsl:apply-templates />
+    </div>
+</xsl:template>
+
+<xsl:template match="fcs:ResourceFragment/fcs:DataView[@type='application/x-clarin-fcs-hits+xml']">
     <xsl:apply-templates />
 </xsl:template>
 
-<xsl:template match="fcs:ResourceFragment/fcs:DataView">
-    <xsl:apply-templates />
+<xsl:template match="fcs:ResourceFragment/fcs:DataView[@type='application/x-clarin-fcs-adv+xml']">
+    <div class="detailed-view" style="display:none">
+        <table class="layers">
+            <tbody>
+                <xsl:apply-templates select="adv:Advanced/adv:Layers/adv:Layer" />
+            </tbody>
+        </table>
+    </div>
+</xsl:template>
+
+<xsl:template match="adv:Advanced/adv:Layers/adv:Layer">
+    <tr>
+    <xsl:apply-templates select="adv:Span" />
+    </tr>
+</xsl:template>
+
+<xsl:template match="adv:Span">
+    <td>
+        <xsl:value-of select="." />
+    </td>
 </xsl:template>
 
 <xsl:template match="hits:Result">
-    <p>
+    <p class="hits-view">
         <xsl:apply-templates />
     </p>
 </xsl:template>
