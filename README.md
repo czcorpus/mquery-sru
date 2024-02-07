@@ -52,7 +52,7 @@ To run the endpoint, you need at least
 2. defined path to your Manatee corpora registry (= configuration) files
 2. defined corpora along with:
     * positional attributes to be exposed
-    * mapping of FCS-QL's `within` structures (`s`, `sentence', `p` etc.) to your specific corpora structures
+    * mapping of FCS-QL's `within` structures (`s`, `sentence`, `p` etc.) to your specific corpora structures
 3. address and port of your Redis service plus a number of database to be used for passing queries and results around
 
 See `conf.sample.json` for detailed info.
