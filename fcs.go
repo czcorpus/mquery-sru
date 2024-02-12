@@ -30,7 +30,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -46,7 +45,6 @@ import (
 	"github.com/czcorpus/mquery-sru/handler/form"
 	"github.com/czcorpus/mquery-sru/monitoring"
 	"github.com/czcorpus/mquery-sru/rdb"
-	"github.com/czcorpus/mquery-sru/test"
 	"github.com/czcorpus/mquery-sru/worker"
 )
 
@@ -161,7 +159,6 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Usage:\n\t%s [options] server [config.json]\n\t", filepath.Base(os.Args[0]))
 		fmt.Fprintf(os.Stderr, "Usage:\n\t%s [options] worker [config.json]\n\t", filepath.Base(os.Args[0]))
 		fmt.Fprintf(os.Stderr, "Usage:\n\t%s translate [basic/advanced]\n\t", filepath.Base(os.Args[0]))
-		fmt.Fprintf(os.Stderr, "Usage:\n\t%s test corpgen <corpname> <wordCount> <tagCount> <wordsPerSentence>\n\t", filepath.Base(os.Args[0]))
 		fmt.Fprintf(os.Stderr, "%s [options] version\n", filepath.Base(os.Args[0]))
 		flag.PrintDefaults()
 	}
@@ -179,39 +176,6 @@ func main() {
 			repl(translateFCSQuery)
 		default:
 			fmt.Println("Unknown query type")
-			os.Exit(2)
-		}
-	case "test":
-		switch flag.Arg(1) {
-		case "corpgen":
-			corpName := flag.Arg(2)
-			wordCount := flag.Arg(3)
-			iWordCount, err := strconv.Atoi(wordCount)
-			if err != nil {
-				fmt.Printf("Invalid wordCount: %s", err)
-				os.Exit(2)
-			}
-			tagCount := flag.Arg(4)
-			iTagCount, err := strconv.Atoi(tagCount)
-			if err != nil {
-				fmt.Printf("Invalid tagCount: %s", err)
-				os.Exit(2)
-			}
-			wordsPerSentence := flag.Arg(5)
-			iWordsPerSentence, err := strconv.Atoi(wordsPerSentence)
-			if err != nil {
-				fmt.Printf("Invalid wordsPerSentence: %s", err)
-				os.Exit(2)
-			}
-			err = test.GenerateTestCorpus(corpName, iWordCount, iTagCount, iWordsPerSentence)
-			if err != nil {
-				fmt.Printf("Failed to generate test corpus data: %s", err)
-				os.Exit(2)
-			}
-			fmt.Println("Test corpus data generated")
-			return
-		default:
-			fmt.Println("Unknown test action")
 			os.Exit(2)
 		}
 	}
