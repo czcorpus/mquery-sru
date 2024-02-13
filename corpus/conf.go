@@ -40,8 +40,7 @@ const (
 
 	DefaultLayerType = LayerTypeText
 
-	dfltMaxRecords      = 50
-	dfltNumberOfRecords = 25
+	dfltMaxRecords = 50
 )
 
 // LayerType is a layer above positional attributes
@@ -361,9 +360,9 @@ type CorporaSetup struct {
 	// located.
 	RegistryDir string `json:"registryDir"`
 
-	// MaximumRecords specifies how many records are we willing
-	// to provide on a single search (via maximumRecords URL arg;
-	// otherwise, a dk)
+	// MaximumRecords specifies max. number of records returned
+	// in a "searchRetrieve" search. In case of MQuery, this is
+	// also limited by its internals to `MaxRecordsInternalLimit`
 	MaximumRecords int `json:"maximumRecords"`
 
 	// NumberOfRecords is a default number of records provided
@@ -401,15 +400,6 @@ func (cs *CorporaSetup) ValidateAndDefaults(confContext string) error {
 	} else if cs.MaximumRecords > mango.MaxRecordsInternalLimit {
 		return fmt.Errorf(
 			"`%s.maximumRecords must be at most %d", confContext, mango.MaxRecordsInternalLimit)
-	}
-	if cs.NumberOfRecords == 0 {
-		cs.NumberOfRecords = dfltNumberOfRecords
-		log.Warn().
-			Int("value", dfltNumberOfRecords).
-			Msgf("%s.numberOfRecords not set, using default", confContext)
-
-	} else if cs.NumberOfRecords > cs.MaximumRecords {
-		return fmt.Errorf("`%s.numberOfRecords is too high, must be at most %d", confContext, cs.MaximumRecords)
 	}
 	return cs.Resources.Validate("resources")
 }
