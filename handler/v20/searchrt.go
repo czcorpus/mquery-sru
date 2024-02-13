@@ -177,15 +177,17 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return general.ConformantUnprocessableEntity
 	}
 
-	xMaximumRecords := ctx.DefaultQuery(SearchMaximumRecords.String(), "100")
-	maximumRecords, err := strconv.Atoi(xMaximumRecords)
-	if err != nil {
-		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.DCUnsupportedParameterValue,
-			Ident:   SearchMaximumRecords.String(),
-			Message: general.DCUnsupportedParameterValue.AsMessage(),
-		})
-		return general.ConformantUnprocessableEntity
+	maximumRecords := a.corporaConf.MaximumRecords
+	if xMaximumRecords := ctx.Query(SearchMaximumRecords.String()); len(xMaximumRecords) > 0 {
+		maximumRecords, err = strconv.Atoi(xMaximumRecords)
+		if err != nil {
+			fcsResponse.General.AddError(general.FCSError{
+				Code:    general.DCUnsupportedParameterValue,
+				Ident:   SearchMaximumRecords.String(),
+				Message: general.DCUnsupportedParameterValue.AsMessage(),
+			})
+			return general.ConformantUnprocessableEntity
+		}
 	}
 	if maximumRecords < 1 {
 		fcsResponse.General.AddError(general.FCSError{
