@@ -18,8 +18,9 @@
     },
     "corpora": {
         "registryDir": "/path/to/corpora/registry",
-        "resources": {
-            "syn2020": {
+        "resources": [
+            {
+                "id": "syn2020",
                 "pid": "syn2020",
                 "fullName": {"en": "syn2020", "cs": "syn2020"},
                 "description": {
@@ -58,7 +59,7 @@
 
                 }
             }
-        }
+        ]
     },
     "redis": {
         "host": "10.0.3.130",

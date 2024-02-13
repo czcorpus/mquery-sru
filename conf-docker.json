@@ -22,8 +22,9 @@
             "lemma": "lemma",
             "pos": "pos"
         },
-        "resources": {
-            "syn2020": {
+        "resources": [
+            {
+                "id": "syn2020",
                 "pid": "syn2020",
                 "fullName": {"en": "syn2020", "cs": "syn2020"},
                 "description": {
@@ -63,7 +64,7 @@
 
                 }
             }
-        }
+        ]
     },
     "redis": {
         "host": "mquery-sru_redis_1",
