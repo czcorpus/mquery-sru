@@ -17,11 +17,6 @@
     },
     "corpora": {
         "registryDir": "/var/lib/manatee/registry",
-        "layers": {
-            "text": "word",
-            "lemma": "lemma",
-            "pos": "pos"
-        },
         "resources": [
             {
                 "id": "syn2020",
