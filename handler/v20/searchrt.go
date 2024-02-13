@@ -44,13 +44,22 @@ func (a *FCSSubHandlerV20) translateQuery(
 ) (compiler.AST, *general.FCSError) {
 	var ast compiler.AST
 	var fcsErr *general.FCSError
+	res, err := a.corporaConf.Resources.GetResource(corpusName)
+	if err != nil {
+		fcsErr = &general.FCSError{
+			Code:    general.DCGeneralSystemError,
+			Ident:   err.Error(),
+			Message: general.DCGeneralSystemError.AsMessage(),
+		}
+		return nil, fcsErr
+	}
 	switch queryType {
 	case QueryTypeCQL:
 		var err error
 		ast, err = basic.ParseQuery(
 			query,
-			a.corporaConf.Resources[corpusName].PosAttrs,
-			a.corporaConf.Resources[corpusName].StructureMapping,
+			res.PosAttrs,
+			res.StructureMapping,
 		)
 		if err != nil {
 			fcsErr = &general.FCSError{
@@ -63,8 +72,8 @@ func (a *FCSSubHandlerV20) translateQuery(
 		var err error
 		ast, err = fcsql.ParseQuery(
 			query,
-			a.corporaConf.Resources[corpusName].PosAttrs,
-			a.corporaConf.Resources[corpusName].StructureMapping,
+			res.PosAttrs,
+			res.StructureMapping,
 		)
 		if err != nil {
 			fcsErr = &general.FCSError{
@@ -195,8 +204,8 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	// get searchable corpora and attrs
 	if len(corpora) > 0 {
 		for _, v := range corpora {
-			_, ok := a.corporaConf.Resources[v]
-			if !ok {
+			_, err := a.corporaConf.Resources.GetResource(v)
+			if err != nil {
 				fcsResponse.General.AddError(general.FCSError{
 					Code:    general.DCUnsupportedContextSet,
 					Ident:   SearchRetrArgFCSContext.String(),
@@ -215,7 +224,15 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return general.ConformantStatusBadRequest
 	}
 
-	retrieveAttrs := a.corporaConf.Resources.GetCommonPosAttrNames(corpora...)
+	retrieveAttrs, err := a.corporaConf.Resources.GetCommonPosAttrNames(corpora...)
+	if err != nil {
+		fcsResponse.General.AddError(general.FCSError{
+			Code:    general.DCGeneralSystemError,
+			Ident:   err.Error(),
+			Message: general.DCGeneralSystemError.AsMessage(),
+		})
+		return http.StatusInternalServerError
+	}
 
 	queryType := getTypedArg[QueryType](ctx, "queryType", DefaultQueryType)
 	fcsResponse.SearchRetrieve.QueryType = queryType
@@ -318,15 +335,32 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	// transform results
 	fcsResponse.SearchRetrieve.Results = make([]FCSSearchRow, 0, maximumRecords)
 	commonLayers := a.corporaConf.Resources.GetCommonLayers()
-	commonPosAttrs := a.corporaConf.Resources.GetCommonPosAttrs(corpora...)
+	commonPosAttrs, err := a.corporaConf.Resources.GetCommonPosAttrs(corpora...)
+	if err != nil {
+		fcsResponse.General.AddError(general.FCSError{
+			Code:    general.DCGeneralSystemError,
+			Ident:   err.Error(),
+			Message: general.DCGeneralSystemError.AsMessage(),
+		})
+		return http.StatusInternalServerError
+	}
 
 	for len(fcsResponse.SearchRetrieve.Results) < maximumRecords && fromResource.Next() {
 		segmentPos := 1
+		res, err := a.corporaConf.Resources.GetResource(fromResource.CurrRscName())
+		if err != nil {
+			fcsResponse.General.AddError(general.FCSError{
+				Code:    general.DCGeneralSystemError,
+				Ident:   err.Error(),
+				Message: general.DCGeneralSystemError.AsMessage(),
+			})
+			return http.StatusInternalServerError
+		}
 		row := FCSSearchRow{
-			LayerAttrs: a.corporaConf.Resources[fromResource.CurrRscName()].GetDefinedLayers().ToOrderedSlice(),
+			LayerAttrs: res.GetDefinedLayers().ToOrderedSlice(),
 			Position:   len(fcsResponse.SearchRetrieve.Results) + 1,
 			PID:        fromResource.CurrRscName(),
-			Ref:        a.corporaConf.Resources[fromResource.CurrRscName()].URI,
+			Ref:        res.URI,
 		}
 		item := fromResource.CurrLine()
 		for j, t := range item.Text {

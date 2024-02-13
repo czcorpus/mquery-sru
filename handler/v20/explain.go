@@ -38,7 +38,7 @@ func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 		PrimaryLanguage:     a.serverInfo.PrimaryLanguage,
 		MaximumRecords:      a.corporaConf.MaximumRecords,
 		NumberOfRecords:     a.corporaConf.NumberOfRecords,
-		PosAttrs:            a.corporaConf.Resources.GetCommonPosAttrs(a.corporaConf.Resources.GetCorpora()...),
+		PosAttrs:            a.corporaConf.Resources.GetCommonPosAttrs2(),
 	}
 
 	// check if all parameters are supported

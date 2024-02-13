@@ -118,6 +118,7 @@ type StructureMapping struct {
 // CorpusSetup is a complete corpus configuration
 // (it is part of MQuery-SRU configuration)
 type CorpusSetup struct {
+	ID  string `json:"id"`
 	PID string `json:"pid"`
 
 	// language mappings
@@ -237,7 +238,7 @@ func (ls *CorpusSetup) Validate(confContext string) error {
 
 // SrchResources is a configuration of all the enabled
 // corpora.
-type SrchResources map[string]*CorpusSetup
+type SrchResources []*CorpusSetup
 
 func (sr SrchResources) GetCommonLayers() []LayerType {
 	var ans *collections.Set[LayerType]
@@ -253,23 +254,56 @@ func (sr SrchResources) GetCommonLayers() []LayerType {
 }
 
 func (sr SrchResources) GetCorpora() []string {
-	ans := make([]string, len(sr))
-	i := 0
-	for k := range sr {
-		ans[i] = k
-		i++
+	return collections.SliceMap(sr, func(v *CorpusSetup, i int) string { return v.ID })
+}
+
+func (sr SrchResources) GetResource(ID string) (*CorpusSetup, error) {
+	resIndex := collections.SliceFindIndex(sr, func(v *CorpusSetup) bool { return v.ID == ID })
+	if resIndex == -1 {
+		return nil, fmt.Errorf("Resource not found: %s", ID)
 	}
-	return ans
+	return sr[resIndex], nil
 }
 
 // GetCommonPosAttrs returns positional attributes common
 // to provided corpora. The attribute of the text layer which
 // is set as default will be listed always first, the rest
 // is sorted alphabetically.
-func (sr SrchResources) GetCommonPosAttrs(corpusNames ...string) []PosAttr {
+func (sr SrchResources) GetCommonPosAttrs(corpusNames ...string) ([]PosAttr, error) {
 	collect := make(map[string]PosAttr)
 	for _, corp := range corpusNames {
-		for _, pa := range sr[corp].PosAttrs {
+		res, err := sr.GetResource(corp)
+		if err != nil {
+			return nil, err
+		}
+		for _, pa := range res.PosAttrs {
+			collect[pa.Name] = pa
+		}
+	}
+	i := 0
+	ans := make([]PosAttr, len(collect))
+	for _, v := range collect {
+		ans[i] = v
+		i++
+	}
+	sort.SliceStable(ans, func(i, j int) bool {
+		if ans[i].Layer == DefaultLayerType && ans[i].IsLayerDefault {
+			return true
+		}
+		if ans[j].Layer == DefaultLayerType && ans[j].IsLayerDefault {
+			return false
+		}
+		return strings.Compare(ans[i].Name, ans[j].Name) < 0
+	})
+	return ans, nil
+}
+
+// GetCommonPosAttrs2 returns positional attributes common
+// to defined corpora, it can not return error like GetCommonPosAttrs
+func (sr SrchResources) GetCommonPosAttrs2() []PosAttr {
+	collect := make(map[string]PosAttr)
+	for _, res := range sr {
+		for _, pa := range res.PosAttrs {
 			collect[pa.Name] = pa
 		}
 	}
@@ -293,13 +327,16 @@ func (sr SrchResources) GetCommonPosAttrs(corpusNames ...string) []PosAttr {
 
 // GetCommonPosAttrNames is the same as GetCommonPosAttrs
 // but it returns just a list of attribute names.
-func (sr SrchResources) GetCommonPosAttrNames(corpusName ...string) []string {
-	pa := sr.GetCommonPosAttrs(corpusName...)
+func (sr SrchResources) GetCommonPosAttrNames(corpusName ...string) ([]string, error) {
+	pa, err := sr.GetCommonPosAttrs(corpusName...)
+	if err != nil {
+		return nil, err
+	}
 	ans := make([]string, len(pa))
 	for i, pa := range pa {
 		ans[i] = pa.Name
 	}
-	return ans
+	return ans, nil
 }
 
 // Validate validates all the corpora configurations.
