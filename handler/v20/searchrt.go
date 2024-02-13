@@ -197,6 +197,17 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		})
 		return general.ConformantUnprocessableEntity
 	}
+	if maximumRecords > mango.MaxRecordsInternalLimit {
+		// TODO the error type is not probably very accurate
+		// as the actual result can be very small. But we still
+		// have to limit max. number of records...
+		fcsResponse.General.AddError(general.FCSError{
+			Code:    general.DCTooManyMatchingRecords,
+			Ident:   fmt.Sprintf("%d", mango.MaxRecordsInternalLimit),
+			Message: general.DCTooManyMatchingRecords.AsMessage(),
+		})
+		return general.ConformantUnprocessableEntity
+	}
 
 	corpora := strings.Split(ctx.DefaultQuery(SearchRetrArgFCSContext.String(), ""), ",")
 	if len(corpora) == 0 || len(corpora) == 1 && corpora[0] == "" {
@@ -360,7 +371,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		}
 		row := FCSSearchRow{
 			LayerAttrs: res.GetDefinedLayers().ToOrderedSlice(),
-			Position:   len(fcsResponse.SearchRetrieve.Results) + 1,
+			Position:   len(fcsResponse.SearchRetrieve.Results) + startRecord,
 			PID:        fromResource.CurrRscName(),
 			Ref:        res.URI,
 		}

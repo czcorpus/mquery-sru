@@ -56,6 +56,8 @@ func (dc DiagnosticCode) AsMessage() string {
 		return "Cannot process query; reason unknown"
 	case DCQueryFeatureUnsupported:
 		return "Query feature unsupported"
+	case DCTooManyMatchingRecords:
+		return "Result set not created: too many matching records"
 	case DCFirstRecordPosOutOfRange:
 		return "First record position out of range"
 	case DCUnknownSchemaForRetrieval:
@@ -92,11 +94,13 @@ const (
 	DCUnsupportedParameter          DiagnosticCode = 8
 	DCDatabaseDoesNotExist          DiagnosticCode = 235
 	// CQL related diagnostics
-	DCQuerySyntaxError          DiagnosticCode = 10
-	DCUnsupportedContextSet     DiagnosticCode = 15
-	DCUnsupportedIndex          DiagnosticCode = 16
-	DCQueryCannotProcess        DiagnosticCode = 47
-	DCQueryFeatureUnsupported   DiagnosticCode = 48
+	DCQuerySyntaxError        DiagnosticCode = 10
+	DCUnsupportedContextSet   DiagnosticCode = 15
+	DCUnsupportedIndex        DiagnosticCode = 16
+	DCQueryCannotProcess      DiagnosticCode = 47
+	DCQueryFeatureUnsupported DiagnosticCode = 48
+	// Diagnostics Relating to Records
+	DCTooManyMatchingRecords    DiagnosticCode = 60
 	DCFirstRecordPosOutOfRange  DiagnosticCode = 61
 	DCUnknownSchemaForRetrieval DiagnosticCode = 66
 	// Records related diagnostics
