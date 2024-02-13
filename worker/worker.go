@@ -29,7 +29,7 @@ import (
 	"github.com/czcorpus/mquery-sru/corpus/conc"
 	"github.com/czcorpus/mquery-sru/mango"
 	"github.com/czcorpus/mquery-sru/rdb"
-	"github.com/czcorpus/mquery-sru/results"
+	"github.com/czcorpus/mquery-sru/result"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
@@ -41,7 +41,7 @@ const (
 )
 
 type jobLogger interface {
-	Log(rec results.JobLog)
+	Log(rec result.JobLog)
 }
 
 type Worker struct {
@@ -51,10 +51,10 @@ type Worker struct {
 	exitEvent  chan os.Signal
 	ticker     time.Ticker
 	jobLogger  jobLogger
-	currJobLog *results.JobLog
+	currJobLog *result.JobLog
 }
 
-func (w *Worker) publishResult(res results.SerializableResult, channel string) error {
+func (w *Worker) publishResult(res result.SerializableResult, channel string) error {
 	ans, err := rdb.CreateWorkerResult(res)
 	if err != nil {
 		return err
@@ -95,7 +95,7 @@ func (w *Worker) tryNextQuery() error {
 		return nil
 	}
 
-	w.currJobLog = &results.JobLog{
+	w.currJobLog = &result.JobLog{
 		WorkerID: w.ID,
 		Func:     query.Func,
 		Begin:    time.Now(),
@@ -113,7 +113,7 @@ func (w *Worker) tryNextQuery() error {
 			return err
 		}
 	default:
-		ans := &results.ErrorResult{Error: fmt.Sprintf("unknown query function: %s", query.Func)}
+		ans := &result.ErrorResult{Error: fmt.Sprintf("unknown query function: %s", query.Func)}
 		if err = w.publishResult(ans, query.Channel); err != nil {
 			return err
 		}
@@ -142,8 +142,8 @@ func (w *Worker) tokenCoverage(mktokencovPath, subcPath, corpusPath, structure s
 	return cmd.Run()
 }
 
-func (w *Worker) concExample(args rdb.ConcExampleArgs) *results.ConcExample {
-	var ans results.ConcExample
+func (w *Worker) concExample(args rdb.ConcExampleArgs) *result.ConcExample {
+	var ans result.ConcExample
 	concEx, err := mango.GetConcExamples(
 		args.CorpusPath, args.Query, args.Attrs, args.StartLine, args.MaxItems)
 	if err != nil {

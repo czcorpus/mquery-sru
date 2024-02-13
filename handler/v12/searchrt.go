@@ -30,7 +30,7 @@ import (
 	"github.com/czcorpus/mquery-sru/query/compiler"
 	"github.com/czcorpus/mquery-sru/query/parser/basic"
 	"github.com/czcorpus/mquery-sru/rdb"
-	"github.com/czcorpus/mquery-sru/results"
+	"github.com/czcorpus/mquery-sru/result"
 
 	"github.com/gin-gonic/gin"
 )
@@ -214,7 +214,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	}
 
 	// using fromResource, we will cycle through available resources' results and their lines
-	fromResource := results.NewRoundRobinLineSel(corpora...)
+	fromResource := result.NewRoundRobinLineSel(corpora...)
 
 	for i, wait := range waits {
 		rawResult := <-wait

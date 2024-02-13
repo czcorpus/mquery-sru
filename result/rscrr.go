@@ -16,7 +16,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with MQUERY.  If not, see <https://www.gnu.org/licenses/>.
 
-package results
+package result
 
 import (
 	"fmt"
@@ -34,6 +34,11 @@ type item struct {
 	Lines    ConcExample
 }
 
+// RoundRobinLineSel allows for fetching data from
+// multiple search results (= from different corpora)
+// and taking them by "round robin" style. It is able
+// to handle result sets of different sizes by cycling
+// through less and less resources as they run out of items.
 type RoundRobinLineSel struct {
 	items   []item
 	currIdx int
@@ -48,6 +53,9 @@ func (r *RoundRobinLineSel) DescribeCurr() string {
 	)
 }
 
+// CurrLine returns the current line from a current resource
+// during an iteration. It is intended to be called within a loop
+// controlled by method `Next()`
 func (r *RoundRobinLineSel) CurrLine() conc.ConcordanceLine {
 	if !r.items[r.currIdx].Started {
 		panic(fmt.Sprintf("iterator not initialized for %s", r.items[r.currIdx].Name))
@@ -58,6 +66,8 @@ func (r *RoundRobinLineSel) CurrLine() conc.ConcordanceLine {
 	return r.items[r.currIdx].Lines.Lines[r.items[r.currIdx].CurrLine]
 }
 
+// CurrRscName returns the currently set resource (corpus)
+// during iteration.
 func (r *RoundRobinLineSel) CurrRscName() string {
 	if r.items[r.currIdx].Depleted {
 		panic("accessing depleted resource")
@@ -65,7 +75,13 @@ func (r *RoundRobinLineSel) CurrRscName() string {
 	return r.items[r.currIdx].Name
 }
 
+// SetRscLines sets concordance data for a resource (corpus).
+// The method can be called only if the `Next()` method has not
+// been called yet. Otherwise the call panics.
 func (r *RoundRobinLineSel) SetRscLines(rsc string, c ConcExample) {
+	if r.iterationRunning() {
+		panic("cannot add resource lines to an already iterating RoundRobinLineSel")
+	}
 	for i, item := range r.items {
 		if item.Name == rsc {
 			item.Lines = c
@@ -76,11 +92,14 @@ func (r *RoundRobinLineSel) SetRscLines(rsc string, c ConcExample) {
 	panic("unknown resource")
 }
 
+// RscSetErrorAt sets and error for idx-th resource. With that,
+// the iteration may continue, but the errored resource is skipped.
 func (r *RoundRobinLineSel) RscSetErrorAt(idx int, err error) {
 	r.items[idx].Err = err
 	r.items[idx].Depleted = true
 }
 
+// CurrRscGetError returns possible error for the current resource.
 func (r *RoundRobinLineSel) CurrRscGetError() error {
 	return r.items[r.currIdx].Err
 }
@@ -118,6 +137,7 @@ func (r *RoundRobinLineSel) GetFirstError() error {
 	return nil
 }
 
+// IsEmpty returns true if all the resources are emtpy
 func (r *RoundRobinLineSel) IsEmpty() bool {
 	for _, v := range r.items {
 		if len(v.Lines.Lines) > 0 {
@@ -127,9 +147,20 @@ func (r *RoundRobinLineSel) IsEmpty() bool {
 	return true
 }
 
+func (r *RoundRobinLineSel) iterationRunning() bool {
+	for _, item := range r.items {
+		if item.Started {
+			return true
+		}
+	}
+	return false
+}
+
 // Next prepares next line from the multi-resource result.
 // Please note that to obtain the first item Next() must be
 // called too.
+// Also, once called for the first time, no new result sets
+// can be added (this causes the call to panic)
 func (r *RoundRobinLineSel) Next() bool {
 	if len(r.items) == 0 || r.IsEmpty() {
 		return false
@@ -180,6 +211,9 @@ func (r *RoundRobinLineSel) setNextAvailRsc() bool {
 	return true
 }
 
+// AllDepleted returns true if all the resources
+// have been used and thus there are no more lines
+// to be provided.
 func (r *RoundRobinLineSel) AllDepleted() bool {
 	for _, v := range r.items {
 		if v.Depleted == false {
@@ -195,6 +229,8 @@ func (r *RoundRobinLineSel) setCurrDepleted() {
 
 }
 
+// NewRoundRobinLineSel creates a new instance of NewRoundRobinLineSel
+// with correctly initialized attributes.
 func NewRoundRobinLineSel(items ...string) *RoundRobinLineSel {
 	ans := &RoundRobinLineSel{
 		items: make([]item, len(items)),

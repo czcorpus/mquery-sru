@@ -73,6 +73,7 @@ func runApiServer(
 	exitEvent chan os.Signal,
 	radapter *rdb.Adapter,
 ) {
+	log.Info().Msg("Starting MQuery-SRU server")
 	if !conf.LogLevel.IsDebugMode() {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -106,7 +107,6 @@ func runApiServer(
 	monitoringActions := monitoring.NewActions(logger, conf.TimezoneLocation())
 	engine.GET("/monitoring/workers-load", monitoringActions.WorkersLoad)
 
-	log.Info().Msgf("starting to listen at %s:%d", conf.ListenAddress, conf.ListenPort)
 	srv := &http.Server{
 		Handler:      engine,
 		Addr:         fmt.Sprintf("%s:%d", conf.ListenAddress, conf.ListenPort),
@@ -114,6 +114,7 @@ func runApiServer(
 		ReadTimeout:  time.Duration(conf.ServerReadTimeoutSecs) * time.Second,
 	}
 	go func() {
+		log.Info().Msgf("listening at %s:%d", conf.ListenAddress, conf.ListenPort)
 		err := srv.ListenAndServe()
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -133,6 +134,7 @@ func runApiServer(
 }
 
 func runWorker(conf *cnf.Conf, workerID string, radapter *rdb.Adapter, exitEvent chan os.Signal) {
+	log.Info().Msg("Starting MQuery-SRU worker")
 	ch := radapter.Subscribe()
 	logger := monitoring.NewWorkerJobLogger(conf.TimezoneLocation())
 	w := worker.NewWorker(workerID, radapter, ch, exitEvent, logger)
@@ -198,7 +200,7 @@ func main() {
 	} else {
 		logging.SetupLogging(conf.LogFile, conf.LogLevel)
 	}
-	log.Info().Msg("Starting MQuery-SRU")
+	log.Info().Msg("MQuery-SRU initialization...")
 	cnf.ValidateAndDefaults(conf)
 	syscallChan := make(chan os.Signal, 1)
 	signal.Notify(syscallChan, os.Interrupt)

@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"github.com/bytedance/sonic"
-	"github.com/czcorpus/mquery-sru/results"
+	"github.com/czcorpus/mquery-sru/result"
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
@@ -48,10 +48,10 @@ var (
 )
 
 type Query struct {
-	ResultType results.ResultType `json:"resultType"`
-	Channel    string             `json:"channel"`
-	Func       string             `json:"func"`
-	Args       json.RawMessage    `json:"args"`
+	ResultType result.ResultType `json:"resultType"`
+	Channel    string            `json:"channel"`
+	Func       string            `json:"func"`
+	Args       json.RawMessage   `json:"args"`
 }
 
 type ConcExampleArgs struct {
@@ -152,16 +152,16 @@ func (a *Adapter) PublishQuery(query Query) (<-chan *WorkerResult, error) {
 	if err := a.redis.LPush(a.ctx, DefaultQueueKey, msg).Err(); err != nil {
 		return nil, err
 	}
-	ans := make(chan *WorkerResult)
+	ansChan := make(chan *WorkerResult)
 
 	// now we wait for response and send result via `ans`
 	go func() {
 		defer func() {
 			sub.Close()
-			close(ans)
+			close(ansChan)
 		}()
 
-		result := new(WorkerResult)
+		ans := new(WorkerResult)
 		tmr := time.NewTimer(a.queryAnswerTimeout)
 
 		for {
@@ -173,33 +173,33 @@ func (a *Adapter) PublishQuery(query Query) (<-chan *WorkerResult, error) {
 					Msg("received result")
 				cmd := a.redis.Get(a.ctx, item.Payload)
 				if cmd.Err() != nil {
-					result.AttachValue(
-						&results.ErrorResult{
+					ans.AttachValue(
+						&result.ErrorResult{
 							ResultType: query.ResultType,
 							Error:      cmd.Err().Error(),
 						},
 					)
 
 				} else {
-					err := sonic.Unmarshal([]byte(cmd.Val()), &result)
+					err := sonic.Unmarshal([]byte(cmd.Val()), &ans)
 					if err != nil {
-						result.AttachValue(&results.ErrorResult{Error: err.Error()})
+						ans.AttachValue(&result.ErrorResult{Error: err.Error()})
 					}
 				}
-				ans <- result
+				ansChan <- ans
 				tmr.Stop()
 				return
 			case <-tmr.C:
-				result.AttachValue(&results.ErrorResult{
+				ans.AttachValue(&result.ErrorResult{
 					Error: fmt.Sprintf("worker result timeouted (%v)", DefaultQueryAnswerTimeout),
 				})
-				ans <- result
+				ansChan <- ans
 				return
 			}
 		}
 
 	}()
-	return ans, a.redis.Publish(a.ctx, a.channelQuery, MsgNewQuery).Err()
+	return ansChan, a.redis.Publish(a.ctx, a.channelQuery, MsgNewQuery).Err()
 }
 
 // DequeueQuery looks for a query queued for processing.
