@@ -97,3 +97,11 @@ func TestWithSomeEmpty(t *testing.T) {
 	ft := firstWord(r.items[r.currIdx].Lines.Lines[0])
 	assert.Equal(t, "bar1", ft)
 }
+
+func TestSetRscLinesPanicsIfIterationStarted(t *testing.T) {
+	r := createResource()
+	r.Next()
+	assert.Panics(t, func() {
+		r.SetRscLines("corp1", ConcExample{Lines: []conc.ConcordanceLine{}})
+	})
+}
