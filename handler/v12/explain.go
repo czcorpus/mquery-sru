@@ -22,6 +22,7 @@ package v12
 import (
 	"net/http"
 
+	"github.com/czcorpus/mquery-sru/corpus"
 	"github.com/czcorpus/mquery-sru/general"
 
 	"github.com/gin-gonic/gin"
@@ -37,7 +38,7 @@ func (a *FCSSubHandlerV12) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 		DatabaseDescription: a.serverInfo.DatabaseDescription,
 		PrimaryLanguage:     a.serverInfo.PrimaryLanguage,
 		MaximumRecords:      a.corporaConf.MaximumRecords,
-		NumberOfRecords:     a.corporaConf.NumberOfRecords,
+		NumberOfRecords:     corpus.ExplainOpNumberOfRecords,
 	}
 
 	// check if all parameters are supported
