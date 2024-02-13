@@ -41,6 +41,11 @@ const (
 	DefaultLayerType = LayerTypeText
 
 	dfltMaxRecords = 50
+
+	// ExplainOpNumberOfRecords is a value we currently don't understand
+	// well...
+	// TODO what is this value for in the "explain" operation?
+	ExplainOpNumberOfRecords = 25
 )
 
 // LayerType is a layer above positional attributes
@@ -364,10 +369,6 @@ type CorporaSetup struct {
 	// in a "searchRetrieve" search. In case of MQuery, this is
 	// also limited by its internals to `MaxRecordsInternalLimit`
 	MaximumRecords int `json:"maximumRecords"`
-
-	// NumberOfRecords is a default number of records provided
-	// as a response to a query
-	NumberOfRecords int `json:"numberOfRecords"`
 
 	// Resources is a description of configured corpora/resources
 	Resources SrchResources `json:"resources"`
