@@ -23,7 +23,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/czcorpus/mquery-sru/results"
+	"github.com/czcorpus/mquery-sru/result"
 )
 
 type WorkersLoad map[string]float64
@@ -33,7 +33,7 @@ type WorkerJobLogger struct {
 	location *time.Location
 }
 
-func (w *WorkerJobLogger) Log(rec results.JobLog) {
+func (w *WorkerJobLogger) Log(rec result.JobLog) {
 	// TODO
 }
 

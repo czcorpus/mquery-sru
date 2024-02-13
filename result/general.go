@@ -1,4 +1,4 @@
-// Copyright 2023 Tomas Machalek <tomas.machalek@gmail.com>
+// Copyright 2023 Martin Zimandl <martin.zimandl@gmail.com>
 // Copyright 2023 Institute of the Czech National Corpus,
 //                Faculty of Arts, Charles University
 //   This file is part of MQUERY.
@@ -16,19 +16,30 @@
 //  You should have received a copy of the GNU General Public License
 //  along with MQUERY.  If not, see <https://www.gnu.org/licenses/>.
 
-package results
+package result
 
-import "errors"
+import (
+	"time"
 
-type ErrorResult struct {
-	ResultType ResultType `json:"resultType"`
-	Error      string     `json:"error"`
+	"github.com/bytedance/sonic"
+)
+
+const (
+	ResultWorkerPerformance = "workerPerformance"
+)
+
+type JobLog struct {
+	WorkerID string    `json:"workerId"`
+	Func     string    `json:"func"`
+	Begin    time.Time `json:"begin"`
+	End      time.Time `json:"end"`
+	Err      error     `json:"error"`
 }
 
-func (res *ErrorResult) Err() error {
-	return errors.New(res.Error)
-}
-
-func (res *ErrorResult) Type() ResultType {
-	return res.ResultType
+func (jl *JobLog) ToJSON() (string, error) {
+	ans, err := sonic.Marshal(jl)
+	if err != nil {
+		return "", err
+	}
+	return string(ans), nil
 }

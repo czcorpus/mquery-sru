@@ -30,7 +30,7 @@ import (
 func (a *FCSSubHandlerV12) explain(ctx *gin.Context, fcsResponse *FCSResponse) int {
 	// prepare response data
 	fcsResponse.Explain = &FCSExplain{
-		ServerName:          a.serverInfo.ServerName,
+		ServerName:          a.serverInfo.ServerHost,
 		ServerPort:          a.serverInfo.ServerPort,
 		Database:            a.serverInfo.Database,
 		DatabaseTitle:       a.serverInfo.DatabaseTitle,

@@ -44,14 +44,33 @@ const (
 )
 
 type ServerInfo struct {
-	ServerName string `json:"serverName"`
-	ServerPort string `json:"serverPort"`
-	Database   string `json:"database"`
 
-	// language mappings
-	DatabaseTitle       map[string]string `json:"databaseTitle"`       // section required, "en" required
-	DatabaseDescription map[string]string `json:"databaseDescription"` // section optional, "en" required
-	PrimaryLanguage     string            `json:"primaryLanguage"`
+	// ServerHost specifies an external host the service runs at.
+	// (e.g. `fcs.korpus.cz`)
+	ServerHost string `json:"serverHost"`
+
+	// ServerPort specifies an external port the service listens on.
+	ServerPort string `json:"serverPort"`
+
+	// Database speicifies a concrete "sub section" of the endpoint.
+	// TODO: not sure about this; In the documentation, it seems
+	// like it is a URL path specifying concrete resources offered.
+	Database string `json:"database"`
+
+	// DatabaseTitle is a multi-language configuration
+	// for database title. The whole section is required
+	// in the config and it should at least contain the 'en'
+	// translation.
+	DatabaseTitle map[string]string `json:"databaseTitle"`
+
+	// DatabaseDescription contains more information about
+	// the endpoint data. The whole section is optional but
+	// if present, 'en' translation is required.
+	DatabaseDescription map[string]string `json:"databaseDescription"`
+
+	// PrimaryLanguage defines a language which is native
+	// for different labels, descriptions etc.
+	PrimaryLanguage string `json:"primaryLanguage"`
 }
 
 func (s *ServerInfo) Validate() error {

@@ -23,16 +23,16 @@ import (
 	"fmt"
 
 	"github.com/bytedance/sonic"
-	"github.com/czcorpus/mquery-sru/results"
+	"github.com/czcorpus/mquery-sru/result"
 )
 
 type WorkerResult struct {
-	ID         string             `json:"id"`
-	ResultType results.ResultType `json:"resultType"`
-	Value      json.RawMessage    `json:"value"`
+	ID         string            `json:"id"`
+	ResultType result.ResultType `json:"resultType"`
+	Value      json.RawMessage   `json:"value"`
 }
 
-func (wr *WorkerResult) AttachValue(value results.SerializableResult) error {
+func (wr *WorkerResult) AttachValue(value result.SerializableResult) error {
 	rawValue, err := sonic.Marshal(value)
 	if err != nil {
 		return err
@@ -41,7 +41,7 @@ func (wr *WorkerResult) AttachValue(value results.SerializableResult) error {
 	return nil
 }
 
-func CreateWorkerResult(value results.SerializableResult) (*WorkerResult, error) {
+func CreateWorkerResult(value result.SerializableResult) (*WorkerResult, error) {
 	rawValue, err := sonic.Marshal(value)
 	if err != nil {
 		return nil, err
@@ -49,8 +49,8 @@ func CreateWorkerResult(value results.SerializableResult) (*WorkerResult, error)
 	return &WorkerResult{Value: rawValue, ResultType: value.Type()}, nil
 }
 
-func DeserializeConcExampleResult(w *WorkerResult) (results.ConcExample, error) {
-	var ans results.ConcExample
+func DeserializeConcExampleResult(w *WorkerResult) (result.ConcExample, error) {
+	var ans result.ConcExample
 	err := sonic.Unmarshal(w.Value, &ans)
 	if err != nil {
 		return ans, fmt.Errorf("failed to deserialize ConcExample: %w", err)
