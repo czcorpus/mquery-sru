@@ -21,6 +21,7 @@ package basic
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/czcorpus/mquery-sru/corpus"
@@ -265,7 +266,12 @@ type word struct {
 }
 
 func (w *word) Generate(ast *Query) string {
-	return w.value
+	tmp := w.value
+	cqlEscapeChar := []string{"\"", "\\"}
+	for _, v := range cqlEscapeChar {
+		tmp = strings.ReplaceAll(tmp, v, "\\"+v)
+	}
+	return regexp.QuoteMeta(tmp)
 }
 
 // -----
