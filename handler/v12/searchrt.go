@@ -27,6 +27,7 @@ import (
 	"github.com/bytedance/sonic"
 	"github.com/czcorpus/mquery-sru/general"
 	"github.com/czcorpus/mquery-sru/mango"
+	"github.com/czcorpus/mquery-sru/query"
 	"github.com/czcorpus/mquery-sru/query/compiler"
 	"github.com/czcorpus/mquery-sru/query/parser/basic"
 	"github.com/czcorpus/mquery-sru/rdb"
@@ -165,6 +166,8 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return http.StatusInternalServerError
 	}
 
+	ranges := query.CalculatePartialRanges(corpora, startRecord, maximumRecords)
+
 	// make searches
 	waits := make([]<-chan *rdb.WorkerResult, len(corpora))
 	for i, corpusName := range corpora {
@@ -187,7 +190,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			CorpusPath: a.corporaConf.GetRegistryPath(corpusName),
 			Query:      query,
 			Attrs:      retrieveAttrs,
-			StartLine:  startRecord - 1,
+			StartLine:  ranges[corpusName].From - 1,
 			MaxItems:   maximumRecords,
 		})
 		if err != nil {

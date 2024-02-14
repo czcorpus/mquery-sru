@@ -346,8 +346,8 @@ func (sr SrchResources) GetCommonPosAttrNames(corpusName ...string) ([]string, e
 // Validate validates all the corpora configurations.
 // This should be run during server startup.
 func (sr SrchResources) Validate(confContext string) error {
-	for name, corp := range sr {
-		if err := corp.Validate(fmt.Sprintf("%s[%s]", confContext, name)); err != nil {
+	for _, corp := range sr {
+		if err := corp.Validate(fmt.Sprintf("%s[%s]", confContext, corp.ID)); err != nil {
 			return err
 		}
 	}
