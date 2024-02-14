@@ -142,13 +142,21 @@ func (w *Worker) tokenCoverage(mktokencovPath, subcPath, corpusPath, structure s
 	return cmd.Run()
 }
 
-func (w *Worker) concExample(args rdb.ConcExampleArgs) *result.ConcExample {
-	var ans result.ConcExample
+func (w *Worker) concExample(args rdb.ConcExampleArgs) (ans *result.ConcExample) {
+	ans = new(result.ConcExample)
+	defer func() {
+		if r := recover(); r != nil {
+			ans = &result.ConcExample{
+				Error: fmt.Sprintf("%v", r),
+				Lines: make([]conc.ConcordanceLine, 0),
+			}
+		}
+	}()
 	concEx, err := mango.GetConcExamples(
 		args.CorpusPath, args.Query, args.Attrs, args.StartLine, args.MaxItems)
 	if err != nil {
 		ans.Error = err.Error()
-		return &ans
+		return
 	}
 	log.Debug().
 		Str("query", args.Query).
@@ -157,7 +165,7 @@ func (w *Worker) concExample(args rdb.ConcExampleArgs) *result.ConcExample {
 	parser := conc.NewLineParser(args.Attrs)
 	ans.Lines = parser.Parse(concEx)
 	ans.ConcSize = concEx.ConcSize
-	return &ans
+	return
 }
 
 func NewWorker(

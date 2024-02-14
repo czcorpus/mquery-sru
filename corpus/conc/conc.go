@@ -22,6 +22,7 @@ import (
 	"html"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/czcorpus/mquery-sru/mango"
 
@@ -59,32 +60,48 @@ type LineParser struct {
 func (lp *LineParser) parseTokenQuadruple(s []string) *Token {
 	mAttrs := make(map[string]string)
 	rawAttrs := strings.Split(s[2], "/")[1:]
-	for i, attr := range lp.attrs[1:] {
-		mAttrs[attr] = rawAttrs[i]
+	var token Token
+	if len(rawAttrs) != len(lp.attrs)-1 {
+		log.Warn().
+			Str("value", s[2]).
+			Int("expectedNumAttrs", len(lp.attrs)-1).
+			Msg("cannot parse token quadruple")
+		token.Word = s[0]
+		for _, attr := range lp.attrs[1:] {
+			mAttrs[attr] = "N/A"
+		}
+
+	} else {
+		for i, attr := range lp.attrs[1:] {
+			mAttrs[attr] = rawAttrs[i]
+		}
+		token.Word = s[0]
+		token.Strong = len(s[1]) > 2
+		token.Attrs = mAttrs
 	}
-	return &Token{
-		Word:   s[0],
-		Strong: len(s[1]) > 2,
-		Attrs:  mAttrs,
-	}
+	return &token
 }
 
 func (lp *LineParser) normalizeTokens(tokens []string) []string {
 	ans := make([]string, 0, len(tokens))
 	var parTok strings.Builder
 	for _, tok := range tokens {
+		tokLen := utf8.RuneCountInString(tok)
 		if tok == "" {
 			continue
 
+		} else if tokLen == 1 {
+			ans = append(ans, tok)
+
 		} else if tok[0] == '{' {
-			if tok[len(tok)-1] != '}' {
+			if tok[tokLen-1] != '}' {
 				parTok.WriteString(tok)
 
 			} else {
 				ans = append(ans, tok)
 			}
 
-		} else if tok[len(tok)-1] == '}' {
+		} else if tok[tokLen-1] == '}' {
 			parTok.WriteString(tok)
 			ans = append(ans, parTok.String())
 			parTok.Reset()
