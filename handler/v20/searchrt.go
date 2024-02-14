@@ -29,6 +29,7 @@ import (
 	"github.com/czcorpus/mquery-sru/corpus"
 	"github.com/czcorpus/mquery-sru/general"
 	"github.com/czcorpus/mquery-sru/mango"
+	"github.com/czcorpus/mquery-sru/query"
 	"github.com/czcorpus/mquery-sru/query/compiler"
 	"github.com/czcorpus/mquery-sru/query/parser/basic"
 	"github.com/czcorpus/mquery-sru/query/parser/fcsql"
@@ -249,6 +250,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 
 	queryType := getTypedArg[QueryType](ctx, "queryType", DefaultQueryType)
 	fcsResponse.SearchRetrieve.QueryType = queryType
+	ranges := query.CalculatePartialRanges(corpora, startRecord, maximumRecords)
 
 	// make searches
 	waits := make([]<-chan *rdb.WorkerResult, len(corpora))
@@ -273,7 +275,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			CorpusPath: a.corporaConf.GetRegistryPath(corpusName),
 			Query:      query,
 			Attrs:      retrieveAttrs,
-			StartLine:  startRecord - 1,
+			StartLine:  ranges[corpusName].From - 1,
 			MaxItems:   maximumRecords,
 		})
 		if err != nil {
