@@ -23,26 +23,13 @@ Language)
 ## How to install
 
 1. Install `Go` language environment, either via a package manager or manually from Go [download page](https://go.dev/dl/)
-2. Install Manatee-open from a [download page](https://nlp.fi.muni.cz/trac/noske). No specific language bindings are required.
-3. Get MQuery-SRU sources (`git clone github.com:czcorpus/mquery-sru.git`)
-3. now there are two ways how to continue:
-    1. Automated build
-        1. Install a building tool [Manabuild](https://github.com/czcorpus/manabuild) (`go get github.com/czcorpus/manabuild`, then `go install github.com/czcorpus/manabuild`)
-        2. Go to your MQuery-SRU directory and run `/path/to/manabuild`
-        (or just `manabuild` in case your Go installation updated your `$PATH` env. variable with `$GOPATH/bin`)
-            * the tool should locate your installed Manatee-open library, download matching sources and compile and build MQuery-SRU with the library
-    2. Manual build
-        1. Download (or locate) proper Manatee-open sources matching your installed version
-        2. define the following environment variables: `GO_CXXFLAGS`, `CGO_CPPFLAGS`, `CGO_LDFLAGS` - see the box bellow, make also sure paths represent your actual manatee-open sources location
-        3. `go build`
+   1. make sure `/usr/local/go/bin` and `~/go/bin` are in your `$PATH` so you can run any installed Go tools without specifying a full path
+2. Install Manatee-open from the [download page](https://nlp.fi.muni.cz/trac/noske). No specific language bindings are required.
+   1. `configure --with-pcre && make && sudo make install && sudo ldconfig`
+3. Get MQuery-SRU sources (`git clone --depth 1 github.com:czcorpus/mquery-sru.git`)
+4. Run `make tools`
+5. Run `make`
 
-Required environment for manual installation:
-```
-GO_CXXFLAGS=-std=c++14 -I/tmp/manatee-open-2.223.6/corp -I/tmp/manatee-open-2.223.6/concord -I/tmp/manatee-open-2.223.6/query
-CGO_CPPFLAGS=-I/tmp/manatee-open-2.223.6 -I/tmp/manatee-open-2.223.6/finlib -I/tmp/manatee-open-2.223.6/fsa3 -I/tmp/manatee-open-2.223.6/hat-trie
-CGO_LDFLAGS=-lmanatee -L/usr/local/lib -lhat-trie -L/usr/local/lib -lfsa3 -L/tmp/manatee-open-2.223.6/fsa3/.libs
-
-```
 
 ## Configuration
 
