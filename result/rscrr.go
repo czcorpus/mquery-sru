@@ -27,11 +27,10 @@ import (
 
 type item struct {
 	Name     string
-	Depleted bool
-	Started  bool
 	CurrLine int
 	Err      error
 	Lines    ConcExample
+	Started  bool
 }
 
 // RoundRobinLineSel allows for fetching data from
@@ -40,46 +39,54 @@ type item struct {
 // to handle result sets of different sizes by cycling
 // through less and less resources as they run out of items.
 type RoundRobinLineSel struct {
-	items   []item
-	currIdx int
+	items       []item
+	currIdx     int
+	maxLines    int
+	lineCounter int
 }
 
 func (r *RoundRobinLineSel) DescribeCurr() string {
 	return fmt.Sprintf(
-		"resource [%s][%d] (depleted: %t)",
+		"resource [%s][%d]",
 		r.items[r.currIdx].Name,
 		r.items[r.currIdx].CurrLine,
-		r.items[r.currIdx].Depleted,
 	)
 }
 
 // CurrLine returns the current line from a current resource
 // during an iteration. It is intended to be called within a loop
 // controlled by method `Next()`
-func (r *RoundRobinLineSel) CurrLine() conc.ConcordanceLine {
-	if !r.items[r.currIdx].Started {
-		panic(fmt.Sprintf("iterator not initialized for %s", r.items[r.currIdx].Name))
+func (r *RoundRobinLineSel) CurrLine() *conc.ConcordanceLine {
+	if r.lineCounter >= r.maxLines+1 { // lineCounter is always ahead by 1 (that's why `+1`)
+		return nil
 	}
-	if r.items[r.currIdx].Depleted {
-		panic("accessing depleted resource")
+	lineNum := r.items[r.currIdx].CurrLine
+	if lineNum < len(r.items[r.currIdx].Lines.Lines) {
+		return &r.items[r.currIdx].Lines.Lines[lineNum]
 	}
-	return r.items[r.currIdx].Lines.Lines[r.items[r.currIdx].CurrLine]
+	return nil
 }
 
 // CurrRscName returns the currently set resource (corpus)
 // during iteration.
 func (r *RoundRobinLineSel) CurrRscName() string {
-	if r.items[r.currIdx].Depleted {
-		panic("accessing depleted resource")
-	}
 	return r.items[r.currIdx].Name
+}
+
+func (r *RoundRobinLineSel) iterationStarted() bool {
+	for _, v := range r.items {
+		if v.Started {
+			return true
+		}
+	}
+	return false
 }
 
 // SetRscLines sets concordance data for a resource (corpus).
 // The method can be called only if the `Next()` method has not
 // been called yet. Otherwise the call panics.
 func (r *RoundRobinLineSel) SetRscLines(rsc string, c ConcExample) {
-	if r.iterationRunning() {
+	if r.iterationStarted() {
 		panic("cannot add resource lines to an already iterating RoundRobinLineSel")
 	}
 	for i, item := range r.items {
@@ -96,7 +103,6 @@ func (r *RoundRobinLineSel) SetRscLines(rsc string, c ConcExample) {
 // the iteration may continue, but the errored resource is skipped.
 func (r *RoundRobinLineSel) RscSetErrorAt(idx int, err error) {
 	r.items[idx].Err = err
-	r.items[idx].Depleted = true
 }
 
 // CurrRscGetError returns possible error for the current resource.
@@ -147,93 +153,51 @@ func (r *RoundRobinLineSel) IsEmpty() bool {
 	return true
 }
 
-func (r *RoundRobinLineSel) iterationRunning() bool {
-	for _, item := range r.items {
-		if item.Started {
-			return true
-		}
-	}
-	return false
-}
-
 // Next prepares next line from the multi-resource result.
 // Please note that to obtain the first item Next() must be
 // called too.
 // Also, once called for the first time, no new result sets
 // can be added (this causes the call to panic)
 func (r *RoundRobinLineSel) Next() bool {
+	if r.lineCounter == r.maxLines {
+		return false
+	}
 	if len(r.items) == 0 || r.IsEmpty() {
 		return false
 	}
+
 	if !r.items[r.currIdx].Started {
+		r.lineCounter++
 		r.items[r.currIdx].Started = true
 		if len(r.items[r.currIdx].Lines.Lines) > 0 {
 			return true
 		}
 	}
 
-	foundNext := r.setNextAvailRsc()
-	if !foundNext {
-		return false
-	}
-	if r.items[r.currIdx].Started {
+	for i := 1; i < len(r.items); i++ {
+		r.lineCounter++
+		r.currIdx = (r.currIdx + 1) % len(r.items)
+		if !r.items[r.currIdx].Started {
+			r.items[r.currIdx].Started = true
+			if len(r.items[r.currIdx].Lines.Lines) > 0 {
+				return true
+			}
+			continue
+		}
 		r.items[r.currIdx].CurrLine++
-
-	} else {
-		r.items[r.currIdx].Started = true
-	}
-	if r.items[r.currIdx].CurrLine >= len(r.items[r.currIdx].Lines.Lines) {
-		r.setCurrDepleted()
-		return r.Next()
-	}
-	return true
-}
-
-func (r *RoundRobinLineSel) initEmpty() {
-	if r.items == nil {
-		r.items = []item{}
-	}
-}
-
-func (r *RoundRobinLineSel) setNextAvailRsc() bool {
-	r.initEmpty()
-	if r.AllDepleted() {
-		return false
-	}
-	var avail bool
-	for i := (r.currIdx + 1) % len(r.items); avail == false; i = ((i + 1) % len(r.items)) {
-		avail = !r.items[i].Depleted
-		if avail {
-			r.currIdx = i
-			break
+		if r.items[r.currIdx].CurrLine < len(r.items[r.currIdx].Lines.Lines) {
+			return true
 		}
 	}
-	return true
-}
-
-// AllDepleted returns true if all the resources
-// have been used and thus there are no more lines
-// to be provided.
-func (r *RoundRobinLineSel) AllDepleted() bool {
-	for _, v := range r.items {
-		if v.Depleted == false {
-			return false
-		}
-	}
-	return true
-}
-
-func (r *RoundRobinLineSel) setCurrDepleted() {
-	r.initEmpty()
-	r.items[r.currIdx].Depleted = true
-
+	return false
 }
 
 // NewRoundRobinLineSel creates a new instance of NewRoundRobinLineSel
 // with correctly initialized attributes.
-func NewRoundRobinLineSel(items ...string) *RoundRobinLineSel {
+func NewRoundRobinLineSel(maxLines int, items ...string) *RoundRobinLineSel {
 	ans := &RoundRobinLineSel{
-		items: make([]item, len(items)),
+		items:    make([]item, len(items)),
+		maxLines: maxLines,
 	}
 	for i, v := range items {
 		ans.items[i] = item{Name: v}

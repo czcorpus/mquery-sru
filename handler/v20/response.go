@@ -80,6 +80,7 @@ type EchoedSRRequest struct {
 type FCSSearchRetrieve struct {
 	QueryType       QueryType
 	Results         []FCSSearchRow
+	NumberOfRecords int
 	EchoedSRRequest EchoedSRRequest
 }
 

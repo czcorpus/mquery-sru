@@ -24,7 +24,7 @@
 {{ end }}{{ if eq .Operation "searchRetrieve" }}
 <sruResponse:searchRetrieveResponse xmlns:sruResponse="http://docs.oasis-open.org/ns/search-ws/sruResponse">
   <sruResponse:version>2.0</sruResponse:version>
-  <sruResponse:numberOfRecords>{{ .SearchRetrieve.Results | len }}</sruResponse:numberOfRecords>
+  <sruResponse:numberOfRecords>{{ .SearchRetrieve.NumberOfRecords }}</sruResponse:numberOfRecords>
   {{ if not .General.Fatal }}
     {{ template "searchret.xml" . }}
   {{ end }}
