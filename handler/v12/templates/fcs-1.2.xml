@@ -11,9 +11,9 @@
       </sru:recordData>
     </sru:record>
     {{ if .Explain.ExtraResponseData }}
-    <sruResponse:echoedExplainRequest>
-      <sruResponse:version>1.2</sruResponse:version>
-    </sruResponse:echoedExplainRequest>
+    <sru:echoedExplainRequest>
+      <sru:version>1.2</sru:version>
+    </sru:echoedExplainRequest>
       <sru:extraResponseData>
         {{ template "description.xml" .Explain.Resources }}
       </sru:extraResponseData>
