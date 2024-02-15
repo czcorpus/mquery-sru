@@ -27,7 +27,7 @@ import (
 )
 
 func createResource() *RoundRobinLineSel {
-	r := NewRoundRobinLineSel("corp1", "corp2", "corp3")
+	r := NewRoundRobinLineSel(9, "corp1", "corp2", "corp3")
 	r.SetRscLines("corp1", ConcExample{Lines: []conc.ConcordanceLine{
 		{Text: conc.TokenSlice{&conc.Token{Word: "foo1"}}},
 		{Text: conc.TokenSlice{&conc.Token{Word: "foo2"}}},
@@ -47,7 +47,7 @@ func createResource() *RoundRobinLineSel {
 }
 
 func createResourceWithSomeEmpty() *RoundRobinLineSel {
-	r := NewRoundRobinLineSel("corp1", "corp2", "corp3")
+	r := NewRoundRobinLineSel(9, "corp1", "corp2", "corp3")
 	r.SetRscLines("corp1", ConcExample{Lines: []conc.ConcordanceLine{}})
 	r.SetRscLines("corp2", ConcExample{Lines: []conc.ConcordanceLine{
 		{Text: conc.TokenSlice{&conc.Token{Word: "bar1"}}},
@@ -62,30 +62,32 @@ func createResourceWithSomeEmpty() *RoundRobinLineSel {
 	return r
 }
 
-func firstWord(line conc.ConcordanceLine) string {
+func firstWord(line *conc.ConcordanceLine) string {
 	return line.Text[0].Word
-}
-
-func TestEmptyWithoutFactory(t *testing.T) {
-	r := new(RoundRobinLineSel)
-	hasNext := r.setNextAvailRsc()
-	assert.False(t, hasNext)
 }
 
 func TestTypicalSetup(t *testing.T) {
 	r := createResource()
 	r.Next()
 	assert.Equal(t, "foo1", firstWord(r.CurrLine()))
-
-}
-
-func TestAllDepletedWorks(t *testing.T) {
-	r := createResource()
-	for i := 0; i < 9; i++ {
-		r.Next()
-	}
 	r.Next()
-	assert.True(t, r.AllDepleted())
+	assert.Equal(t, "bar1", firstWord(r.CurrLine()))
+	r.Next()
+	assert.Equal(t, "baz1", firstWord(r.CurrLine()))
+	r.Next()
+	assert.Equal(t, "foo2", firstWord(r.CurrLine()))
+	r.Next()
+	assert.Equal(t, "bar2", firstWord(r.CurrLine()))
+	r.Next()
+	assert.Equal(t, "baz2", firstWord(r.CurrLine()))
+	r.Next()
+	assert.Equal(t, "foo3", firstWord(r.CurrLine()))
+	r.Next()
+	assert.Equal(t, "bar3", firstWord(r.CurrLine()))
+	r.Next()
+	assert.Equal(t, "baz3", firstWord(r.CurrLine()))
+	assert.False(t, r.Next())
+	assert.Equal(t, 9, r.lineCounter)
 }
 
 // TestWithSomeEmpty reflects problem reported
@@ -94,8 +96,19 @@ func TestWithSomeEmpty(t *testing.T) {
 	r := createResourceWithSomeEmpty()
 	hasNext := r.Next()
 	assert.True(t, hasNext)
-	ft := firstWord(r.items[r.currIdx].Lines.Lines[0])
-	assert.Equal(t, "bar1", ft)
+	assert.Equal(t, "bar1", firstWord(r.CurrLine()))
+	r.Next()
+	assert.Equal(t, "baz1", firstWord(r.CurrLine()))
+	r.Next()
+	assert.Equal(t, "bar2", firstWord(r.CurrLine()))
+	r.Next()
+	assert.Equal(t, "baz2", firstWord(r.CurrLine()))
+	r.Next()
+	assert.Equal(t, "bar3", firstWord(r.CurrLine()))
+	r.Next()
+	assert.Equal(t, "baz3", firstWord(r.CurrLine()))
+	assert.Equal(t, 9, r.lineCounter)
+	assert.False(t, r.Next())
 }
 
 func TestSetRscLinesPanicsIfIterationStarted(t *testing.T) {

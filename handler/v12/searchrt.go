@@ -166,13 +166,13 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return http.StatusInternalServerError
 	}
 
-	ranges := query.CalculatePartialRanges(corpora, startRecord, maximumRecords)
+	ranges := query.CalculatePartialRanges(corpora, startRecord-1, maximumRecords)
 
 	// make searches
 	waits := make([]<-chan *rdb.WorkerResult, len(corpora))
-	for i, corpusName := range corpora {
+	for i, rng := range ranges {
 
-		ast, fcsErr := a.translateQuery(corpusName, fcsQuery)
+		ast, fcsErr := a.translateQuery(rng.Rsc, fcsQuery)
 		if fcsErr != nil {
 			fcsResponse.General.AddError(*fcsErr)
 			return general.ConformantUnprocessableEntity
@@ -187,10 +187,10 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			return general.ConformantUnprocessableEntity
 		}
 		args, err := sonic.Marshal(rdb.ConcExampleArgs{
-			CorpusPath: a.corporaConf.GetRegistryPath(corpusName),
+			CorpusPath: a.corporaConf.GetRegistryPath(rng.Rsc),
 			Query:      query,
 			Attrs:      retrieveAttrs,
-			StartLine:  ranges[corpusName].From - 1,
+			StartLine:  rng.From,
 			MaxItems:   maximumRecords,
 		})
 		if err != nil {
@@ -217,7 +217,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	}
 
 	// using fromResource, we will cycle through available resources' results and their lines
-	fromResource := result.NewRoundRobinLineSel(corpora...)
+	fromResource := result.NewRoundRobinLineSel(maximumRecords, corpora...)
 
 	for i, wait := range waits {
 		rawResult := <-wait

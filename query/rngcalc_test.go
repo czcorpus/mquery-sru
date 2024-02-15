@@ -26,16 +26,19 @@ import (
 
 func TestThreeResourcesOfDiffSizes(t *testing.T) {
 	ans := CalculatePartialRanges([]string{"c1", "c2", "c3"}, 38, 10)
-	assert.Equal(t, 13, ans["c1"].From)
-	assert.Equal(t, 23, ans["c1"].To)
-	assert.Equal(t, 13, ans["c2"].From)
-	assert.Equal(t, 23, ans["c2"].To)
-	assert.Equal(t, 12, ans["c3"].From)
-	assert.Equal(t, 22, ans["c3"].To)
+	assert.Equal(t, 12, ans[0].From)
+	assert.Equal(t, 22, ans[0].To)
+	assert.Equal(t, "c3", ans[0].Rsc)
+	assert.Equal(t, 13, ans[1].From)
+	assert.Equal(t, 23, ans[1].To)
+	assert.Equal(t, "c1", ans[1].Rsc)
+	assert.Equal(t, 13, ans[2].From)
+	assert.Equal(t, 23, ans[2].To)
+	assert.Equal(t, "c2", ans[2].Rsc)
 }
 
 func TestSingleResource(t *testing.T) {
 	ans := CalculatePartialRanges([]string{"c1"}, 38, 10)
-	assert.Equal(t, 38, ans["c1"].From)
-	assert.Equal(t, 48, ans["c1"].To)
+	assert.Equal(t, 38, ans[0].From)
+	assert.Equal(t, 48, ans[0].To)
 }
