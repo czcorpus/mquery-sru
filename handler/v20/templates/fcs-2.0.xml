@@ -11,6 +11,9 @@
           {{ template "explain.xml" .Explain }}
       </sruResponse:recordData>
     </sruResponse:record>
+    <sruResponse:echoedExplainRequest>
+      <sruResponse:version>2.0</sruResponse:version>
+    </sruResponse:echoedExplainRequest>
     {{ if .Explain.ExtraResponseData }}
       <sruResponse:extraResponseData>
         {{ template "description.xml" . }}
