@@ -1,6 +1,7 @@
-<ed:EndpointDescription xmlns:ed="http://clarin.eu/fcs/endpoint-description" version="1">
+<ed:EndpointDescription xmlns:ed="http://clarin.eu/fcs/endpoint-description" version="2">
   <ed:Capabilities>
     <ed:Capability>http://clarin.eu/fcs/capability/basic-search</ed:Capability>
+    <ed:Capability>http://clarin.eu/fcs/capability/advanced-search</ed:Capability>
   </ed:Capabilities>
   <ed:SupportedDataViews>
     <ed:SupportedDataView id="hits" delivery-policy="send-by-default">application/x-clarin-fcs-hits+xml</ed:SupportedDataView>
