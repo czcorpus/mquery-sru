@@ -30,7 +30,7 @@ Language)
 4. Run `make tools`
 5. Run `make build`
 6. copy `mquery-sru` to a desired location and crate a config file (conf.sample.json can be used as a starting point)
-7. run `mquery-sru server /path/to/conf.json` and `mquery-sru worker /path/to/conf.json` (multiple workers are supported)
+7. run `mquery-sru server /path/to/conf.json` and `mquery-sru worker /path/to/conf.json` (multiple can be run to utilize higher service load)
    * for OS integration, see <a href="#os-integration-systemd">OS integration (systemd)</a>
 
 
@@ -64,6 +64,6 @@ Now you can try to run the service:
 
 ```
 systemctl start mquery-sru-server
-systemctl start mquery-sru-worker-all
+systemctl start mquery-sru-worker-all.target
 ```
 
