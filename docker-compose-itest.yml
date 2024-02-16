@@ -5,26 +5,24 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile.itests
-    command: bash -c "cp -r /opt/mquery-sru-source/* /opt/mquery-sru && export PATH=$PATH:/usr/local/go/bin:/root/go/bin && make build && ./mquery-sru server conf.json"
+    command: bash -c "cp -r /opt/mquery-sru-source/* /opt/mquery-sru && export PATH=$PATH:/usr/local/go/bin:/root/go/bin && make build && ./mquery-sru server conf.itest.json"
     networks:
       - redis
     ports:
       - 8989:8989
     volumes:
       - ./:/opt/mquery-sru-source
-      - ./conf.itest.json:/opt/mquery-sru/conf.json
       - ./logs:/opt/logs
 
   worker:
     build:
       context: .
       dockerfile: ./Dockerfile.itests
-    command: bash -c "cp -r /opt/mquery-sru-source/* /opt/mquery-sru && export PATH=$PATH:/usr/local/go/bin:/root/go/bin && make build && WORKER_ID=0 ./mquery-sru worker conf.json"
+    command: bash -c "cp -r /opt/mquery-sru-source/* /opt/mquery-sru && export PATH=$PATH:/usr/local/go/bin:/root/go/bin && make build && WORKER_ID=0 ./mquery-sru worker conf.itest.json"
     networks:
       - redis
     volumes:
       - ./:/opt/mquery-sru-source
-      - ./conf.itest.json:/opt/mquery-sru/conf.json
       - ./logs:/opt/logs
 
   redis:
