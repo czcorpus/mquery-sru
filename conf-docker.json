@@ -4,9 +4,8 @@
     "serverReadTimeoutSecs": 600,
     "serverWriteTimeoutSecs": 60,
     "serverInfo": {
-        "serverName": "my",
+        "serverHost": "my",
         "serverPort": "80",
-        "externalUrlPath": "",
         "database": "fcs",
         "databaseTitle": {
             "en": "CNC FCS"
@@ -14,7 +13,8 @@
         "databaseDescription": {
             "en": "CNC API for FCS"
         },
-        "primaryLanguage": "en"
+        "primaryLanguage": "en",
+        "externalUrlPath": ""
     },
     "corpora": {
         "registryDir": "/var/lib/manatee/registry",

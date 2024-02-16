@@ -52,9 +52,6 @@ type ServerInfo struct {
 	// ServerPort specifies an external port the service listens on.
 	ServerPort string `json:"serverPort"`
 
-	// ExternalURLPath specifies an external path to the API on host
-	ExternalURLPath string `json:"externalUrlPath"`
-
 	// Database speicifies a concrete "sub section" of the endpoint.
 	// TODO: not sure about this; In the documentation, it seems
 	// like it is a URL path specifying concrete resources offered.
@@ -74,12 +71,26 @@ type ServerInfo struct {
 	// PrimaryLanguage defines a language which is native
 	// for different labels, descriptions etc.
 	PrimaryLanguage string `json:"primaryLanguage"`
+
+	// ExternalURLPath specifies an external path to the API on host
+	ExternalURLPath string `json:"externalUrlPath"`
 }
 
 func (s *ServerInfo) Validate() error {
 	if s == nil {
 		return errors.New("missing serverInfo section")
 	}
+
+	if s.ServerHost == "" {
+		return errors.New("missing configuration `serverInfo.ServerHost`")
+	}
+	if s.ServerPort == "" {
+		return errors.New("missing configuration `serverInfo.ServerPort`")
+	}
+	if s.Database == "" {
+		return errors.New("missing configuration `serverInfo.Database`")
+	}
+
 	if s.DatabaseTitle == nil {
 		return errors.New("missing configuration section `serverInfo.databaseTitle`")
 	}
