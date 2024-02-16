@@ -1,125 +1,104 @@
 {
-    "listenAddress" : "127.0.0.1",
-    "listenPort": 8097,
-    "serverReadTimeoutSecs": 120,
+    "listenAddress" : "0.0.0.0",
+    "listenPort": 8989,
+    "serverReadTimeoutSecs": 600,
     "serverWriteTimeoutSecs": 60,
-    "sourcesRootDir": "/home/tomas/work/tools/mquery-sru",
     "serverInfo": {
-        "serverName": "korpus.cz",
+        "serverName": "my",
         "serverPort": "80",
         "database": "fcs",
-        "databaseTitle": {"en": "CNC FCS endpoint"},
-        "databaseDescription": {"en": "CNC FCS endpoint (testing)"}
+        "databaseTitle": {
+            "en": "CNC FCS"
+        },
+        "databaseDescription": {
+            "en": "CNC API for FCS"
+        },
+        "primaryLanguage": "en"
     },
     "corpora": {
-        "registryDir": "/home/tomas/work/data/corpora/registry",
+        "registryDir": "/var/lib/manatee/registry",
+        "maximumRecords": 10,
         "resources": [
             {
-                "id": "syn2020",
-                "fullName": {
-                        "cs": "SYN 2020",
-                        "en": "SYN 2020"
-                },
-                "description": {
-                        "cs": "Synchronní reprezentativní a referenční korpus současné psané češtiny, obsahující 100 milionů textových slov.",
-                        "en": "Synchronous representative and reference corpus of contemporary written Czech, containing 100 million text words."
-                },
-                "pid": "cnc/corpora/syn2020",
-                "languages": ["ces"],
+                "id": "A",
+                "pid": "A",
+                "fullName": {"en": "A"},
+                "description": {"en": "Test corpus A"},
+                "languages": ["eng"],
                 "posAttrs": [
                     {
                         "name": "word",
                         "id": "attr1",
                         "layer": "text",
-                        "isLayerDefault": true,
-                        "isBasicSearchAttr": true
+                        "isBasicSearchAttr": true,
+                        "isLayerDefault": true
                     },
                     {
                         "name": "lemma",
                         "id": "attr2",
                         "layer": "lemma",
-                        "isLayerDefault": true,
-                        "isBasicSearchAttr": true
-                    },
-                    {
-                        "name": "pos",
-                        "id": "attr3",
-                        "layer": "pos",
+                        "isBasicSearchAttr": true,
                         "isLayerDefault": true
                     },
                     {
                         "name": "tag",
                         "id": "attr4",
-                        "layer": "pos"
+                        "layer": "pos",
+                        "isLayerDefault": true
                     }
                 ],
                 "structureMapping": {
-                    "utteranceStruct": "s",
-                    "paragraphStruct": "p",
-                    "turnStruct":      "p",
-                    "textStruct":      "doc",
-                    "sessionStruct":   "doc"
+
                 }
-            },
-            {
-                "id": "klaus",
-                "fullName": {
-                        "en": "Klaus, Václav Klaus",
-                        "cs": "Klaus, Václav Klaus"
-                },
-                "description": {
-                        "cs": "Texty Václava K.",
-                        "en": "The stuff from Klaus"
-                },
-                "pid": "cnc/corpora/klaus",
-                "languages": ["ces"],
+            }, {
+                "id": "B",
+                "pid": "B",
+                "fullName": {"en": "B"},
+                "description": {"en": "Test corpus B"},
+                "languages": ["eng"],
                 "posAttrs": [
                     {
                         "name": "word",
                         "id": "attr1",
                         "layer": "text",
-                        "isLayerDefault": true,
-                        "isBasicSearchAttr": true
+                        "isBasicSearchAttr": true,
+                        "isLayerDefault": true
                     },
                     {
                         "name": "lemma",
                         "id": "attr2",
                         "layer": "lemma",
-                        "isLayerDefault": true,
-                        "isBasicSearchAttr": true
-                    },
-                    {
-                        "name": "pos",
-                        "id": "attr3",
-                        "layer": "pos",
+                        "isBasicSearchAttr": true,
                         "isLayerDefault": true
                     },
                     {
                         "name": "tag",
                         "id": "attr4",
-                        "layer": "pos"
+                        "layer": "pos",
+                        "isLayerDefault": true
                     }
                 ],
                 "structureMapping": {
-                    "sentenceStruct": "s",
-                    "utteranceStruct": "p",
-                    "paragraphStruct": "p",
-                    "turnStruct":      "p",
-                    "textStruct":      "doc",
-                    "sessionStruct":   "doc"
+
                 }
             }
         ]
     },
     "redis": {
-        "host": "10.0.3.130",
+        "host": "mquery-sru-it_redis_1",
         "port": 6379,
-        "db": 8,
-        "queryAnswerTimeoutSecs": 180,
-        "dataEncoder": "sonic"
+        "db": 7,
+        "cachePath": "/var/lib/manatee/cache.masm",
+        "queryAnswerTimeoutSecs": 600
     },
-    "_logFile": "/var/log/mquery-sru/mquery.log",
+    "db": {
+        "host": "kontext_mariadb_1:3306",
+        "user": "kontext",
+        "password": "kontext-secret",
+        "name": "kontext",
+        "corpusTable": "kontext_corpus"
+    },
+    "logFile": "/opt/logs/test.log",
     "logLevel": "debug",
-    "language": "en",
-    "timeZone": "Europe/Prague"
+    "jobLogsDir": "/opt/logs"
 }
