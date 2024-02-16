@@ -80,17 +80,20 @@ func (q *Query) TranslateWithinCtx(v string) string {
 	return "??"
 }
 
+// TranslatePosAttr transforms a FCS-QL attribute specifier (e.g. `text`, `p_tag:pos`)
+// into a real corpus positional attribute.
+// Please note that it also supports `word` alias for the `text` layer
 func (q *Query) TranslatePosAttr(qualifier, name string) string {
 	if qualifier != "" {
 		for _, p := range q.posAttrs {
-			if p.Name == qualifier && string(p.Layer) == name {
+			if p.Name == qualifier && (string(p.Layer) == name || p.Layer == "text" && name == "word") {
 				return p.Name
 			}
 		}
 
 	} else {
 		for _, p := range q.posAttrs {
-			if string(p.Layer) == name && p.IsLayerDefault {
+			if (string(p.Layer) == name || p.Layer == "text" && name == "word") && p.IsLayerDefault {
 				return p.Name
 			}
 		}
