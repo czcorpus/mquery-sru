@@ -28,7 +28,10 @@ Language)
    1. `configure --with-pcre && make && sudo make install && sudo ldconfig`
 3. Get MQuery-SRU sources (`git clone --depth 1 github.com:czcorpus/mquery-sru.git`)
 4. Run `make tools`
-5. Run `make`
+5. Run `make build`
+6. copy `mquery-sru` to a desired location and crate a config file (conf.sample.json can be used as a starting point)
+7. run `mquery-sru server /path/to/conf.json` and `mquery-sru worker /path/to/conf.json` (multiple workers are supported)
+   * for OS integration, see <a href="OS_itegration_(systemd)">OS integration (systemd)</a>
 
 
 ## Configuration
