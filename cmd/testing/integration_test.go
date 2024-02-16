@@ -22,7 +22,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/mzimandl/mquery-sru-it/tests"
+	"github.com/czcorpus/mquery-sru/cmd/testing/tests"
 
 	"github.com/stretchr/testify/suite"
 )

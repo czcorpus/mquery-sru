@@ -17,8 +17,8 @@
 //  You should have received a copy of the GNU General Public License
 //  along with MQUERY.  If not, see <https://www.gnu.org/licenses/>.
 
-//go:generate pigeon -o query/parser/fcsql/fcsql.go query/parser/fcsql/fcsql.peg
-//go:generate pigeon -o query/parser/basic/basic.go query/parser/basic/basic.peg
+//go:generate pigeon -o ../../query/parser/fcsql/fcsql.go ../../query/parser/fcsql/fcsql.peg
+//go:generate pigeon -o ../../query/parser/basic/basic.go ../../query/parser/basic/basic.peg
 
 package main
 

@@ -1,7 +1,7 @@
 version: "3"
 
 services:
-  server:
+  server-test:
     build:
       context: .
       dockerfile: ./Dockerfile.itests
@@ -14,7 +14,7 @@ services:
       - ./:/opt/mquery-sru-source
       - ./logs:/opt/logs
 
-  worker:
+  worker-test:
     build:
       context: .
       dockerfile: ./Dockerfile.itests
