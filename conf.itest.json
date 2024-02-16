@@ -1,0 +1,125 @@
+{
+    "listenAddress" : "127.0.0.1",
+    "listenPort": 8097,
+    "serverReadTimeoutSecs": 120,
+    "serverWriteTimeoutSecs": 60,
+    "sourcesRootDir": "/home/tomas/work/tools/mquery-sru",
+    "serverInfo": {
+        "serverName": "korpus.cz",
+        "serverPort": "80",
+        "database": "fcs",
+        "databaseTitle": {"en": "CNC FCS endpoint"},
+        "databaseDescription": {"en": "CNC FCS endpoint (testing)"}
+    },
+    "corpora": {
+        "registryDir": "/home/tomas/work/data/corpora/registry",
+        "resources": [
+            {
+                "id": "syn2020",
+                "fullName": {
+                        "cs": "SYN 2020",
+                        "en": "SYN 2020"
+                },
+                "description": {
+                        "cs": "Synchronní reprezentativní a referenční korpus současné psané češtiny, obsahující 100 milionů textových slov.",
+                        "en": "Synchronous representative and reference corpus of contemporary written Czech, containing 100 million text words."
+                },
+                "pid": "cnc/corpora/syn2020",
+                "languages": ["ces"],
+                "posAttrs": [
+                    {
+                        "name": "word",
+                        "id": "attr1",
+                        "layer": "text",
+                        "isLayerDefault": true,
+                        "isBasicSearchAttr": true
+                    },
+                    {
+                        "name": "lemma",
+                        "id": "attr2",
+                        "layer": "lemma",
+                        "isLayerDefault": true,
+                        "isBasicSearchAttr": true
+                    },
+                    {
+                        "name": "pos",
+                        "id": "attr3",
+                        "layer": "pos",
+                        "isLayerDefault": true
+                    },
+                    {
+                        "name": "tag",
+                        "id": "attr4",
+                        "layer": "pos"
+                    }
+                ],
+                "structureMapping": {
+                    "utteranceStruct": "s",
+                    "paragraphStruct": "p",
+                    "turnStruct":      "p",
+                    "textStruct":      "doc",
+                    "sessionStruct":   "doc"
+                }
+            },
+            {
+                "id": "klaus",
+                "fullName": {
+                        "en": "Klaus, Václav Klaus",
+                        "cs": "Klaus, Václav Klaus"
+                },
+                "description": {
+                        "cs": "Texty Václava K.",
+                        "en": "The stuff from Klaus"
+                },
+                "pid": "cnc/corpora/klaus",
+                "languages": ["ces"],
+                "posAttrs": [
+                    {
+                        "name": "word",
+                        "id": "attr1",
+                        "layer": "text",
+                        "isLayerDefault": true,
+                        "isBasicSearchAttr": true
+                    },
+                    {
+                        "name": "lemma",
+                        "id": "attr2",
+                        "layer": "lemma",
+                        "isLayerDefault": true,
+                        "isBasicSearchAttr": true
+                    },
+                    {
+                        "name": "pos",
+                        "id": "attr3",
+                        "layer": "pos",
+                        "isLayerDefault": true
+                    },
+                    {
+                        "name": "tag",
+                        "id": "attr4",
+                        "layer": "pos"
+                    }
+                ],
+                "structureMapping": {
+                    "sentenceStruct": "s",
+                    "utteranceStruct": "p",
+                    "paragraphStruct": "p",
+                    "turnStruct":      "p",
+                    "textStruct":      "doc",
+                    "sessionStruct":   "doc"
+                }
+            }
+        ]
+    },
+    "redis": {
+        "host": "10.0.3.130",
+        "port": 6379,
+        "db": 8,
+        "queryAnswerTimeoutSecs": 180,
+        "dataEncoder": "sonic"
+    },
+    "_logFile": "/var/log/mquery-sru/mquery.log",
+    "logLevel": "debug",
+    "language": "en",
+    "timeZone": "Europe/Prague"
+}
