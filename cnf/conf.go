@@ -52,6 +52,9 @@ type ServerInfo struct {
 	// ServerPort specifies an external port the service listens on.
 	ServerPort string `json:"serverPort"`
 
+	// ExternalURLPath specifies an external path to the API on host
+	ExternalURLPath string `json:"externalUrlPath"`
+
 	// Database speicifies a concrete "sub section" of the endpoint.
 	// TODO: not sure about this; In the documentation, it seems
 	// like it is a URL path specifying concrete resources offered.

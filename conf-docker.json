@@ -6,6 +6,7 @@
     "serverInfo": {
         "serverName": "my",
         "serverPort": "80",
+        "externalUrlPath": "",
         "database": "fcs",
         "databaseTitle": {
             "en": "CNC FCS"
