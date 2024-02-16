@@ -17,9 +17,12 @@ clean:
 	rm mquery-sru
 
 test:
-	go test ./...
+	go test $(go list ./... | grep -v "github.com/czcorpus/mquery-sru/cmd/testing")
+
+itest:
+	go test -v ./cmd/testing --args http://localhost:8989/
 
 rtest:
 	go test -race ./...
 
-.PHONY: clean install test tools
+.PHONY: clean install test itest tools
