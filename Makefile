@@ -1,14 +1,14 @@
 all: build-and-test
 
 build:
-	manabuild mquery-sru
+	manabuild -cmd-dir service
 
 build-and-test:
-	manabuild -test mquery-sru
+	manabuild -test -cmd-dir service mquery-sru
 
 tools:
 	go install github.com/mna/pigeon
-	go install github.com/czcorpus/manabuild
+	go install github.com/czcorpus/manabuild@latest
 
 install:
 	cp ./mquery-sru /usr/local/bin
