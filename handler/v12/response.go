@@ -29,6 +29,11 @@ type FCSResourceInfo struct {
 	Description map[string]string
 	URI         string
 	Languages   []string
+
+	// AvailableLayers is a list of values separated
+	// by single space (as required in CLARIN-FCS
+	// Interface Specification)
+	AvailableLayers string
 }
 
 type Token struct {

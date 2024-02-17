@@ -15,7 +15,7 @@
       <sru:version>1.2</sru:version>
     </sru:echoedExplainRequest>
       <sru:extraResponseData>
-        {{ template "description.xml" .Explain.Resources }}
+        {{ template "description.xml" .Explain }}
       </sru:extraResponseData>
     {{ end }}
   {{ end }}

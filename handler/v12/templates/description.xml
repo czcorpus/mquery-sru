@@ -6,8 +6,13 @@
   <ed:SupportedDataViews>
     <ed:SupportedDataView id="hits" delivery-policy="send-by-default">application/x-clarin-fcs-hits+xml</ed:SupportedDataView>
   </ed:SupportedDataViews>
+  <ed:SupportedLayers>
+    {{ range $k, $v := .PosAttrs }}
+      <ed:SupportedLayer id="{{ $v.ID }}" qualifier="{{ $v.Name }}" result-id="{{ $v.Layer.GetResultID }}">{{ $v.Layer }}</ed:SupportedLayer>
+    {{ end }}
+  </ed:SupportedLayers>
   <ed:Resources>
-    {{ range . }}
+    {{ range .Resources }}
       <ed:Resource pid="{{ .PID }}">
         {{ range $lang, $title := .Title }}
           <ed:Title xml:lang="{{ $lang }}">{{ $title }}</ed:Title>
@@ -23,7 +28,8 @@
             <ed:Language>{{ . }}</ed:Language>
           {{ end }}
         </ed:Languages>
-        <ed:AvailableDataViews ref="hits"/>
+          <ed:AvailableLayers ref="{{ .AvailableLayers }}"/>
+        <ed:AvailableDataViews ref="hits adv"/>
       </ed:Resource>
     {{ end }}
   </ed:Resources>
