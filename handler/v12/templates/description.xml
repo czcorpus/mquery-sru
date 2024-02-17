@@ -28,8 +28,8 @@
             <ed:Language>{{ . }}</ed:Language>
           {{ end }}
         </ed:Languages>
-          <ed:AvailableLayers ref="{{ .AvailableLayers }}"/>
         <ed:AvailableDataViews ref="hits adv"/>
+        <ed:AvailableLayers ref="{{ .AvailableLayers }}"/>
       </ed:Resource>
     {{ end }}
   </ed:Resources>
