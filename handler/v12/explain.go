@@ -39,6 +39,7 @@ func (a *FCSSubHandlerV12) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 		PrimaryLanguage:     a.serverInfo.PrimaryLanguage,
 		MaximumRecords:      a.corporaConf.MaximumRecords,
 		NumberOfRecords:     corpus.ExplainOpNumberOfRecords,
+		PosAttrs:            a.corporaConf.Resources.GetCommonPosAttrs2(),
 	}
 
 	// check if all parameters are supported
@@ -60,11 +61,12 @@ func (a *FCSSubHandlerV12) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 			fcsResponse.Explain.Resources = append(
 				fcsResponse.Explain.Resources,
 				FCSResourceInfo{
-					PID:         corpusConf.PID,
-					Title:       corpusConf.FullName,
-					Description: corpusConf.Description,
-					URI:         corpusConf.URI,
-					Languages:   corpusConf.Languages,
+					PID:             corpusConf.PID,
+					Title:           corpusConf.FullName,
+					Description:     corpusConf.Description,
+					URI:             corpusConf.URI,
+					Languages:       corpusConf.Languages,
+					AvailableLayers: corpusConf.GetDefinedLayersAsRefString(),
 				},
 			)
 		}
