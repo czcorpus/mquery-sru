@@ -68,6 +68,8 @@ type ServerInfo struct {
 	// if present, 'en' translation is required.
 	DatabaseDescription map[string]string `json:"databaseDescription"`
 
+	DatabaseAuthor map[string]string `json:"databaseAuthor"`
+
 	// PrimaryLanguage defines a language which is native
 	// for different labels, descriptions etc.
 	PrimaryLanguage string `json:"primaryLanguage"`
@@ -103,6 +105,13 @@ func (s *ServerInfo) Validate() error {
 		_, ok := s.DatabaseDescription["en"]
 		if !ok {
 			return errors.New("missing required configuration for `serverInfo.databaseDescription.en`")
+		}
+	}
+
+	if s.DatabaseAuthor != nil {
+		_, ok := s.DatabaseAuthor["en"]
+		if !ok {
+			return errors.New("missing required configuration for `serverInfo.databaseAuthor.en`")
 		}
 	}
 
