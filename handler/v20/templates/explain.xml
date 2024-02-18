@@ -12,6 +12,9 @@
     {{ range $lang, $desc := .DatabaseDescription }}
       <zr:description lang="{{ $lang }}"{{ if eq $lang $primaryLang }} primary="true"{{ end }}>{{ $desc }}</zr:description>
     {{ end }}
+    {{ range $lang, $author := .DatabaseAuthor }}
+      <zr:author lang="{{ $lang }}"{{ if eq $lang $primaryLang }} primary="true"{{ end }}>{{ $author }}</zr:author>
+    {{ end }}
   </zr:databaseInfo>
   <zr:indexInfo>
     <zr:set identifier="http://clarin.eu/fcs/resource" name="fcs">
