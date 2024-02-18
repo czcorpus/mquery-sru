@@ -5,6 +5,7 @@
   </ed:Capabilities>
   <ed:SupportedDataViews>
     <ed:SupportedDataView id="hits" delivery-policy="send-by-default">application/x-clarin-fcs-hits+xml</ed:SupportedDataView>
+    <ed:SupportedDataView id="adv" delivery-policy="send-by-default">application/x-clarin-fcs-adv+xml</ed:SupportedDataView>
   </ed:SupportedDataViews>
   <ed:SupportedLayers>
     {{ range $k, $v := .PosAttrs }}
