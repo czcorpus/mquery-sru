@@ -63,6 +63,7 @@ type FCSExplain struct {
 	Database            string
 	DatabaseTitle       map[string]string
 	DatabaseDescription map[string]string
+	DatabaseAuthor      map[string]string
 	PrimaryLanguage     string
 	PosAttrs            []corpus.PosAttr
 	Resources           []FCSResourceInfo
