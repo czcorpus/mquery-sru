@@ -35,6 +35,9 @@ Language)
    * one or more workers: `WORKER_ID=0 mquery-sru worker /path/to/conf.json` (multiple workers can be run to utilize higher service load; in such case, set `WORKER_ID` properly for each one)
    * for OS integration, see <a href="#os-integration-systemd">OS integration (systemd)</a>
 
+## Worker considerations
+
+It's important to understand that endpoints experiencing low traffic can still benefit from having multiple workers. Specifically, if an endpoint is configured to search across multiple corpora, MQuery-SRU can leverage these workers to execute searches in parallel. This approach can significantly reduce the response time by querying all configured corpora simultaneously, thereby improving efficiency even under conditions of minimal load.
 
 ## Configuration
 
