@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/bytedance/sonic"
+	"github.com/czcorpus/cnc-gokit/collections"
 	"github.com/czcorpus/mquery-sru/corpus"
 	"github.com/czcorpus/mquery-sru/general"
 	"github.com/czcorpus/mquery-sru/mango"
@@ -212,7 +213,14 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 
 	corpora := strings.Split(ctx.DefaultQuery(SearchRetrArgFCSContext.String(), ""), ",")
 	if len(corpora) == 0 || len(corpora) == 1 && corpora[0] == "" {
-		corpora = a.corporaConf.Resources.GetCorpora()
+		tmp := strings.Split(ctx.Query(SearchRetrArgFCSContext.String()), ",")
+		customCorpora := make([]string, 0, len(corpora))
+		for _, co := range a.corporaConf.Resources {
+			if collections.SliceContains(tmp, co.PID) {
+				customCorpora = append(customCorpora, co.ID)
+			}
+		}
+		corpora = customCorpora
 	}
 
 	// get searchable corpora and attrs
