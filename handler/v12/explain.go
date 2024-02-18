@@ -36,6 +36,7 @@ func (a *FCSSubHandlerV12) explain(ctx *gin.Context, fcsResponse *FCSResponse) i
 		Database:            a.serverInfo.Database,
 		DatabaseTitle:       a.serverInfo.DatabaseTitle,
 		DatabaseDescription: a.serverInfo.DatabaseDescription,
+		DatabaseAuthor:      a.serverInfo.DatabaseAuthor,
 		PrimaryLanguage:     a.serverInfo.PrimaryLanguage,
 		MaximumRecords:      a.corporaConf.MaximumRecords,
 		NumberOfRecords:     corpus.ExplainOpNumberOfRecords,
