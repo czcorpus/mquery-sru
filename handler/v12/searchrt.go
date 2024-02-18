@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/bytedance/sonic"
+	"github.com/czcorpus/cnc-gokit/collections"
 	"github.com/czcorpus/mquery-sru/general"
 	"github.com/czcorpus/mquery-sru/mango"
 	"github.com/czcorpus/mquery-sru/query"
@@ -108,6 +109,16 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	}
 	fcsResponse.SearchRetrieve.EchoedSRRequest.StartRecord = startRecord
 
+	recordSchema := ctx.DefaultQuery(SearchRetrArgRecordSchema.String(), general.RecordSchema)
+	if recordSchema != general.RecordSchema {
+		fcsResponse.General.AddError(general.FCSError{
+			Code:    general.DCUnknownSchemaForRetrieval,
+			Ident:   SearchMaximumRecords.String(),
+			Message: general.DCUnknownSchemaForRetrieval.AsMessage(),
+		})
+		return general.ConformantUnprocessableEntity
+	}
+
 	maximumRecords := a.corporaConf.MaximumRecords
 	if xMaximumRecords := ctx.Query(SearchMaximumRecords.String()); len(xMaximumRecords) > 0 {
 		maximumRecords, err = strconv.Atoi(xMaximumRecords)
@@ -131,7 +142,14 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 
 	corpora := a.corporaConf.Resources.GetCorpora()
 	if ctx.Request.URL.Query().Has(ctx.Query(SearchRetrArgFCSContext.String())) {
-		corpora = strings.Split(ctx.Query(SearchRetrArgFCSContext.String()), ",")
+		tmp := strings.Split(ctx.Query(SearchRetrArgFCSContext.String()), ",")
+		customCorpora := make([]string, 0, len(corpora))
+		for _, co := range a.corporaConf.Resources {
+			if collections.SliceContains(tmp, co.PID) {
+				customCorpora = append(customCorpora, co.ID)
+			}
+		}
+		corpora = customCorpora
 	}
 
 	// get searchable corpora and attrs

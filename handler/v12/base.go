@@ -49,6 +49,7 @@ const (
 	SearchRetrArgQuery         SearchRetrArg = "query"
 	SearchRetrArgFCSContext    SearchRetrArg = "x-fcs-context"
 	SearchRetrArgFCSDataViews  SearchRetrArg = "x-fcs-dataviews"
+	SearchRetrArgRecordSchema  SearchRetrArg = "recordSchema"
 
 	ScanArgVersion          ScanArg = "version"
 	ScanArgOperation        ScanArg = "operation"
@@ -100,6 +101,7 @@ func (sra SearchRetrArg) Validate() error {
 		sra == SearchRetrArgOperation ||
 		sra == SearchRetrArgQuery ||
 		sra == SearchRetrArgFCSContext ||
+		sra == SearchRetrArgRecordSchema ||
 		sra == SearchRetrArgFCSDataViews {
 		return nil
 	}
