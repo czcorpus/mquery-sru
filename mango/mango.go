@@ -50,10 +50,10 @@ type GoConcExamples struct {
 	ConcSize int
 }
 
-func GetConcExamples(corpusPath, query string, attrs []string, fromLine, maxItems int) (GoConcExamples, error) {
+func GetConcExamples(corpusPath, query string, attrs []string, fromLine, maxItems int, maxContext int) (GoConcExamples, error) {
 	ans := C.conc_examples(
 		C.CString(corpusPath), C.CString(query), C.CString(strings.Join(attrs, ",")),
-		C.longlong(fromLine), C.longlong(maxItems))
+		C.longlong(fromLine), C.longlong(maxItems), C.longlong(maxContext))
 	var ret GoConcExamples
 	ret.Lines = make([]string, 0, maxItems)
 	ret.ConcSize = int(ans.concSize)

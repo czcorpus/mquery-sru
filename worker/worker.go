@@ -153,7 +153,7 @@ func (w *Worker) concExample(args rdb.ConcExampleArgs) (ans *result.ConcExample)
 		}
 	}()
 	concEx, err := mango.GetConcExamples(
-		args.CorpusPath, args.Query, args.Attrs, args.StartLine, args.MaxItems)
+		args.CorpusPath, args.Query, args.Attrs, args.StartLine, args.MaxItems, args.MaxContext)
 	if err != nil {
 		ans.Error = err.Error()
 		return

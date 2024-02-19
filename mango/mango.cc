@@ -26,7 +26,7 @@
 using namespace std;
 
 KWICRowsRetval conc_examples(
-    const char* corpusPath, const char* query, const char* attrs, PosInt fromLine, PosInt limit) {
+    const char* corpusPath, const char* query, const char* attrs, PosInt fromLine, PosInt limit, PosInt maxContext) {
 
     string cPath(corpusPath);
     try {
@@ -60,7 +60,7 @@ KWICRowsRetval conc_examples(
         PosInt concSize = conc->size();
         KWICLines* kl = new KWICLines(
             corp, conc->RS(true, fromLine, fromLine+limit-1), "-1:s", "1:s",
-			attrs, attrs, "", "", limit, false);
+			attrs, attrs, "", "", maxContext, false);
         if (conc->size() < limit) {
             limit = conc->size();
         }
