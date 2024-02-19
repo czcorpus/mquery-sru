@@ -29,7 +29,7 @@ Language)
 3. Get MQuery-SRU sources (`git clone --depth 1 github.com:czcorpus/mquery-sru.git`)
 4. Run `make tools`
 5. Run `make build`
-6. copy `mquery-sru` to a desired location and crate a config file (conf.sample.json can be used as a starting point)
+6. copy `mquery-sru` to a desired location and create a config file (conf.sample.json can be used as a starting point)
 7. run:
    * main server: `mquery-sru server /path/to/conf.json` and 
    * one or more workers: `WORKER_ID=0 mquery-sru worker /path/to/conf.json` (multiple workers can be run to utilize higher service load; in such case, set `WORKER_ID` properly for each one)
