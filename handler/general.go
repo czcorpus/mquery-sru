@@ -75,6 +75,7 @@ func (a *FCSHandler) handleWithXSLT(ctx *gin.Context, xslt map[string]string) {
 			Message: "Unsupported version " + resp.Version,
 		})
 	}
+	ctx.Set("logEvent_version", resp.Version)
 	handler.Handle(ctx, resp, xslt)
 }
 
