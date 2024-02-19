@@ -78,6 +78,7 @@ func (a *FCSSubHandlerV12) Handle(
 	} else if ctx.Request.URL.Query().Has(ScanArgScanClause.String()) {
 		operation = OperationScan
 	}
+	ctx.Set("logEvent_operation", operation)
 	if err := operation.Validate(); err != nil {
 		fcsResponse.General.AddError(general.FCSError{
 			Code:    general.DCUnsupportedOperation,
