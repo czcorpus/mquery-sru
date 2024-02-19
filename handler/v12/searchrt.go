@@ -210,6 +210,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			Attrs:      retrieveAttrs,
 			StartLine:  rng.From,
 			MaxItems:   maximumRecords,
+			MaxContext: a.corporaConf.MaximumContext,
 		})
 		if err != nil {
 			fcsResponse.General.AddError(general.FCSError{

@@ -60,6 +60,7 @@ type ConcExampleArgs struct {
 	Attrs      []string `json:"attrs"`
 	MaxItems   int      `json:"maxItems"`
 	StartLine  int      `json:"startLine"`
+	MaxContext int      `json:"maxContext"`
 }
 
 func (q Query) ToJSON() (string, error) {

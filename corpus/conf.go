@@ -41,6 +41,7 @@ const (
 	DefaultLayerType = LayerTypeText
 
 	dfltMaxRecords = 50
+	dfltMaxContext = 50
 
 	// ExplainOpNumberOfRecords is a value we currently don't understand
 	// well...
@@ -370,6 +371,9 @@ type CorporaSetup struct {
 	// also limited by its internals to `MaxRecordsInternalLimit`
 	MaximumRecords int `json:"maximumRecords"`
 
+	// MaximumContext specifies max. number of tokens left/right from hit
+	MaximumContext int `json:"maximumContext"`
+
 	// Resources is a description of configured corpora/resources
 	Resources SrchResources `json:"resources"`
 }
@@ -402,5 +406,16 @@ func (cs *CorporaSetup) ValidateAndDefaults(confContext string) error {
 		return fmt.Errorf(
 			"`%s.maximumRecords must be at most %d", confContext, mango.MaxRecordsInternalLimit)
 	}
+
+	if cs.MaximumContext < 0 {
+		return fmt.Errorf("`%s.maximumContext` invalid value; has to be positive", confContext)
+
+	} else if cs.MaximumContext == 0 {
+		cs.MaximumContext = dfltMaxContext
+		log.Warn().
+			Int("value", dfltMaxContext).
+			Msgf("%s.maximumContext not set, using default", confContext)
+	}
+
 	return cs.Resources.Validate("resources")
 }

@@ -53,7 +53,7 @@ typedef struct KWICRowsRetval {
  * @return KWICRowsRetval
  */
 KWICRowsRetval conc_examples(
-    const char* corpusPath, const char*query, const char* attrs, PosInt fromLine, PosInt limit);
+    const char* corpusPath, const char*query, const char* attrs, PosInt fromLine, PosInt limit, PosInt maxContext);
 
 
 /**
