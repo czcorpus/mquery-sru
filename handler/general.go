@@ -49,13 +49,6 @@ type FCSHandler struct {
 	conf     *corpus.CorporaSetup
 	radapter *rdb.Adapter
 
-	supportedRecordPackings []string
-	supportedOperations     []string
-
-	queryAllow          []string
-	queryExplain        []string
-	querySearchRetrieve []string
-
 	versions map[string]FCSSubHandler
 }
 
