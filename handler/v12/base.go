@@ -78,7 +78,6 @@ func (a *FCSSubHandlerV12) Handle(
 	} else if ctx.Request.URL.Query().Has(ScanArgScanClause.String()) {
 		operation = OperationScan
 	}
-	ctx.Set("logEvent_operation", operation)
 	if err := operation.Validate(); err != nil {
 		fcsResponse.General.AddError(general.FCSError{
 			Code:    general.DCUnsupportedOperation,
@@ -88,6 +87,7 @@ func (a *FCSSubHandlerV12) Handle(
 		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
 		return
 	}
+	ctx.Set("logEvent_operation", operation)
 	fcsResponse.Operation = operation
 	fcsResponse.General.XSLT = xslt[operation.String()]
 
@@ -101,6 +101,7 @@ func (a *FCSSubHandlerV12) Handle(
 		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
 		return
 	}
+	ctx.Set("logEvent_recordPacking", recordPacking)
 	fcsResponse.RecordPacking = recordPacking
 
 	code := http.StatusOK
