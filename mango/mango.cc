@@ -59,7 +59,7 @@ KWICRowsRetval conc_examples(
         conc->shuffle();
         PosInt concSize = conc->size();
         KWICLines* kl = new KWICLines(
-            corp, conc->RS(true, fromLine, fromLine+limit-1), "-1:s", "1:s",
+            corp, conc->RS(true, fromLine, fromLine+limit), "-1:s", "1:s",
 			attrs, attrs, "", "", maxContext, false);
         if (conc->size() < limit) {
             limit = conc->size();
