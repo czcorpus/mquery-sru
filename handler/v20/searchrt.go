@@ -214,7 +214,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	if len(corporaPids) > 0 {
 		for _, pid := range corporaPids {
 			res, err := a.corporaConf.Resources.GetResourceByPID(pid)
-			if err != corpus.ErrResourceNotFound {
+			if err == corpus.ErrResourceNotFound {
 				fcsResponse.SearchRetrieve.Results = []FCSSearchRow{}
 				return http.StatusOK
 			}
@@ -224,6 +224,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	} else {
 		corpora = a.corporaConf.Resources.GetCorpora()
 	}
+	fmt.Println("CORPORA: ", corpora)
 
 	// get searchable corpora and attrs
 	if len(corpora) == 0 {
