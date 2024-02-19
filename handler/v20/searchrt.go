@@ -23,10 +23,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/bytedance/sonic"
-	"github.com/czcorpus/cnc-gokit/collections"
 	"github.com/czcorpus/mquery-sru/corpus"
 	"github.com/czcorpus/mquery-sru/general"
 	"github.com/czcorpus/mquery-sru/mango"
@@ -211,33 +209,24 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return general.ConformantUnprocessableEntity
 	}
 
-	corpora := strings.Split(ctx.DefaultQuery(SearchRetrArgFCSContext.String(), ""), ",")
-	if len(corpora) == 0 || len(corpora) == 1 && corpora[0] == "" {
-		tmp := strings.Split(ctx.Query(SearchRetrArgFCSContext.String()), ",")
-		customCorpora := make([]string, 0, len(corpora))
-		for _, co := range a.corporaConf.Resources {
-			if collections.SliceContains(tmp, co.PID) {
-				customCorpora = append(customCorpora, co.ID)
+	corporaPids := fetchContext(ctx)
+	corpora := make([]string, 0, len(corporaPids))
+	if len(corporaPids) > 0 {
+		for _, pid := range corporaPids {
+			res, err := a.corporaConf.Resources.GetResourceByPID(pid)
+			if err != corpus.ErrResourceNotFound {
+				fcsResponse.SearchRetrieve.Results = []FCSSearchRow{}
+				return http.StatusOK
 			}
-		}
-		corpora = customCorpora
-	}
-
-	// get searchable corpora and attrs
-	if len(corpora) > 0 {
-		for _, v := range corpora {
-			_, err := a.corporaConf.Resources.GetResource(v)
-			if err != nil {
-				fcsResponse.General.AddError(general.FCSError{
-					Code:    general.DCUnsupportedContextSet,
-					Ident:   SearchRetrArgFCSContext.String(),
-					Message: general.DCUnsupportedContextSet.AsMessage(),
-				})
-				return general.ConformantUnprocessableEntity
-			}
+			corpora = append(corpora, res.ID)
 		}
 
 	} else {
+		corpora = a.corporaConf.Resources.GetCorpora()
+	}
+
+	// get searchable corpora and attrs
+	if len(corpora) == 0 {
 		fcsResponse.General.AddError(general.FCSError{
 			Code:    general.DCUnsupportedContextSet,
 			Ident:   SearchRetrArgFCSContext.String(),

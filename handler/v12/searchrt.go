@@ -22,10 +22,9 @@ package v12
 import (
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/bytedance/sonic"
-	"github.com/czcorpus/cnc-gokit/collections"
+	"github.com/czcorpus/mquery-sru/corpus"
 	"github.com/czcorpus/mquery-sru/general"
 	"github.com/czcorpus/mquery-sru/mango"
 	"github.com/czcorpus/mquery-sru/query"
@@ -140,16 +139,20 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return general.ConformantUnprocessableEntity
 	}
 
-	corpora := a.corporaConf.Resources.GetCorpora()
-	if ctx.Request.URL.Query().Has(ctx.Query(SearchRetrArgFCSContext.String())) {
-		tmp := strings.Split(ctx.Query(SearchRetrArgFCSContext.String()), ",")
-		customCorpora := make([]string, 0, len(corpora))
-		for _, co := range a.corporaConf.Resources {
-			if collections.SliceContains(tmp, co.PID) {
-				customCorpora = append(customCorpora, co.ID)
+	corporaPids := fetchContext(ctx)
+	corpora := make([]string, 0, len(corporaPids))
+	if len(corporaPids) > 0 {
+		for _, pid := range corporaPids {
+			res, err := a.corporaConf.Resources.GetResourceByPID(pid)
+			if err != corpus.ErrResourceNotFound {
+				fcsResponse.SearchRetrieve.Results = []FCSSearchRow{}
+				return http.StatusOK
 			}
+			corpora = append(corpora, res.ID)
 		}
-		corpora = customCorpora
+
+	} else {
+		corpora = a.corporaConf.Resources.GetCorpora()
 	}
 
 	// get searchable corpora and attrs

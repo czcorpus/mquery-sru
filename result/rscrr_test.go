@@ -26,6 +26,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func createSingleResource() *RoundRobinLineSel {
+	r := NewRoundRobinLineSel(3, "corp1")
+	r.SetRscLines("corp1", ConcExample{Lines: []conc.ConcordanceLine{
+		{Text: conc.TokenSlice{&conc.Token{Word: "foo1"}}},
+		{Text: conc.TokenSlice{&conc.Token{Word: "foo2"}}},
+		{Text: conc.TokenSlice{&conc.Token{Word: "foo3"}}},
+	}})
+	return r
+}
+
 func createResource() *RoundRobinLineSel {
 	r := NewRoundRobinLineSel(9, "corp1", "corp2", "corp3")
 	r.SetRscLines("corp1", ConcExample{Lines: []conc.ConcordanceLine{
@@ -117,4 +127,14 @@ func TestSetRscLinesPanicsIfIterationStarted(t *testing.T) {
 	assert.Panics(t, func() {
 		r.SetRscLines("corp1", ConcExample{Lines: []conc.ConcordanceLine{}})
 	})
+}
+
+func TestWorksWithSingleResource(t *testing.T) {
+	r := createSingleResource()
+	r.Next()
+	assert.Equal(t, "foo1", firstWord(r.CurrLine()))
+	r.Next()
+	assert.Equal(t, "foo2", firstWord(r.CurrLine()))
+	r.Next()
+	assert.Equal(t, "foo3", firstWord(r.CurrLine()))
 }

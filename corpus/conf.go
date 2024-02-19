@@ -19,6 +19,7 @@
 package corpus
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"sort"
@@ -47,6 +48,10 @@ const (
 	// well...
 	// TODO what is this value for in the "explain" operation?
 	ExplainOpNumberOfRecords = 25
+)
+
+var (
+	ErrResourceNotFound = errors.New("resource not found")
 )
 
 // LayerType is a layer above positional attributes
@@ -265,7 +270,7 @@ func (sr SrchResources) GetCorpora() []string {
 func (sr SrchResources) GetResource(ID string) (*CorpusSetup, error) {
 	resIndex := collections.SliceFindIndex(sr, func(v *CorpusSetup) bool { return v.ID == ID })
 	if resIndex == -1 {
-		return nil, fmt.Errorf("Resource not found: %s", ID)
+		return nil, ErrResourceNotFound
 	}
 	return sr[resIndex], nil
 }
@@ -353,6 +358,17 @@ func (sr SrchResources) Validate(confContext string) error {
 		}
 	}
 	return nil
+}
+
+// GetResourceByPID
+// in case a resource with PID does not exist, ErrResourceNotFound is returned
+func (sr SrchResources) GetResourceByPID(PID string) (*CorpusSetup, error) {
+	for _, res := range sr {
+		if res.PID == PID {
+			return res, nil
+		}
+	}
+	return nil, ErrResourceNotFound
 }
 
 // ---

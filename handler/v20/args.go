@@ -21,6 +21,7 @@ package v20
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -172,3 +173,11 @@ func getTypedArg[T ~string](ctx *gin.Context, name string, dflt T) T {
 }
 
 // ----
+
+func fetchContext(ctx *gin.Context) []string {
+	tmp := strings.Split(ctx.DefaultQuery(SearchRetrArgFCSContext.String(), ""), ",")
+	if len(tmp) == 0 || len(tmp) == 1 && tmp[0] == "" {
+		return []string{}
+	}
+	return tmp
+}

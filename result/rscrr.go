@@ -174,7 +174,7 @@ func (r *RoundRobinLineSel) Next() bool {
 		}
 	}
 
-	for i := 1; i < len(r.items); i++ {
+	for i := 0; i < len(r.items); i++ {
 		r.lineCounter++
 		r.currIdx = (r.currIdx + 1) % len(r.items)
 		if !r.items[r.currIdx].Started {
