@@ -126,6 +126,9 @@ func (a *FCSSubHandlerV20) exportAttrsByLayers(
 }
 
 func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResponse) int {
+	logArgs := make(map[string]interface{})
+	logging.AddLogEvent(ctx, "args", logArgs)
+
 	// check if all parameters are supported
 	for key, _ := range ctx.Request.URL.Query() {
 		if err := SearchRetrArg(key).Validate(); err != nil {
@@ -149,7 +152,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return general.ConformantStatusBadRequest
 	}
 	fcsResponse.SearchRetrieve.EchoedSRRequest.Query = fcsQuery
-	logging.AddLogEvent(ctx, SearchRetrArgQuery.String(), fcsQuery)
+	logArgs[SearchRetrArgQuery.String()] = fcsQuery
 
 	// handle start record parameter
 	xStartRecord := ctx.DefaultQuery(SearchRetrStartRecord.String(), "1")
@@ -171,7 +174,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return general.ConformantUnprocessableEntity
 	}
 	fcsResponse.SearchRetrieve.EchoedSRRequest.StartRecord = startRecord
-	logging.AddLogEvent(ctx, SearchRetrStartRecord.String(), startRecord)
+	logArgs[SearchRetrStartRecord.String()] = startRecord
 
 	// handle record schema parameter
 	recordSchema := ctx.DefaultQuery(SearchRetrArgRecordSchema.String(), general.RecordSchema)
@@ -216,7 +219,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		})
 		return general.ConformantUnprocessableEntity
 	}
-	logging.AddLogEvent(ctx, SearchMaximumRecords.String(), maximumRecords)
+	logArgs[SearchMaximumRecords.String()] = maximumRecords
 
 	// handle requested sources
 	corporaPids := fetchContext(ctx)
@@ -254,15 +257,15 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return http.StatusInternalServerError
 	}
 
-	logging.AddLogEvent(ctx, "corpus", a.serverInfo.Database)
-	logging.AddLogEvent(ctx, "sources", corpora)
-	logging.AddLogEvent(ctx, SearchRetrArgFCSContext.String(), ctx.Query(SearchRetrArgFCSContext.String()))
+	logArgs["corpus"] = a.serverInfo.Database
+	logArgs["sources"] = corpora
+	logArgs[SearchRetrArgFCSContext.String()] = ctx.Query(SearchRetrArgFCSContext.String())
 	log.Warn().Msg("Data views are not implemented yet!")
-	logging.AddLogEvent(ctx, SearchRetrArgFCSDataViews.String(), ctx.Query(SearchRetrArgFCSDataViews.String()))
+	logArgs[SearchRetrArgFCSDataViews.String()] = ctx.Query(SearchRetrArgFCSDataViews.String())
 
 	queryType := getTypedArg[QueryType](ctx, SearchRetrArgQueryType.String(), DefaultQueryType)
 	fcsResponse.SearchRetrieve.QueryType = queryType
-	logging.AddLogEvent(ctx, SearchRetrArgQueryType.String(), queryType)
+	logArgs[SearchRetrArgQueryType.String()] = queryType
 
 	ranges := query.CalculatePartialRanges(corpora, startRecord-1, maximumRecords)
 
