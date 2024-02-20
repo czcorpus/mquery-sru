@@ -15,8 +15,8 @@ github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d/go.mod h1:8EPpV
 github.com/chenzhuoyu/iasm v0.9.0 h1:9fhXjVzq5hUy2gkhhgHl95zG2cEAhw9OSGs8toWWAwo=
 github.com/chenzhuoyu/iasm v0.9.0/go.mod h1:Xjy2NpN3h7aUqeqM+woSuuvxmIe6+DDsiNLIrkAmYog=
 github.com/coreos/go-systemd/v22 v22.5.0/go.mod h1:Y58oyj3AT4RCenI/lSvhwexgC+NSVTIJ3seZv2GcEnc=
-github.com/czcorpus/cnc-gokit v0.8.2 h1:yOfgdOL4C0XXc5HulMunISrE502SCgdn5ttfqA1EHsI=
-github.com/czcorpus/cnc-gokit v0.8.2/go.mod h1:m6/pi38R7LW9Dm598fwI0UTqcCcCuLD60Tx7pidWGcc=
+github.com/czcorpus/cnc-gokit v0.9.0 h1:XVdfvDfqCmZ5QmZYiM5YSGgdkGKALiUWhrmWDXYuQpQ=
+github.com/czcorpus/cnc-gokit v0.9.0/go.mod h1:m6/pi38R7LW9Dm598fwI0UTqcCcCuLD60Tx7pidWGcc=
 github.com/czcorpus/manabuild v0.0.6 h1:Zehu6FPu44SLkSux/o9ALvrDE25DnnKu51pgfAXNo24=
 github.com/czcorpus/manabuild v0.0.6/go.mod h1:dj2iAsZObs4yJhF6KkQs5oH2AAyZlrmaNwMGV44hLbk=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
