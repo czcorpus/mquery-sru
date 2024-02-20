@@ -18,7 +18,18 @@
 
 package rdb
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/rs/zerolog/log"
+)
+
+const (
+	dfltPort                   = 6379
+	dfltChannelQuery           = "channel"
+	dfltChannelResultPrefix    = "res"
+	dfltQueryAnswerTimeoutSecs = 30
+)
 
 type Conf struct {
 	Host                   string `json:"host"`
@@ -32,4 +43,41 @@ type Conf struct {
 
 func (conf *Conf) ServerInfo() string {
 	return fmt.Sprintf("%s:%d", conf.Host, conf.Port)
+}
+
+func (conf *Conf) Validate() error {
+	if conf.Host == "" {
+		return fmt.Errorf("redis.host is missing")
+	}
+	if conf.Port == 0 {
+		conf.Port = dfltPort
+		log.Warn().
+			Int("value", conf.Port).
+			Msg("redis.port not specified, using default")
+
+	} else if conf.Port < 1 || conf.Port > 65535 {
+		return fmt.Errorf("redis.port is invalid (use 1-65535)")
+	}
+	if conf.DB < 1 || conf.DB > 16 {
+		return fmt.Errorf("redis.db is invalid (use 1-16)")
+	}
+	if conf.ChannelQuery == "" {
+		conf.ChannelQuery = dfltChannelQuery
+		log.Warn().
+			Str("value", conf.ChannelQuery).
+			Msg("redis.channelQuery not specified, using default")
+	}
+	if conf.ChannelResultPrefix == "" {
+		conf.ChannelResultPrefix = dfltChannelResultPrefix
+		log.Warn().
+			Str("value", conf.ChannelResultPrefix).
+			Msg("redis.channelResultPrefix not specified, using default")
+	}
+	if conf.QueryAnswerTimeoutSecs == 0 {
+		conf.QueryAnswerTimeoutSecs = dfltQueryAnswerTimeoutSecs
+		log.Warn().
+			Int("value", conf.QueryAnswerTimeoutSecs).
+			Msg("redis.queryAnswerTimeoutSecs not specified, using default")
+	}
+	return nil
 }
