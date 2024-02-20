@@ -74,6 +74,5 @@
     },
     "logFile": "",
     "logLevel": "debug",
-    "language": "en",
     "timeZone": "UTC"
 }
