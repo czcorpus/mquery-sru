@@ -75,11 +75,17 @@ general types (e.g. `"paragraphStruct": "p"`)
 ## Redis database
 
 `redis.host` - an IP or hostname of available Redis instance
+
 `redis.port` (optional) - a port used to connect to a Redis instance (defaults to 6379)
+
 `redis.db` - Redis database number (1-16)
+
 `redis.password` (optional) - a password used to connect to a Redis instance
+
 `redis.channelQuery` (optional) - Redis channel to use for server-worker communication (defaults to `mquerysru`)
+
 `redis.channelResultPrefix` (optional) - a prefix used for channels notifying about finished jobs in workers (defaults to `res`)
+
 `redis.queryAnswerTimeoutSecs`(optional) - a time in seconds to wait for a worker to provide a result
 (defaults to `30`)
 
