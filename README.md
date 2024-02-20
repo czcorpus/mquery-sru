@@ -9,7 +9,7 @@ Manatee-open corpus search engine.
     * definable layer &#8596; pos. attribute mapping
 * Level 1 support for basic search via CQL (Context Query
 Language)
-* search in multiple defined corpora
+* simultaneous search in multiple defined corpora
 
 
 ## Requirements
@@ -58,7 +58,7 @@ See `conf.sample.json` for detailed info.
 
 Create a directory for logging (e.g. `/var/log/mquery-sru`) and set proper permissions for `www-data` to be able to write there.
 
-You can use predefined systemd files from `/scripts/systemd/*`. Copy (or link) them to `/etc/systemd/system` and then run:
+You can use predefined systemd files from [/scripts/systemd/*](https://github.com/czcorpus/mquery-sru/tree/main/scripts/systemd). Copy (or link) them to `/etc/systemd/system` and then run:
 
 ```
 systemctl enable mquery-sru-server.service
