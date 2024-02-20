@@ -50,10 +50,16 @@ type GoConcExamples struct {
 	ConcSize int
 }
 
-func GetConcExamples(corpusPath, query string, attrs []string, fromLine, maxItems int, maxContext int) (GoConcExamples, error) {
+func GetConcExamples(
+	corpusPath, query string,
+	attrs []string,
+	fromLine, maxItems, maxContext int,
+	viewContextStruct string,
+) (GoConcExamples, error) {
 	ans := C.conc_examples(
 		C.CString(corpusPath), C.CString(query), C.CString(strings.Join(attrs, ",")),
-		C.longlong(fromLine), C.longlong(maxItems), C.longlong(maxContext))
+		C.longlong(fromLine), C.longlong(maxItems), C.longlong(maxContext),
+		C.CString(viewContextStruct))
 	var ret GoConcExamples
 	ret.Lines = make([]string, 0, maxItems)
 	ret.ConcSize = int(ans.concSize)
@@ -70,7 +76,12 @@ func GetConcExamples(corpusPath, query string, attrs []string, fromLine, maxItem
 	}
 	tmp := (*[MaxRecordsInternalLimit]*C.char)(unsafe.Pointer(ans.value))
 	for i := 0; i < int(ans.size); i++ {
-		ret.Lines = append(ret.Lines, C.GoString(tmp[i]))
+		str := C.GoString(tmp[i])
+		// we must test str len as our c++ wrapper may return it
+		// e.g. in case our offset is higher than actual num of lines
+		if len(str) > 0 {
+			ret.Lines = append(ret.Lines, C.GoString(tmp[i]))
+		}
 	}
 	return ret, nil
 }
