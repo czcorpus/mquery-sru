@@ -125,6 +125,7 @@ type Conf struct {
 	ServerReadTimeoutSecs  int      `json:"serverReadTimeoutSecs"`
 	ServerWriteTimeoutSecs int      `json:"serverWriteTimeoutSecs"`
 	CorsAllowedOrigins     []string `json:"corsAllowedOrigins"`
+	TrustedProxies         []string `json:"trustedProxies"`
 
 	// SourcesRootDir is mainly used to locate html/xml templates and other
 	// assets so we can refer them in a relative way inside the code

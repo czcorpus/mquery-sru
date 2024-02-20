@@ -79,6 +79,14 @@ func runApiServer(
 	}
 
 	engine := gin.New()
+	engine.ForwardedByClientIP = true
+	if len(conf.TrustedProxies) > 0 {
+		if err := engine.SetTrustedProxies(conf.TrustedProxies); err != nil {
+			log.Error().Err(err).Msg("Failed to set trusted proxies")
+			syscallChan <- syscall.SIGTERM
+			return
+		}
+	}
 	engine.Use(gin.Recovery())
 	engine.Use(logging.GinMiddleware())
 	engine.NoMethod(uniresp.NoMethodHandler)
