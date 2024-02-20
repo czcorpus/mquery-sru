@@ -26,7 +26,7 @@ import (
 
 const (
 	dfltPort                   = 6379
-	dfltChannelQuery           = "channel"
+	dfltChannelQuery           = "mquerysru"
 	dfltChannelResultPrefix    = "res"
 	dfltQueryAnswerTimeoutSecs = 30
 )
