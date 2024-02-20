@@ -136,7 +136,6 @@ type Conf struct {
 	Redis          *rdb.Conf            `json:"redis"`
 	LogFile        string               `json:"logFile"`
 	LogLevel       logging.LogLevel     `json:"logLevel"`
-	Language       string               `json:"language"`
 	TimeZone       string               `json:"timeZone"`
 
 	srcPath string
@@ -197,10 +196,7 @@ func ValidateAndDefaults(conf *Conf) {
 		log.Fatal().Err(err).Msg("invalid configuration")
 		return
 	}
-	if conf.Language == "" {
-		conf.Language = dfltLanguage
-		log.Warn().Msgf("language not specified, using default: %s", conf.Language)
-	}
+
 	if err := conf.CorporaSetup.ValidateAndDefaults("corpora"); err != nil {
 		log.Fatal().Err(err).Msg("invalid configuration")
 		return
