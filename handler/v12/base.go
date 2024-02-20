@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"text/template"
 
+	"github.com/czcorpus/cnc-gokit/logging"
 	"github.com/czcorpus/mquery-sru/cnf"
 	"github.com/czcorpus/mquery-sru/corpus"
 	"github.com/czcorpus/mquery-sru/general"
@@ -89,6 +90,7 @@ func (a *FCSSubHandlerV12) Handle(
 	}
 	fcsResponse.Operation = operation
 	fcsResponse.General.XSLT = xslt[operation.String()]
+	logging.AddLogEvent(ctx, "operation", operation)
 
 	recordPacking := getTypedArg(ctx, "recordPacking", fcsResponse.RecordPacking)
 	if err := recordPacking.Validate(); err != nil {
@@ -101,6 +103,7 @@ func (a *FCSSubHandlerV12) Handle(
 		return
 	}
 	fcsResponse.RecordPacking = recordPacking
+	logging.AddLogEvent(ctx, "recordPacking", recordPacking)
 
 	code := http.StatusOK
 	switch fcsResponse.Operation {

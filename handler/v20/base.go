@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"text/template"
 
+	"github.com/czcorpus/cnc-gokit/logging"
 	"github.com/czcorpus/mquery-sru/cnf"
 	"github.com/czcorpus/mquery-sru/corpus"
 	"github.com/czcorpus/mquery-sru/general"
@@ -90,6 +91,7 @@ func (a *FCSSubHandlerV20) Handle(
 	}
 	fcsResponse.Operation = operation
 	fcsResponse.General.XSLT = xslt[operation.String()]
+	logging.AddLogEvent(ctx, "operation", operation)
 
 	recordXMLEscaping := getTypedArg(ctx, "recordXMLEscaping", fcsResponse.RecordXMLEscaping)
 	if err := recordXMLEscaping.Validate(); err != nil {
@@ -102,6 +104,7 @@ func (a *FCSSubHandlerV20) Handle(
 		return
 	}
 	fcsResponse.RecordXMLEscaping = recordXMLEscaping
+	logging.AddLogEvent(ctx, "recordXMLEscaping", recordXMLEscaping)
 
 	code := http.StatusOK
 	switch fcsResponse.Operation {

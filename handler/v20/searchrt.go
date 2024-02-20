@@ -25,6 +25,7 @@ import (
 	"strconv"
 
 	"github.com/bytedance/sonic"
+	"github.com/czcorpus/cnc-gokit/logging"
 	"github.com/czcorpus/mquery-sru/corpus"
 	"github.com/czcorpus/mquery-sru/general"
 	"github.com/czcorpus/mquery-sru/mango"
@@ -34,6 +35,7 @@ import (
 	"github.com/czcorpus/mquery-sru/query/parser/fcsql"
 	"github.com/czcorpus/mquery-sru/rdb"
 	"github.com/czcorpus/mquery-sru/result"
+	"github.com/rs/zerolog/log"
 
 	"github.com/gin-gonic/gin"
 )
@@ -136,7 +138,8 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		}
 	}
 
-	fcsQuery := ctx.Query("query")
+	// handle query parameter
+	fcsQuery := ctx.Query(SearchRetrArgQuery.String())
 	if len(fcsQuery) == 0 {
 		fcsResponse.General.AddError(general.FCSError{
 			Code:    general.DCMandatoryParameterNotSupplied,
@@ -146,7 +149,9 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return general.ConformantStatusBadRequest
 	}
 	fcsResponse.SearchRetrieve.EchoedSRRequest.Query = fcsQuery
+	logging.AddLogEvent(ctx, SearchRetrArgQuery.String(), fcsQuery)
 
+	// handle start record parameter
 	xStartRecord := ctx.DefaultQuery(SearchRetrStartRecord.String(), "1")
 	startRecord, err := strconv.Atoi(xStartRecord)
 	if err != nil {
@@ -166,7 +171,9 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return general.ConformantUnprocessableEntity
 	}
 	fcsResponse.SearchRetrieve.EchoedSRRequest.StartRecord = startRecord
+	logging.AddLogEvent(ctx, SearchRetrStartRecord.String(), startRecord)
 
+	// handle record schema parameter
 	recordSchema := ctx.DefaultQuery(SearchRetrArgRecordSchema.String(), general.RecordSchema)
 	if recordSchema != general.RecordSchema {
 		fcsResponse.General.AddError(general.FCSError{
@@ -177,6 +184,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return general.ConformantUnprocessableEntity
 	}
 
+	// handle max records parameter
 	maximumRecords := a.corporaConf.MaximumRecords
 	if xMaximumRecords := ctx.Query(SearchMaximumRecords.String()); len(xMaximumRecords) > 0 {
 		maximumRecords, err = strconv.Atoi(xMaximumRecords)
@@ -208,7 +216,9 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		})
 		return general.ConformantUnprocessableEntity
 	}
+	logging.AddLogEvent(ctx, SearchMaximumRecords.String(), maximumRecords)
 
+	// handle requested sources
 	corporaPids := fetchContext(ctx)
 	corpora := make([]string, 0, len(corporaPids))
 	if len(corporaPids) > 0 {
@@ -234,7 +244,6 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		})
 		return general.ConformantStatusBadRequest
 	}
-
 	retrieveAttrs, err := a.corporaConf.Resources.GetCommonPosAttrNames(corpora...)
 	if err != nil {
 		fcsResponse.General.AddError(general.FCSError{
@@ -245,8 +254,16 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		return http.StatusInternalServerError
 	}
 
-	queryType := getTypedArg[QueryType](ctx, "queryType", DefaultQueryType)
+	logging.AddLogEvent(ctx, "corpus", a.serverInfo.Database)
+	logging.AddLogEvent(ctx, "sources", corpora)
+	logging.AddLogEvent(ctx, SearchRetrArgFCSContext.String(), ctx.Query(SearchRetrArgFCSContext.String()))
+	log.Warn().Msg("Data views are not implemented yet!")
+	logging.AddLogEvent(ctx, SearchRetrArgFCSDataViews.String(), ctx.Query(SearchRetrArgFCSDataViews.String()))
+
+	queryType := getTypedArg[QueryType](ctx, SearchRetrArgQueryType.String(), DefaultQueryType)
 	fcsResponse.SearchRetrieve.QueryType = queryType
+	logging.AddLogEvent(ctx, SearchRetrArgQueryType.String(), queryType)
+
 	ranges := query.CalculatePartialRanges(corpora, startRecord-1, maximumRecords)
 
 	// make searches
