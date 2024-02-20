@@ -89,9 +89,9 @@ func (a *FCSSubHandlerV20) Handle(
 		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
 		return
 	}
-	logging.AddLogEvent(ctx, "operation", operation)
 	fcsResponse.Operation = operation
 	fcsResponse.General.XSLT = xslt[operation.String()]
+	logging.AddLogEvent(ctx, "operation", operation)
 
 	recordXMLEscaping := getTypedArg(ctx, "recordXMLEscaping", fcsResponse.RecordXMLEscaping)
 	if err := recordXMLEscaping.Validate(); err != nil {
@@ -103,8 +103,8 @@ func (a *FCSSubHandlerV20) Handle(
 		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
 		return
 	}
-	logging.AddLogEvent(ctx, "recordXMLEscaping", recordXMLEscaping)
 	fcsResponse.RecordXMLEscaping = recordXMLEscaping
+	logging.AddLogEvent(ctx, "recordXMLEscaping", recordXMLEscaping)
 
 	code := http.StatusOK
 	switch fcsResponse.Operation {

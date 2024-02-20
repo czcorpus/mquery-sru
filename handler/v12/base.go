@@ -88,9 +88,9 @@ func (a *FCSSubHandlerV12) Handle(
 		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
 		return
 	}
-	logging.AddLogEvent(ctx, "operation", operation)
 	fcsResponse.Operation = operation
 	fcsResponse.General.XSLT = xslt[operation.String()]
+	logging.AddLogEvent(ctx, "operation", operation)
 
 	recordPacking := getTypedArg(ctx, "recordPacking", fcsResponse.RecordPacking)
 	if err := recordPacking.Validate(); err != nil {
@@ -102,8 +102,8 @@ func (a *FCSSubHandlerV12) Handle(
 		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
 		return
 	}
-	logging.AddLogEvent(ctx, "recordPacking", recordPacking)
 	fcsResponse.RecordPacking = recordPacking
+	logging.AddLogEvent(ctx, "recordPacking", recordPacking)
 
 	code := http.StatusOK
 	switch fcsResponse.Operation {
