@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"text/template"
 
+	"github.com/czcorpus/cnc-gokit/logging"
 	"github.com/czcorpus/mquery-sru/cnf"
 	"github.com/czcorpus/mquery-sru/corpus"
 	"github.com/czcorpus/mquery-sru/general"
@@ -88,7 +89,7 @@ func (a *FCSSubHandlerV20) Handle(
 		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
 		return
 	}
-	ctx.Set("logEvent_operation", operation)
+	logging.AddLogEvent(ctx, "operation", operation)
 	fcsResponse.Operation = operation
 	fcsResponse.General.XSLT = xslt[operation.String()]
 
@@ -102,7 +103,7 @@ func (a *FCSSubHandlerV20) Handle(
 		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
 		return
 	}
-	ctx.Set("logEvent_recordXMLEscaping", recordXMLEscaping)
+	logging.AddLogEvent(ctx, "recordXMLEscaping", recordXMLEscaping)
 	fcsResponse.RecordXMLEscaping = recordXMLEscaping
 
 	code := http.StatusOK

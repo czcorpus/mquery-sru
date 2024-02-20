@@ -19,6 +19,7 @@
 package handler
 
 import (
+	"github.com/czcorpus/cnc-gokit/logging"
 	"github.com/czcorpus/mquery-sru/cnf"
 	"github.com/czcorpus/mquery-sru/corpus"
 	"github.com/czcorpus/mquery-sru/general"
@@ -75,7 +76,7 @@ func (a *FCSHandler) handleWithXSLT(ctx *gin.Context, xslt map[string]string) {
 			Message: "Unsupported version " + resp.Version,
 		})
 	}
-	ctx.Set("logEvent_version", resp.Version)
+	logging.AddLogEvent(ctx, "version", resp.Version)
 	handler.Handle(ctx, resp, xslt)
 }
 
