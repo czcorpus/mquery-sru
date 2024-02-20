@@ -34,6 +34,14 @@ func (lrlist LineRangeList) Resources() []string {
 	return ans
 }
 
+func (lrlist LineRangeList) PIDList() []string {
+	ans := make([]string, len(lrlist))
+	for i, v := range lrlist {
+		ans[i] = v.Rsc
+	}
+	return ans
+}
+
 // CalculatePartialRanges calculates ranges for individual resources (corpora)
 // in case we know that:
 //  1. we need global offset and limit

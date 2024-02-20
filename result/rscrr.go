@@ -39,10 +39,10 @@ type item struct {
 // to handle result sets of different sizes by cycling
 // through less and less resources as they run out of items.
 type RoundRobinLineSel struct {
-	items       []item
-	currIdx     int
-	maxLines    int
-	lineCounter int
+	items             []item
+	currIdx           int
+	maxLines          int
+	nextOutputLineIdx int
 }
 
 func (r *RoundRobinLineSel) DescribeCurr() string {
@@ -57,7 +57,7 @@ func (r *RoundRobinLineSel) DescribeCurr() string {
 // during an iteration. It is intended to be called within a loop
 // controlled by method `Next()`
 func (r *RoundRobinLineSel) CurrLine() *conc.ConcordanceLine {
-	if r.lineCounter >= r.maxLines+1 { // lineCounter is always ahead by 1 (that's why `+1`)
+	if r.nextOutputLineIdx >= r.maxLines+1 { // lineCounter is always ahead by 1 (that's why `+1`)
 		return nil
 	}
 	lineNum := r.items[r.currIdx].CurrLine
@@ -159,7 +159,8 @@ func (r *RoundRobinLineSel) IsEmpty() bool {
 // Also, once called for the first time, no new result sets
 // can be added (this causes the call to panic)
 func (r *RoundRobinLineSel) Next() bool {
-	if r.lineCounter == r.maxLines {
+	if r.nextOutputLineIdx >= r.maxLines {
+		r.nextOutputLineIdx++
 		return false
 	}
 	if len(r.items) == 0 || r.IsEmpty() {
@@ -167,7 +168,7 @@ func (r *RoundRobinLineSel) Next() bool {
 	}
 
 	if !r.items[r.currIdx].Started {
-		r.lineCounter++
+		r.nextOutputLineIdx++
 		r.items[r.currIdx].Started = true
 		if len(r.items[r.currIdx].Lines.Lines) > 0 {
 			return true
@@ -175,7 +176,10 @@ func (r *RoundRobinLineSel) Next() bool {
 	}
 
 	for i := 0; i < len(r.items); i++ {
-		r.lineCounter++
+		r.nextOutputLineIdx++
+		if r.nextOutputLineIdx > r.maxLines {
+			return false
+		}
 		r.currIdx = (r.currIdx + 1) % len(r.items)
 		if !r.items[r.currIdx].Started {
 			r.items[r.currIdx].Started = true

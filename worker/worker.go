@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
-	"os/exec"
 	"time"
 
 	"github.com/bytedance/sonic"
@@ -137,11 +136,6 @@ func (w *Worker) Listen() {
 	}
 }
 
-func (w *Worker) tokenCoverage(mktokencovPath, subcPath, corpusPath, structure string) error {
-	cmd := exec.Command(mktokencovPath, corpusPath, structure, "-s", subcPath)
-	return cmd.Run()
-}
-
 func (w *Worker) concExample(args rdb.ConcExampleArgs) (ans *result.ConcExample) {
 	ans = new(result.ConcExample)
 	defer func() {
@@ -153,7 +147,8 @@ func (w *Worker) concExample(args rdb.ConcExampleArgs) (ans *result.ConcExample)
 		}
 	}()
 	concEx, err := mango.GetConcExamples(
-		args.CorpusPath, args.Query, args.Attrs, args.StartLine, args.MaxItems, args.MaxContext)
+		args.CorpusPath, args.Query, args.Attrs, args.StartLine, args.MaxItems,
+		args.MaxContext, args.ViewContextStruct)
 	if err != nil {
 		ans.Error = err.Error()
 		return

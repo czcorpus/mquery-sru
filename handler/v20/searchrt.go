@@ -224,7 +224,6 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	} else {
 		corpora = a.corporaConf.Resources.GetCorpora()
 	}
-	fmt.Println("CORPORA: ", corpora)
 
 	// get searchable corpora and attrs
 	if len(corpora) == 0 {
@@ -251,7 +250,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	ranges := query.CalculatePartialRanges(corpora, startRecord-1, maximumRecords)
 
 	// make searches
-	waits := make([]<-chan *rdb.WorkerResult, len(corpora))
+	waits := make([]<-chan *rdb.WorkerResult, len(ranges))
 	for i, rng := range ranges {
 
 		ast, fcsErr := a.translateQuery(rng.Rsc, fcsQuery, queryType)
@@ -269,13 +268,23 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			})
 			return general.ConformantUnprocessableEntity
 		}
+		rscConf, err := a.corporaConf.Resources.GetResource(rng.Rsc)
+		if err != nil {
+			fcsResponse.General.AddError(general.FCSError{
+				Code:    general.DCGeneralSystemError,
+				Ident:   err.Error(),
+				Message: general.DCGeneralSystemError.AsMessage(),
+			})
+			return general.ConformandGeneralServerError
+		}
 		args, err := sonic.Marshal(rdb.ConcExampleArgs{
-			CorpusPath: a.corporaConf.GetRegistryPath(rng.Rsc),
-			Query:      query,
-			Attrs:      retrieveAttrs,
-			StartLine:  rng.From,
-			MaxItems:   maximumRecords,
-			MaxContext: a.corporaConf.MaximumContext,
+			CorpusPath:        a.corporaConf.GetRegistryPath(rng.Rsc),
+			Query:             query,
+			Attrs:             retrieveAttrs,
+			StartLine:         rng.From,
+			MaxItems:          maximumRecords,
+			MaxContext:        a.corporaConf.MaximumContext,
+			ViewContextStruct: rscConf.ViewContextStruct,
 		})
 		if err != nil {
 			fcsResponse.General.AddError(general.FCSError{
@@ -299,9 +308,8 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		}
 		waits[i] = wait
 	}
-
 	// using fromResource, we will cycle through available resources' results and their lines
-	fromResource := result.NewRoundRobinLineSel(maximumRecords, corpora...)
+	fromResource := result.NewRoundRobinLineSel(maximumRecords, ranges.PIDList()...)
 	var totalConcSize int
 	for i, wait := range waits {
 		rawResult := <-wait
@@ -327,7 +335,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 				return http.StatusInternalServerError
 			}
 		}
-		fromResource.SetRscLines(corpora[i], result)
+		fromResource.SetRscLines(ranges[i].Rsc, result)
 		totalConcSize += result.ConcSize
 	}
 	fcsResponse.SearchRetrieve.NumberOfRecords = totalConcSize
@@ -375,7 +383,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		row := FCSSearchRow{
 			LayerAttrs: res.GetDefinedLayers().ToOrderedSlice(),
 			Position:   len(fcsResponse.SearchRetrieve.Results) + startRecord,
-			PID:        fromResource.CurrRscName(),
+			PID:        res.PID,
 			Ref:        res.URI,
 		}
 		item := fromResource.CurrLine()

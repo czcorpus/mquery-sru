@@ -190,7 +190,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	ranges := query.CalculatePartialRanges(corpora, startRecord-1, maximumRecords)
 
 	// make searches
-	waits := make([]<-chan *rdb.WorkerResult, len(corpora))
+	waits := make([]<-chan *rdb.WorkerResult, len(ranges))
 	for i, rng := range ranges {
 
 		ast, fcsErr := a.translateQuery(rng.Rsc, fcsQuery)
@@ -207,13 +207,23 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			})
 			return general.ConformantUnprocessableEntity
 		}
+		rscConf, err := a.corporaConf.Resources.GetResource(rng.Rsc)
+		if err != nil {
+			fcsResponse.General.AddError(general.FCSError{
+				Code:    general.DCGeneralSystemError,
+				Ident:   err.Error(),
+				Message: general.DCGeneralSystemError.AsMessage(),
+			})
+			return general.ConformandGeneralServerError
+		}
 		args, err := sonic.Marshal(rdb.ConcExampleArgs{
-			CorpusPath: a.corporaConf.GetRegistryPath(rng.Rsc),
-			Query:      query,
-			Attrs:      retrieveAttrs,
-			StartLine:  rng.From,
-			MaxItems:   maximumRecords,
-			MaxContext: a.corporaConf.MaximumContext,
+			CorpusPath:        a.corporaConf.GetRegistryPath(rng.Rsc),
+			Query:             query,
+			Attrs:             retrieveAttrs,
+			StartLine:         rng.From,
+			MaxItems:          maximumRecords,
+			MaxContext:        a.corporaConf.MaximumContext,
+			ViewContextStruct: rscConf.ViewContextStruct,
 		})
 		if err != nil {
 			fcsResponse.General.AddError(general.FCSError{
@@ -221,7 +231,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 				Ident:   err.Error(),
 				Message: "General system error",
 			})
-			return http.StatusInternalServerError
+			return general.ConformandGeneralServerError
 		}
 		wait, err := a.radapter.PublishQuery(rdb.Query{
 			Func: "concExample",
@@ -233,13 +243,13 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 				Ident:   err.Error(),
 				Message: "General system error",
 			})
-			return http.StatusInternalServerError
+			return general.ConformandGeneralServerError
 		}
 		waits[i] = wait
 	}
 
 	// using fromResource, we will cycle through available resources' results and their lines
-	fromResource := result.NewRoundRobinLineSel(maximumRecords, corpora...)
+	fromResource := result.NewRoundRobinLineSel(maximumRecords, ranges.PIDList()...)
 
 	for i, wait := range waits {
 		rawResult := <-wait
@@ -265,7 +275,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 				return http.StatusInternalServerError
 			}
 		}
-		fromResource.SetRscLines(corpora[i], result)
+		fromResource.SetRscLines(ranges[i].Rsc, result)
 	}
 	if fromResource.AllHasOutOfRangeError() {
 		fcsResponse.General.AddError(general.FCSError{
@@ -300,7 +310,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		}
 		row := FCSSearchRow{
 			Position: len(fcsResponse.SearchRetrieve.Results) + 1,
-			PID:      fromResource.CurrRscName(),
+			PID:      res.PID,
 			Ref:      res.URI,
 		}
 		item := fromResource.CurrLine()

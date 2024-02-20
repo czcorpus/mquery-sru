@@ -44,6 +44,8 @@ const (
 	dfltMaxRecords = 50
 	dfltMaxContext = 50
 
+	dfltViewContextStruct = "s"
+
 	// ExplainOpNumberOfRecords is a value we currently don't understand
 	// well...
 	// TODO what is this value for in the "explain" operation?
@@ -141,6 +143,11 @@ type CorpusSetup struct {
 	URI              string           `json:"uri"`
 	PosAttrs         []PosAttr        `json:"posAttrs"`
 	StructureMapping StructureMapping `json:"structureMapping"`
+
+	// ViewContextStruct is a structure used to specify "units"
+	// for KWIC left and right context. Typically, this is
+	// a structure representing a sentence or a speach.
+	ViewContextStruct string `json:"viewContextStruct"`
 }
 
 // GetBasicSearchAttrs provides all the basic search attrs
@@ -239,6 +246,14 @@ func (ls *CorpusSetup) Validate(confContext string) error {
 	}
 	if basicSrchAttrs == 0 {
 		return fmt.Errorf("no positional attributes are set to be used in basic search query")
+	}
+
+	if ls.ViewContextStruct == "" {
+		ls.ViewContextStruct = dfltViewContextStruct
+		log.Warn().
+			Str("value", ls.ViewContextStruct).
+			Str("corpus", ls.ID).
+			Msg("viewContextStruct not defined, using default")
 	}
 
 	return nil

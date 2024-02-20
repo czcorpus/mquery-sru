@@ -26,12 +26,59 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func createSingleResource() *RoundRobinLineSel {
+func createSingleResourceEmptyResult() *RoundRobinLineSel {
 	r := NewRoundRobinLineSel(3, "corp1")
+	r.SetRscLines("corp1", ConcExample{Lines: []conc.ConcordanceLine{}})
+	return r
+}
+
+func createSingleResource() *RoundRobinLineSel {
+	r := NewRoundRobinLineSel(4, "corp1")
 	r.SetRscLines("corp1", ConcExample{Lines: []conc.ConcordanceLine{
 		{Text: conc.TokenSlice{&conc.Token{Word: "foo1"}}},
 		{Text: conc.TokenSlice{&conc.Token{Word: "foo2"}}},
 		{Text: conc.TokenSlice{&conc.Token{Word: "foo3"}}},
+		{Text: conc.TokenSlice{&conc.Token{Word: "foo4"}}},
+	}})
+	return r
+}
+
+func createTwoResourcesOneEmpty() *RoundRobinLineSel {
+	r := NewRoundRobinLineSel(4, "corp1", "corp2")
+	r.SetRscLines("corp1", ConcExample{Lines: []conc.ConcordanceLine{
+		{Text: conc.TokenSlice{&conc.Token{Word: "foo1"}}},
+		{Text: conc.TokenSlice{&conc.Token{Word: "foo2"}}},
+		{Text: conc.TokenSlice{&conc.Token{Word: "foo3"}}},
+		{Text: conc.TokenSlice{&conc.Token{Word: "foo4"}}},
+	}})
+	r.SetRscLines("corp2", ConcExample{Lines: []conc.ConcordanceLine{}})
+	return r
+}
+
+func createTwoResourcesSecondSmaller() *RoundRobinLineSel {
+	r := NewRoundRobinLineSel(8, "corp1", "corp2") // 8 = "we expect 8 (but we get less)"
+	r.SetRscLines("corp1", ConcExample{Lines: []conc.ConcordanceLine{
+		{Text: conc.TokenSlice{&conc.Token{Word: "foo1"}}},
+		{Text: conc.TokenSlice{&conc.Token{Word: "foo2"}}},
+		{Text: conc.TokenSlice{&conc.Token{Word: "foo3"}}},
+		{Text: conc.TokenSlice{&conc.Token{Word: "foo4"}}},
+	}})
+	r.SetRscLines("corp2", ConcExample{Lines: []conc.ConcordanceLine{
+		{Text: conc.TokenSlice{&conc.Token{Word: "bar1"}}},
+	}})
+	return r
+}
+
+func createTwoResourcesFirstSmaller() *RoundRobinLineSel {
+	r := NewRoundRobinLineSel(8, "corp1", "corp2") // 8 = "we expect 8 (but we get less)"
+	r.SetRscLines("corp1", ConcExample{Lines: []conc.ConcordanceLine{
+		{Text: conc.TokenSlice{&conc.Token{Word: "foo1"}}},
+	}})
+	r.SetRscLines("corp2", ConcExample{Lines: []conc.ConcordanceLine{
+		{Text: conc.TokenSlice{&conc.Token{Word: "bar1"}}},
+		{Text: conc.TokenSlice{&conc.Token{Word: "bar2"}}},
+		{Text: conc.TokenSlice{&conc.Token{Word: "bar3"}}},
+		{Text: conc.TokenSlice{&conc.Token{Word: "bar4"}}},
 	}})
 	return r
 }
@@ -80,24 +127,35 @@ func TestTypicalSetup(t *testing.T) {
 	r := createResource()
 	r.Next()
 	assert.Equal(t, "foo1", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp1", r.CurrRscName())
 	r.Next()
 	assert.Equal(t, "bar1", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp2", r.CurrRscName())
 	r.Next()
 	assert.Equal(t, "baz1", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp3", r.CurrRscName())
 	r.Next()
 	assert.Equal(t, "foo2", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp1", r.CurrRscName())
 	r.Next()
 	assert.Equal(t, "bar2", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp2", r.CurrRscName())
 	r.Next()
 	assert.Equal(t, "baz2", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp3", r.CurrRscName())
 	r.Next()
 	assert.Equal(t, "foo3", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp1", r.CurrRscName())
 	r.Next()
 	assert.Equal(t, "bar3", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp2", r.CurrRscName())
 	r.Next()
 	assert.Equal(t, "baz3", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp3", r.CurrRscName())
+	assert.Equal(t, 9, r.nextOutputLineIdx)
 	assert.False(t, r.Next())
-	assert.Equal(t, 9, r.lineCounter)
+	assert.Nil(t, r.CurrLine())
+	assert.Equal(t, 10, r.nextOutputLineIdx)
 }
 
 // TestWithSomeEmpty reflects problem reported
@@ -107,18 +165,25 @@ func TestWithSomeEmpty(t *testing.T) {
 	hasNext := r.Next()
 	assert.True(t, hasNext)
 	assert.Equal(t, "bar1", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp2", r.CurrRscName())
 	r.Next()
 	assert.Equal(t, "baz1", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp3", r.CurrRscName())
 	r.Next()
 	assert.Equal(t, "bar2", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp2", r.CurrRscName())
 	r.Next()
 	assert.Equal(t, "baz2", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp3", r.CurrRscName())
 	r.Next()
 	assert.Equal(t, "bar3", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp2", r.CurrRscName())
 	r.Next()
 	assert.Equal(t, "baz3", firstWord(r.CurrLine()))
-	assert.Equal(t, 9, r.lineCounter)
+	assert.Equal(t, "corp3", r.CurrRscName())
+	assert.Equal(t, 9, r.nextOutputLineIdx)
 	assert.False(t, r.Next())
+	assert.Nil(t, r.CurrLine())
 }
 
 func TestSetRscLinesPanicsIfIterationStarted(t *testing.T) {
@@ -131,10 +196,78 @@ func TestSetRscLinesPanicsIfIterationStarted(t *testing.T) {
 
 func TestWorksWithSingleResource(t *testing.T) {
 	r := createSingleResource()
-	r.Next()
+	assert.True(t, r.Next())
 	assert.Equal(t, "foo1", firstWord(r.CurrLine()))
-	r.Next()
+	assert.Equal(t, "corp1", r.CurrRscName())
+	assert.True(t, r.Next())
 	assert.Equal(t, "foo2", firstWord(r.CurrLine()))
-	r.Next()
+	assert.Equal(t, "corp1", r.CurrRscName())
+	assert.True(t, r.Next())
 	assert.Equal(t, "foo3", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp1", r.CurrRscName())
+	assert.True(t, r.Next())
+	assert.Equal(t, "foo4", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp1", r.CurrRscName())
+	assert.False(t, r.Next())
+}
+
+// TestTwoResourcesOneEmpty is a regression test
+func TestTwoResourcesOneEmpty(t *testing.T) {
+	r := createTwoResourcesOneEmpty()
+	assert.True(t, r.Next())
+	assert.Equal(t, "foo1", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp1", r.CurrRscName())
+	assert.True(t, r.Next())
+	assert.Equal(t, "foo2", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp1", r.CurrRscName())
+	assert.False(t, r.Next())
+	assert.Nil(t, r.CurrLine())
+}
+
+// TestTwoResourcesSecondSmaller is a regression test
+func TestTwoResourcesSecondSmaller(t *testing.T) {
+	r := createTwoResourcesSecondSmaller()
+	assert.True(t, r.Next())
+	assert.Equal(t, "foo1", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp1", r.CurrRscName())
+	assert.True(t, r.Next())
+	assert.Equal(t, "bar1", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp2", r.CurrRscName())
+	assert.True(t, r.Next())
+	assert.Equal(t, "foo2", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp1", r.CurrRscName())
+	assert.True(t, r.Next())
+	assert.Equal(t, "foo3", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp1", r.CurrRscName())
+	assert.True(t, r.Next())
+	assert.Equal(t, "foo4", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp1", r.CurrRscName())
+	assert.False(t, r.Next())
+	assert.Nil(t, r.CurrLine())
+}
+
+func TestTwoResourcesFirstSmaller(t *testing.T) {
+	r := createTwoResourcesFirstSmaller()
+	assert.True(t, r.Next())
+	assert.Equal(t, "foo1", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp1", r.CurrRscName())
+	assert.True(t, r.Next())
+	assert.Equal(t, "bar1", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp2", r.CurrRscName())
+	assert.True(t, r.Next())
+	assert.Equal(t, "bar2", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp2", r.CurrRscName())
+	assert.True(t, r.Next())
+	assert.Equal(t, "bar3", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp2", r.CurrRscName())
+	assert.True(t, r.Next())
+	assert.Equal(t, "bar4", firstWord(r.CurrLine()))
+	assert.Equal(t, "corp2", r.CurrRscName())
+	assert.False(t, r.Next())
+	assert.Nil(t, r.CurrLine())
+}
+
+func TestSingleResourceWithNoLines(t *testing.T) {
+	r := createSingleResourceEmptyResult()
+	assert.False(t, r.Next())
 }

@@ -67,3 +67,7 @@ func (res *ConcExample) Err() error {
 func (res *ConcExample) Type() ResultType {
 	return res.ResultType
 }
+
+func (res *ConcExample) NumLines() int {
+	return len(res.Lines)
+}

@@ -55,12 +55,13 @@ type Query struct {
 }
 
 type ConcExampleArgs struct {
-	CorpusPath string   `json:"corpusPath"`
-	Query      string   `json:"query"`
-	Attrs      []string `json:"attrs"`
-	MaxItems   int      `json:"maxItems"`
-	StartLine  int      `json:"startLine"`
-	MaxContext int      `json:"maxContext"`
+	CorpusPath        string   `json:"corpusPath"`
+	Query             string   `json:"query"`
+	Attrs             []string `json:"attrs"`
+	MaxItems          int      `json:"maxItems"`
+	StartLine         int      `json:"startLine"`
+	MaxContext        int      `json:"maxContext"`
+	ViewContextStruct string   `json:"viewContextStruct"`
 }
 
 func (q Query) ToJSON() (string, error) {
