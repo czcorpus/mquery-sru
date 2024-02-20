@@ -50,7 +50,7 @@ To run the endpoint, you need at least
     * mapping of FCS-QL's `within` structures (`s`, `sentence`, `p` etc.) to your specific corpora structures
 3. address and port of your Redis service plus a number of database to be used for passing queries and results around
 
-See `conf.sample.json` for detailed info.
+See [configuration reference](https://github.com/czcorpus/mquery-sru/blob/main/config-reference.md) and/or [conf.sample.json](https://github.com/czcorpus/mquery-sru/blob/main/conf.sample.json) for detailed info.
 
 ## OS integration (systemd)
 
