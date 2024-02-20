@@ -208,6 +208,10 @@ func ValidateAndDefaults(conf *Conf) {
 		log.Fatal().Err(err).Msg("invalid configuration")
 		return
 	}
+	if err := conf.Redis.Validate(); err != nil {
+		log.Fatal().Err(err).Msg("invalid configuration")
+		return
+	}
 	if conf.TimeZone == "" {
 		log.Warn().
 			Str("timeZone", dfltTimeZone).
