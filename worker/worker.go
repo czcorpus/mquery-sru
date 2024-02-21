@@ -160,6 +160,7 @@ func (w *Worker) concExample(args rdb.ConcExampleArgs) (ans *result.ConcExample)
 	parser := conc.NewLineParser(args.Attrs)
 	ans.Lines = parser.Parse(concEx)
 	ans.ConcSize = concEx.ConcSize
+	ans.Query = args.Query
 	return
 }
 

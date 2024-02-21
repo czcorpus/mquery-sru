@@ -148,6 +148,8 @@ type CorpusSetup struct {
 	// for KWIC left and right context. Typically, this is
 	// a structure representing a sentence or a speach.
 	ViewContextStruct string `json:"viewContextStruct"`
+
+	KontextBacklinkRootURL string `json:"kontextBacklinkRootURL"`
 }
 
 // GetBasicSearchAttrs provides all the basic search attrs

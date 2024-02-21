@@ -47,6 +47,7 @@ type Token struct {
 
 type ConcordanceLine struct {
 	Text TokenSlice `json:"text"`
+	Ref  string     `json:"ref"`
 }
 
 type ConcExamples struct {
@@ -115,18 +116,22 @@ func (lp *LineParser) normalizeTokens(tokens []string) []string {
 
 // parseRawLine
 func (lp *LineParser) parseRawLine(line string) ConcordanceLine {
-	items := lp.normalizeTokens(splitPatt.Split(html.EscapeString(line), -1))
+	rtokens := splitPatt.Split(html.EscapeString(line), -1)
+	items := lp.normalizeTokens(rtokens[1:])
 	if len(items)%4 != 0 {
 		log.Error().
 			Str("origLine", line).
 			Msg("unparseable Manatee KWIC line")
-		return ConcordanceLine{Text: []*Token{{Word: "---- ERROR (unparseable) ----"}}}
+		return ConcordanceLine{
+			Text: []*Token{{Word: "---- ERROR (unparseable) ----"}},
+			Ref:  rtokens[0],
+		}
 	}
 	tokens := make(TokenSlice, 0, len(items)/4)
 	for i := 0; i < len(items); i += 4 {
 		tokens = append(tokens, lp.parseTokenQuadruple(items[i:i+4]))
 	}
-	return ConcordanceLine{Text: tokens}
+	return ConcordanceLine{Text: tokens, Ref: rtokens[0]}
 }
 
 // Parse converts Manatee-encoded concordance lines into MQuery format.

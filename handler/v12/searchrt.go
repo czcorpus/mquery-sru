@@ -25,6 +25,7 @@ import (
 
 	"github.com/bytedance/sonic"
 	"github.com/czcorpus/cnc-gokit/logging"
+	"github.com/czcorpus/mquery-sru/backlink"
 	"github.com/czcorpus/mquery-sru/corpus"
 	"github.com/czcorpus/mquery-sru/general"
 	"github.com/czcorpus/mquery-sru/mango"
@@ -33,6 +34,7 @@ import (
 	"github.com/czcorpus/mquery-sru/query/parser/basic"
 	"github.com/czcorpus/mquery-sru/rdb"
 	"github.com/czcorpus/mquery-sru/result"
+	"github.com/rs/zerolog/log"
 
 	"github.com/gin-gonic/gin"
 )
@@ -68,9 +70,8 @@ func (a *FCSSubHandlerV12) translateQuery(
 func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResponse) int {
 	logArgs := make(map[string]interface{})
 	logging.AddLogEvent(ctx, "args", logArgs)
-
 	// check if all parameters are supported
-	for key, _ := range ctx.Request.URL.Query() {
+	for key := range ctx.Request.URL.Query() {
 		if err := SearchRetrArg(key).Validate(); err != nil {
 			fcsResponse.General.AddError(general.FCSError{
 				Code:    general.DCUnsupportedParameter,
@@ -266,6 +267,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 
 	// using fromResource, we will cycle through available resources' results and their lines
 	fromResource := result.NewRoundRobinLineSel(maximumRecords, ranges.PIDList()...)
+	usedQueries := make(map[string]string) // maps resource ID to Manatee CQL query
 
 	for i, wait := range waits {
 		rawResult := <-wait
@@ -292,6 +294,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			}
 		}
 		fromResource.SetRscLines(ranges[i].Rsc, result)
+		usedQueries[ranges[i].Rsc] = result.Query
 	}
 	if fromResource.AllHasOutOfRangeError() {
 		fcsResponse.General.AddError(general.FCSError{
@@ -324,12 +327,21 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			})
 			return http.StatusInternalServerError
 		}
+		item := fromResource.CurrLine()
+		var refURL string
+		if res.KontextBacklinkRootURL != "" {
+			var err error
+			refURL, err = backlink.GenerateForKonText(
+				res.KontextBacklinkRootURL, res.ID, usedQueries[res.ID], item.Ref)
+			if err != nil {
+				log.Error().Err(err).Msg("failed to generate ResourceFragment URL")
+			}
+		}
 		row := FCSSearchRow{
 			Position: len(fcsResponse.SearchRetrieve.Results) + 1,
 			PID:      res.PID,
-			Ref:      res.URI,
+			Ref:      refURL,
 		}
-		item := fromResource.CurrLine()
 		for _, t := range item.Text {
 			token := Token{
 				Text: t.Word,
@@ -337,7 +349,6 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			}
 			segmentPos += len(t.Word) + 1 // with space between words
 			row.Tokens = append(row.Tokens, token)
-
 		}
 		fcsResponse.SearchRetrieve.Results = append(fcsResponse.SearchRetrieve.Results, row)
 	}

@@ -8,8 +8,8 @@
       <sruResponse:recordSchema>http://clarin.eu/fcs/resource</sruResponse:recordSchema>
       <sruResponse:recordXMLEscaping>{{ $recordXMLEscaping }}</sruResponse:recordXMLEscaping>
       <sruResponse:recordData>
-        <fcs:Resource xmlns:fcs="http://clarin.eu/fcs/resource" pid="{{ .PID }}"{{ if .Ref }} ref="{{ .Ref }}"{{ end }}>
-          <fcs:ResourceFragment>
+        <fcs:Resource xmlns:fcs="http://clarin.eu/fcs/resource" pid="{{ .PID }}">
+          <fcs:ResourceFragment {{ if .Ref}}ref="{{ escape .Ref }}"{{ end }}>
             {{ template "basicDataView.xml" . }}
             {{ if eq $queryType "fcs" }}{{ template "advancedDataView.xml" . }}{{ end }}
           </fcs:ResourceFragment>
