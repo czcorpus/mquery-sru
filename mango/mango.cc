@@ -67,7 +67,7 @@ KWICRowsRetval conc_examples(
             attrs,
             attrs,
             "",
-            "",
+            "#",
             maxContext,
             false
         );
@@ -81,6 +81,8 @@ KWICRowsRetval conc_examples(
             auto kwc = kl->get_kwic();
             auto rgt = kl->get_right();
             std::ostringstream buffer;
+
+            buffer << kl->get_refs() << " ";
 
             for (size_t i = 0; i < lft.size(); ++i) {
                 if (i > 0) {

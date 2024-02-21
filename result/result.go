@@ -54,6 +54,7 @@ type ConcExample struct {
 	Lines      []conc.ConcordanceLine `json:"lines"`
 	ConcSize   int                    `json:"concSize"`
 	ResultType ResultType             `json:"resultType"`
+	Query      string                 `json:"query"`
 	Error      string                 `json:"error"`
 }
 

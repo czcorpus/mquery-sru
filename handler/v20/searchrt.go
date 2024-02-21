@@ -26,6 +26,7 @@ import (
 
 	"github.com/bytedance/sonic"
 	"github.com/czcorpus/cnc-gokit/logging"
+	"github.com/czcorpus/mquery-sru/backlink"
 	"github.com/czcorpus/mquery-sru/corpus"
 	"github.com/czcorpus/mquery-sru/general"
 	"github.com/czcorpus/mquery-sru/mango"
@@ -330,6 +331,7 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	}
 	// using fromResource, we will cycle through available resources' results and their lines
 	fromResource := result.NewRoundRobinLineSel(maximumRecords, ranges.PIDList()...)
+	usedQueries := make(map[string]string) // maps resource ID to Manatee CQL query
 	var totalConcSize int
 	for i, wait := range waits {
 		rawResult := <-wait
@@ -356,8 +358,10 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			}
 		}
 		fromResource.SetRscLines(ranges[i].Rsc, result)
+		usedQueries[ranges[i].Rsc] = result.Query
 		totalConcSize += result.ConcSize
 	}
+
 	fcsResponse.SearchRetrieve.NumberOfRecords = totalConcSize
 	if fromResource.AllHasOutOfRangeError() {
 		fcsResponse.General.AddError(general.FCSError{
@@ -400,13 +404,22 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			})
 			return http.StatusInternalServerError
 		}
+		item := fromResource.CurrLine()
+		var refURL string
+		if res.KontextBacklinkRootURL != "" {
+			var err error
+			refURL, err = backlink.GenerateForKonText(
+				res.KontextBacklinkRootURL, res.ID, usedQueries[res.ID], item.Ref)
+			if err != nil {
+				log.Error().Err(err).Msg("failed to generate ResourceFragment URL")
+			}
+		}
 		row := FCSSearchRow{
 			LayerAttrs: res.GetDefinedLayers().ToOrderedSlice(),
 			Position:   len(fcsResponse.SearchRetrieve.Results) + startRecord,
 			PID:        res.PID,
-			Ref:        res.URI,
+			Ref:        refURL,
 		}
-		item := fromResource.CurrLine()
 		for j, t := range item.Text {
 			token := Token{
 				Text: t.Word,

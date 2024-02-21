@@ -42,6 +42,8 @@ typedef struct KWICRowsRetval {
 
 /**
  * @brief Based on provided query, return at most `limit` sentences matching the query.
+ * The returned string is always in form "[kwic_token_id] [rest...]" - so to parse the
+ * data properly, the ID must be cut from the rest of the data.
  * Please note that when called from Go via function `GetConcExamples`, the Go function
  * checks the `limit` argument against `mango.MaxRecordsInternalLimit` and will not allow
  * larger value.
