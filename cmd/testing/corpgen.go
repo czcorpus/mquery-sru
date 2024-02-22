@@ -50,7 +50,8 @@ func generateVertical(corpname string, wordCount int, tagCount int, wordsPerSent
 		tag := fmt.Sprintf("tag%d", iTag+1)
 		word := fmt.Sprintf("word_%s%d_%s", corpname, i+1, tag)
 		lemma := fmt.Sprintf("lemma_%s%d", corpname, i+1)
-		line := strings.Join([]string{word, lemma, tag}, "\t")
+		specialAttr := fmt.Sprintf("attr_%s%d", corpname, i+1)
+		line := strings.Join([]string{word, lemma, tag, specialAttr}, "\t")
 		fmt.Fprintln(f, line)
 		if i+1 == wordCount {
 			fmt.Fprintln(f, "</s>")
@@ -91,6 +92,8 @@ ATTRIBUTE   lemma
 
 ATTRIBUTE   tag
 
+ATTRIBUTE   attr%s
+
 STRUCTURE	s
 
 MAXCONTEXT 0
@@ -99,6 +102,7 @@ MAXDETAIL 0
 		corpname,
 		dataPath,
 		verticalPath,
+		corpname,
 	)
 	return err
 }
