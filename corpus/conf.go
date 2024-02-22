@@ -297,6 +297,7 @@ func (sr SrchResources) GetResource(ID string) (*CorpusSetup, error) {
 // is set as default will be listed always first, the rest
 // is sorted alphabetically.
 func (sr SrchResources) GetCommonPosAttrs(corpusNames ...string) ([]PosAttr, error) {
+	count := make(map[string]int)
 	collect := make(map[string]PosAttr)
 	for _, corp := range corpusNames {
 		res, err := sr.GetResource(corp)
@@ -304,7 +305,13 @@ func (sr SrchResources) GetCommonPosAttrs(corpusNames ...string) ([]PosAttr, err
 			return nil, err
 		}
 		for _, pa := range res.PosAttrs {
+			count[pa.Name]++
 			collect[pa.Name] = pa
+		}
+	}
+	for attrName, count := range count {
+		if count != len(corpusNames) {
+			delete(collect, attrName)
 		}
 	}
 	i := 0
@@ -328,10 +335,17 @@ func (sr SrchResources) GetCommonPosAttrs(corpusNames ...string) ([]PosAttr, err
 // GetCommonPosAttrs2 returns positional attributes common
 // to defined corpora, it can not return error like GetCommonPosAttrs
 func (sr SrchResources) GetCommonPosAttrs2() []PosAttr {
+	count := make(map[string]int)
 	collect := make(map[string]PosAttr)
 	for _, res := range sr {
 		for _, pa := range res.PosAttrs {
+			count[pa.Name]++
 			collect[pa.Name] = pa
+		}
+	}
+	for attrName, count := range count {
+		if count != len(sr) {
+			delete(collect, attrName)
 		}
 	}
 	i := 0

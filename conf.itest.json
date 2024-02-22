@@ -42,8 +42,14 @@
                     },
                     {
                         "name": "tag",
-                        "id": "attr4",
+                        "id": "attr3",
                         "layer": "pos",
+                        "isLayerDefault": true
+                    },
+                    {
+                        "name": "attrA",
+                        "id": "attr4",
+                        "layer": "orth",
                         "isLayerDefault": true
                     }
                 ],
@@ -73,8 +79,14 @@
                     },
                     {
                         "name": "tag",
-                        "id": "attr4",
+                        "id": "attr3",
                         "layer": "pos",
+                        "isLayerDefault": true
+                    },
+                    {
+                        "name": "attrB",
+                        "id": "attr4",
+                        "layer": "norm",
                         "isLayerDefault": true
                     }
                 ],
