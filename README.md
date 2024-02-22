@@ -10,6 +10,7 @@ Manatee-open corpus search engine.
 * Level 1 support for basic search via CQL (Context Query
 Language)
 * simultaneous search in multiple defined corpora
+* (optional) backlinks to concordances in KonText
 
 
 ## Requirements
