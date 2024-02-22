@@ -127,7 +127,7 @@ QuantifiedQuery <-
 
 // 3
 BasicQuery <-
-    '(' q:MainQuery ')' {  // grouping
+    '(' Ws* q:MainQuery Ws* ')' {  // grouping
         return &basicQuery{value: q}, nil
     }
     / q:ImplicitQuery {
@@ -223,7 +223,7 @@ Expression <-
 
 // 10
 BasicExpression <-
-    '(' expr:Expression ')' {  // grouping
+    '(' Ws* expr:Expression Ws* ')' {  // grouping
         ans := new(basicExpression)
         ans.exprType = basicExpressionTypeGroup
         tExpr, ok := expr.(*expression)
