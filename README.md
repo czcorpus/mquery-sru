@@ -1,12 +1,11 @@
 # MQuery-SRU
 
-MQuery-SRU is an easy to setup endpoint for Clarin FCS 2.0 (Federated Content Search) based on
-Manatee-open corpus search engine.
+MQuery-SRU is an easy to set up endpoint for [Clarin FCS](https://www.clarin.eu/content/federated-content-search-clarin-fcs-technical-details) 2.0 (Federated Content Search) based on the [Manatee-open](https://nlp.fi.muni.cz/trac/noske) corpus search engine and developed and maintained by the [Institute of the Czech National Corpus](https://ucnk.ff.cuni.cz/en/).
 
 ## Features
 
 * Full support for the FCQ-QL query language
-    * definable layer &#8596; pos. attribute mapping
+    * definable layer &#8596; Manatee-open positional attribute mapping
 * Level 1 support for basic search via CQL (Context Query
 Language)
 * simultaneous search in multiple defined corpora
@@ -73,3 +72,6 @@ systemctl start mquery-sru-server
 systemctl start mquery-sru-worker-all.target
 ```
 
+## See MQuery-SRU in action
+
+A CNC instance of MQuery-SRU is running as one of the endpoints for Clarin [Content Search](https://contentsearch.clarin.eu/) page.
