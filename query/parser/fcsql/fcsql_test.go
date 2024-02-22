@@ -38,6 +38,8 @@ func TestFCSQLParser(t *testing.T) {
 		`"dogs" []{3,} "cats" within s`,
 		`[z:pos = "ADJ"]`,
 		`[z:pos="ADJ" & q:pos="ADJ"]`,
+		`[ (word="foo") ]`,
+		`[( word="foo" )]`,
 	}
 
 	for i, q := range queries {

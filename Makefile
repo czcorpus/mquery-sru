@@ -1,6 +1,7 @@
 all: build-and-test
 
 build:
+	go generate ./cmd/service/fcs.go
 	manabuild -cmd-dir service
 
 build-and-test:
@@ -9,6 +10,9 @@ build-and-test:
 tools:
 	go install github.com/mna/pigeon
 	go install github.com/czcorpus/manabuild@latest
+
+generate:
+	go generate ./cmd/service/fcs.go
 
 install:
 	cp ./mquery-sru /usr/local/bin
