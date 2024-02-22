@@ -109,12 +109,6 @@ func runApiServer(
 		conf.ServerInfo, conf.CorporaSetup, conf.SourcesRootDir)
 	engine.GET("/ui/form", uIActions.Handle)
 
-	logger := monitoring.NewWorkerJobLogger(conf.TimezoneLocation())
-	logger.GoRunTimelineWriter()
-
-	monitoringActions := monitoring.NewActions(logger, conf.TimezoneLocation())
-	engine.GET("/monitoring/workers-load", monitoringActions.WorkersLoad)
-
 	srv := &http.Server{
 		Handler:      engine,
 		Addr:         fmt.Sprintf("%s:%d", conf.ListenAddress, conf.ListenPort),
@@ -145,6 +139,7 @@ func runWorker(conf *cnf.Conf, workerID string, radapter *rdb.Adapter, exitEvent
 	log.Info().Msg("Starting MQuery-SRU worker")
 	ch := radapter.Subscribe()
 	logger := monitoring.NewWorkerJobLogger(conf.TimezoneLocation())
+	go logger.RunLoadInfoSummary() // regular reporting about worker's load
 	w := worker.NewWorker(workerID, radapter, ch, exitEvent, logger)
 	w.Listen()
 }

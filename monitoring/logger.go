@@ -20,61 +20,61 @@
 package monitoring
 
 import (
-	"database/sql"
 	"time"
 
+	"github.com/czcorpus/cnc-gokit/collections"
 	"github.com/czcorpus/mquery-sru/result"
+	"github.com/rs/zerolog/log"
 )
 
-type WorkersLoad map[string]float64
+type loadInfo struct {
+	start       time.Time
+	end         time.Time
+	timeRunning float64
+}
 
 type WorkerJobLogger struct {
-	db       *sql.DB
-	location *time.Location
+	location    *time.Location
+	inputStream chan result.JobLog
+	totals      *collections.CircularList[result.JobLog]
 }
 
 func (w *WorkerJobLogger) Log(rec result.JobLog) {
-	// TODO
+	w.inputStream <- rec
 }
 
-func (w *WorkerJobLogger) WorkersLoad(fromDT, toDT time.Time) (WorkersLoad, error) {
-	ans := make(map[string]float64)
-	// TODO
-	return ans, nil
-}
+func (w *WorkerJobLogger) RunLoadInfoSummary() {
+	ticker := time.NewTicker(1 * time.Minute)
 
-func (w *WorkerJobLogger) TotalLoad(fromDT, toDT time.Time) (float64, error) {
-	// TODO
-	return 0, nil
-}
-
-func (w *WorkerJobLogger) writeTimelineItem() error {
-	// TODO
-	return nil
-}
-
-func (w *WorkerJobLogger) cleanupTimeline() error {
-	// TODO
-	return nil
-}
-
-func (w *WorkerJobLogger) GoRunTimelineWriter() {
-	go func() {
-		ticker := time.NewTicker(60 * time.Second)
-		for range ticker.C {
-			w.writeTimelineItem()
+	for {
+		select {
+		case <-ticker.C:
+			// log summary
+			var startTime, stopTime time.Time
+			var totalRun time.Duration
+			w.totals.ForEach(func(i int, item result.JobLog) bool {
+				if i == 0 {
+					startTime = item.Begin
+				}
+				stopTime = item.End
+				totalRun += item.End.Sub(item.Begin)
+				return true
+			})
+			measuredTime := stopTime.Sub(startTime).Seconds()
+			log.Info().
+				Float64("load", totalRun.Seconds()/measuredTime).
+				Float64("totalRunSeconds", totalRun.Seconds()).
+				Msg("reporting worker load")
+		case v := <-w.inputStream:
+			w.totals.Append(v)
 		}
-	}()
-	go func() {
-		ticker := time.NewTicker(time.Hour)
-		for range ticker.C {
-			w.cleanupTimeline()
-		}
-	}()
+	}
 }
 
 func NewWorkerJobLogger(location *time.Location) *WorkerJobLogger {
 	return &WorkerJobLogger{
-		location: location,
+		location:    location,
+		inputStream: make(chan result.JobLog, 100),
+		totals:      collections.NewCircularList[result.JobLog](60),
 	}
 }

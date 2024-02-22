@@ -50,7 +50,7 @@ type Worker struct {
 	exitEvent  chan os.Signal
 	ticker     time.Ticker
 	jobLogger  jobLogger
-	currJobLog *result.JobLog
+	currJobLog result.JobLog
 }
 
 func (w *Worker) publishResult(res result.SerializableResult, channel string) error {
@@ -61,8 +61,8 @@ func (w *Worker) publishResult(res result.SerializableResult, channel string) er
 
 	w.currJobLog.End = time.Now()
 	w.currJobLog.Err = res.Err()
-	w.jobLogger.Log(*w.currJobLog)
-	w.currJobLog = nil
+	w.jobLogger.Log(w.currJobLog)
+	w.currJobLog = result.JobLog{}
 	return w.radapter.PublishResult(channel, ans)
 }
 
@@ -94,7 +94,7 @@ func (w *Worker) tryNextQuery() error {
 		return nil
 	}
 
-	w.currJobLog = &result.JobLog{
+	w.currJobLog = result.JobLog{
 		WorkerID: w.ID,
 		Func:     query.Func,
 		Begin:    time.Now(),

@@ -4,7 +4,7 @@
     "serverReadTimeoutSecs": 600,
     "serverWriteTimeoutSecs": 60,
     "serverInfo": {
-        "serverHost": "my",
+        "serverName": "my",
         "serverPort": "80",
         "database": "fcs",
         "databaseTitle": {
@@ -85,7 +85,7 @@
         ]
     },
     "redis": {
-        "host": "mquery-sru_redis_1",
+        "host": "mquery-sru-it_redis_1",
         "port": 6379,
         "db": 7,
         "cachePath": "/var/lib/manatee/cache.masm",
