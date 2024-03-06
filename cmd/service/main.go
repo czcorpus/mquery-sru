@@ -48,6 +48,11 @@ import (
 	"github.com/czcorpus/mquery-sru/worker"
 )
 
+const (
+	apiServerExitEventTimeout = 10 * time.Second
+	redisTestTimeout          = 20 * time.Second
+)
+
 var (
 	version   string
 	buildDate string
@@ -64,9 +69,8 @@ func getEnv(name string) string {
 	return ""
 }
 
-func init() {
-}
-
+// runApiServer starts an HTTP API server instance with
+// properties defined in the `conf` argument.
 func runApiServer(
 	conf *cnf.Conf,
 	syscallChan chan os.Signal,
@@ -130,17 +134,17 @@ func runApiServer(
 		syscallChan <- syscall.SIGTERM
 	}()
 
-	select {
-	case <-exitEvent:
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		err := srv.Shutdown(ctx)
-		if err != nil {
-			log.Info().Err(err).Msg("Shutdown request error")
-		}
+	<-exitEvent
+	ctx, cancel := context.WithTimeout(context.Background(), apiServerExitEventTimeout)
+	defer cancel()
+	err := srv.Shutdown(ctx)
+	if err != nil {
+		log.Info().Err(err).Msg("Shutdown request error")
 	}
 }
 
+// runWorker starts a worker instance. The worker can be stopped
+// via the `exitEvent` channel.
 func runWorker(conf *cnf.Conf, workerID string, radapter *rdb.Adapter, exitEvent chan os.Signal) {
 	log.Info().Msg("Starting MQuery-SRU worker")
 	ch := radapter.Subscribe()
@@ -149,6 +153,9 @@ func runWorker(conf *cnf.Conf, workerID string, radapter *rdb.Adapter, exitEvent
 	w.Listen()
 }
 
+// getWorkerID return a worker ID as defined
+// in an environmental variable `WORKER_ID`
+// If not set, the worker ID is `0`
 func getWorkerID() (workerID string) {
 	workerID = getEnv("WORKER_ID")
 	if workerID == "" {
@@ -227,13 +234,13 @@ func main() {
 
 	switch action {
 	case "server":
-		err := radapter.TestConnection(20*time.Second, testConnCancel)
+		err := radapter.TestConnection(redisTestTimeout, testConnCancel)
 		if err != nil {
 			log.Fatal().Err(err).Msg("failed to connect to Redis")
 		}
 		runApiServer(conf, syscallChan, exitEvent, radapter)
 	case "worker":
-		err := radapter.TestConnection(20*time.Second, testConnCancel)
+		err := radapter.TestConnection(redisTestTimeout, testConnCancel)
 		if err != nil {
 			log.Fatal().Err(err).Msg("failed to connect to Redis")
 		}

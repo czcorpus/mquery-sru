@@ -23,6 +23,9 @@ import (
 	"net/url"
 )
 
+// GenerateForKonText - based on query properties, create a URL
+// to a respective concordance within a KonText installation
+// (specified by the `rootURL`)
 func GenerateForKonText(rootURL, corpus, mainQuery, tokenID string) (string, error) {
 	rurl, err := url.Parse(rootURL)
 	if err != nil {
