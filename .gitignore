@@ -28,3 +28,8 @@ mquery-sru
 # generated grammar
 query/parser/fcsql/fcsql.go
 query/parser/basic/basic.go
+
+# editors and build
+Makefile
+# ./vscode
+
