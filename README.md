@@ -27,11 +27,11 @@ Language)
 2. Install Manatee-open from the [download page](https://nlp.fi.muni.cz/trac/noske). No specific language bindings are required.
    1. `configure --with-pcre && make && sudo make install && sudo ldconfig`
 3. Get MQuery-SRU sources (`git clone --depth 1 github.com:czcorpus/mquery-sru.git`)
-4. Run `make tools`
-5. Run `make build`
+4. Run `./configure`
+5. Run `make`
 6. copy `mquery-sru` to a desired location and create a config file (conf.sample.json can be used as a starting point)
 7. run:
-   * main server: `mquery-sru server /path/to/conf.json` and 
+   * main server: `mquery-sru server /path/to/conf.json` and
    * one or more workers: `WORKER_ID=0 mquery-sru worker /path/to/conf.json` (multiple workers can be run to utilize higher service load; in such case, set `WORKER_ID` properly for each one)
    * for OS integration, see <a href="#os-integration-systemd">OS integration (systemd)</a>
 

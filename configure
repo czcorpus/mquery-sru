@@ -1,5 +1,26 @@
 #!/bin/bash
 
+echo "installing required tools..."
+go install github.com/mna/pigeon
+if [ $? -ne 0 ]; then
+  echo "...error"
+fi
+go install github.com/czcorpus/manabuild@latest
+if [ $? -eq 0 ]; then
+  echo "...done"
+else
+  echo "...error"
+fi
+
+echo "generating parser code..."
+go generate ./cmd/service/fcs.go
+if [ $? -eq 0 ]; then
+  echo "...done"
+else
+  echo "...error"
+fi
+
+
 # check system and prepare env variables
 eval $(manabuild -no-build)
 
