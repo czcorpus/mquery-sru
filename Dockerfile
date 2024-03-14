@@ -6,4 +6,4 @@ RUN apt-get update && apt-get install wget tar curl git bison libpcre3-dev -y \
 
 WORKDIR /opt/mquery-sru
 COPY . .
-RUN PATH=$PATH:/usr/local/go/bin:/root/go/bin && make tools && make build
+RUN PATH=$PATH:/usr/local/go/bin:/root/go/bin && ./configure && make build
