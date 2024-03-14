@@ -5,11 +5,11 @@ MQuery-SRU is an easy to set up endpoint for [Clarin FCS](https://www.clarin.eu/
 ## Features
 
 * Full support for the FCQ-QL query language
-    * definable layer &#8596; Manatee-open positional attribute mapping
+    * definable mapping between FCQ-QL layers and Manatee-open positional attributes
 * Level 1 support for basic search via CQL (Context Query
 Language)
 * simultaneous search in multiple defined corpora
-* (optional) backlinks to concordances in KonText
+* (optional) backlinks to respective concordances in KonText
 
 
 ## Requirements
@@ -29,8 +29,8 @@ Language)
 3. Get MQuery-SRU sources (`git clone --depth 1 github.com:czcorpus/mquery-sru.git`)
 4. Run `./configure`
 5. Run `make`
-6. copy `mquery-sru` to a desired location and create a config file (conf.sample.json can be used as a starting point)
-7. run:
+6. :construction: copy `mquery-sru` to a desired location and create a config file (`conf.sample.json` can be used as a starting point) 
+8. run:
    * main server: `mquery-sru server /path/to/conf.json` and
    * one or more workers: `WORKER_ID=0 mquery-sru worker /path/to/conf.json` (multiple workers can be run to utilize higher service load; in such case, set `WORKER_ID` properly for each one)
    * for OS integration, see <a href="#os-integration-systemd">OS integration (systemd)</a>
@@ -46,9 +46,9 @@ To run the endpoint, you need at least
 1. to configure listening address and port
 2. defined path to your Manatee corpora registry (= configuration) files
 2. defined corpora along with:
-    * positional attributes to be exposed
+    * positional attributes to be exposed and also layer names they belong to
     * mapping of FCS-QL's `within` structures (`s`, `sentence`, `p` etc.) to your specific corpora structures
-3. address and port of your Redis service plus a number of database to be used for passing queries and results around
+3. address of your Redis service plus a number of database to be used for passing queries and results around
 
 See [configuration reference](https://github.com/czcorpus/mquery-sru/blob/main/config-reference.md) and/or [conf.sample.json](https://github.com/czcorpus/mquery-sru/blob/main/conf.sample.json) for detailed info.
 
