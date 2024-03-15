@@ -88,6 +88,12 @@ itest:
 	@echo "running integration tests"
 	@CGO_CXXFLAGS="${CGO_CXXFLAGS}" CGO_CPPFLAGS="${CGO_CPPFLAGS}" CGO_LDFLAGS="${CGO_LDFLAGS}" go test -v ./cmd/testing --args http://localhost:8989/
 
+build-docker-itest:
+	docker-compose -f docker-compose-itest.yml build
+
+run-docker-itest:
+	docker-compose -f docker-compose-itest.yml up
+
 EOF
 
 echo "Configuration successful. Run make to build the project."
