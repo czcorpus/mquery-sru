@@ -3,8 +3,8 @@
     "listenPort": 8080,
     "serverReadTimeoutSecs": 120,
     "serverWriteTimeoutSecs": 60,
-    "trustedProxies": ["192.168.1.2", "192.168.1.3"],
-    "sourcesRootDir": "/path/to/project/root",
+    "trustedProxies": [],
+    "sourcesRootDir": ".",
     "serverInfo": {
         "serverHost": "my",
         "serverPort": "80",
@@ -19,7 +19,7 @@
         "externalUrlPath": ""
     },
     "corpora": {
-        "registryDir": "/path/to/corpora/registry",
+        "registryDir": "/var/opt/corpora/registry",
         "resources": [
             {
                 "id": "syn2020",
@@ -64,7 +64,7 @@
         ]
     },
     "redis": {
-        "host": "10.0.3.130",
+        "host": "127.0.0.1",
         "port": 6379,
         "db": 7,
         "password": "secret",
@@ -72,7 +72,7 @@
         "channelResultPrefix": "res",
         "queryAnswerTimeoutSecs": 15
     },
-    "logFile": "",
+    "logFile": null,
     "logLevel": "debug",
     "timeZone": "UTC"
 }
