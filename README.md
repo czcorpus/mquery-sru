@@ -26,7 +26,7 @@ Language)
    1. make sure `/usr/local/go/bin` and `~/go/bin` are in your `$PATH` so you can run any installed Go tools without specifying a full path
 2. Install Manatee-open from the [download page](https://nlp.fi.muni.cz/trac/noske). No specific language bindings are required.
    1. `configure --with-pcre --disable-python && make && sudo make install && sudo ldconfig`
-3. Get MQuery-SRU sources (`git clone --depth 1 github.com:czcorpus/mquery-sru.git`)
+3. Get MQuery-SRU sources (`git clone --depth 1 https://github.com/czcorpus/mquery-sru.git`)
 4. Run `./configure`
 5. Run `make`
 6. :construction: copy `mquery-sru` to a desired location and create a config file (`conf.sample.json` can be used as a starting point) 
