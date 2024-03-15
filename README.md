@@ -29,11 +29,31 @@ Language)
 3. Get MQuery-SRU sources (`git clone --depth 1 https://github.com/czcorpus/mquery-sru.git`)
 4. Run `./configure`
 5. Run `make`
-6. :construction: copy `mquery-sru` to a desired location and create a config file (`conf.sample.json` can be used as a starting point) 
-8. run:
-   * main server: `mquery-sru server /path/to/conf.json` and
-   * one or more workers: `WORKER_ID=0 mquery-sru worker /path/to/conf.json` (multiple workers can be run to utilize higher service load; in such case, set `WORKER_ID` properly for each one)
-   * for OS integration, see <a href="#os-integration-systemd">OS integration (systemd)</a>
+6. Run `make install`
+   * the application will be installed in `/opt/mquery-sru`
+   * for data and registry, `/var/opt/corpora/data` and `/var/opt/corpora/registry` directories will be created
+   * systemd services `mquery-sru-server.service` and `mquery-sru-worker-all.target` will be created
+8. Copy at least one corpus and its configuration (registry) into respective directories (`/var/opt/corpora/data`, `/var/opt/corpora/registry`)
+9. Update corpora entries in `/opt/mquery-sru/conf.json` file to match your installed corpora
+10. start the service:
+   * `systemctl start mquery-sru-server`
+   * `systemctl start mquery-sru-worker-all.target`
+
+## HTTP access
+
+In most cases, it is not recommended to expose the server directly to the Internet. It is therefore advisable to put the service behind an HTTP proxy.
+E.g. in Nginx, the configuration may look like this:
+
+```
+location /mquery-fcs/ {
+    proxy_pass http://127.0.0.1:8080/;
+    proxy_set_header Host $http_host;
+    proxy_redirect off;
+    proxy_read_timeout 30;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Forwarded-Proto $scheme;    
+}
+```
 
 ## Worker considerations
 
@@ -53,6 +73,8 @@ To run the endpoint, you need at least
 See [configuration reference](https://github.com/czcorpus/mquery-sru/blob/main/config-reference.md) and/or [conf.sample.json](https://github.com/czcorpus/mquery-sru/blob/main/conf.sample.json) for detailed info.
 
 ## OS integration (systemd)
+
+This applies in case `make install` is not used.
 
 (Here we assume the service will run with user `www-data`)
 
