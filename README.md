@@ -30,14 +30,14 @@ Language)
 4. Run `./configure`
 5. Run `make`
 6. Run `make install`
-   * the application will be installed in `/opt/mquery-sru`
-   * for data and registry, `/var/opt/corpora/data` and `/var/opt/corpora/registry` directories will be created
-   * systemd services `mquery-sru-server.service` and `mquery-sru-worker-all.target` will be created
+      * the application will be installed in `/opt/mquery-sru`
+      * for data and registry, `/var/opt/corpora/data` and `/var/opt/corpora/registry` directories will be created
+      * systemd services `mquery-sru-server.service` and `mquery-sru-worker-all.target` will be created
 8. Copy at least one corpus and its configuration (registry) into respective directories (`/var/opt/corpora/data`, `/var/opt/corpora/registry`)
 9. Update corpora entries in `/opt/mquery-sru/conf.json` file to match your installed corpora
 10. start the service:
-   * `systemctl start mquery-sru-server`
-   * `systemctl start mquery-sru-worker-all.target`
+      * `systemctl start mquery-sru-server`
+      * `systemctl start mquery-sru-worker-all.target`
 
 ## HTTP access
 
