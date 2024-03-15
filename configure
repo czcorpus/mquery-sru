@@ -56,16 +56,25 @@ generate:
 install:
 	@mkdir -p /opt/mquery-sru
 	@cp -f mquery-sru /opt/mquery-sru
-	@ln -sf /opt/mquery-sru/mquery-sru /usr/local/bin/mquery-sru
 	@cp -rf assets /opt/mquery-sru/assets
 	@mkdir -p /opt/mquery-sru/handler/v12
 	@mkdir -p /opt/mquery-sru/handler/v20
 	@cp -rf handler/v12/templates /opt/mquery-sru/handler/v12/templates
 	@cp -rf handler/v20/templates /opt/mquery-sru/handler/v20/templates
+	@cp -rf scripts /opt/mquery-sru/scripts
+	@ln -sf /opt/mquery-sru/scripts/systemd/mquery-sru-server.service /etc/systemd/system/mquery-sru-server.service
+	@ln -sf /opt/mquery-sru/scripts/systemd/mquery-sru-worker-all.target /etc/systemd/system/mquery-sru-worker-all.target
+	@ln -sf /opt/mquery-sru/scripts/systemd/mquery-sru-worker@.service /etc/systemd/system/mquery-sru-worker@.service
+	@systemctl enable mquery-sru-server
+	@systemctl enable mquery-sru-worker-all.target
 
 clean:
-# TODO
-	@rm mquery-sru
+	@systemctl disable mquery-sru-server
+	@systemctl disable mquery-sru-worker-all.target
+	@rm -rf /etc/systemd/system/mquery-sru-server.service
+	@rm -rf /etc/systemd/system/mquery-sru-worker-all.target
+	@rm -rf /etc/systemd/system/mquery-sru-worker@.service
+	@rm -rf /opt/mquery-sru
 
 test:
 	@echo "running unit tests"
