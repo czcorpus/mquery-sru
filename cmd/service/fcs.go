@@ -92,8 +92,7 @@ func runApiServer(
 	engine.NoMethod(uniresp.NoMethodHandler)
 	engine.NoRoute(uniresp.NotFoundHandler)
 
-	FCSActions := handler.NewFCSHandler(
-		conf.ServerInfo, conf.CorporaSetup, radapter, conf.SourcesRootDir)
+	FCSActions := handler.NewFCSHandler(conf.ServerInfo, conf.CorporaSetup, radapter)
 	engine.GET("/", FCSActions.FCSHandler)
 	engine.HEAD("/", FCSActions.FCSHandler)
 

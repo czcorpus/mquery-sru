@@ -41,24 +41,17 @@ const (
 	RecordSchema = "http://clarin.eu/fcs/resource"
 )
 
-type FCSGeneralResponse struct {
+type FCSGeneralRequest struct {
 	Version string
 	Errors  []FCSError
 	Fatal   bool
-
-	// Context allows us to inject the diagnostic xml
-	// into different responses, e.g.:
-	// <scan:diagnostics>....
-	// vs.
-	// <sruResponse:diagnostics>
-	DiagXMLContext string
 
 	// XSLT is an optional path of a XSL template
 	// for outputting formatted (typically HTML) result
 	XSLT string
 }
 
-func (r *FCSGeneralResponse) AddError(fcsError FCSError) {
+func (r *FCSGeneralRequest) AddError(fcsError FCSError) {
 	if fcsError.IsFatal() {
 		r.Fatal = true
 		if fcsError.Overthrow() {
@@ -68,6 +61,6 @@ func (r *FCSGeneralResponse) AddError(fcsError FCSError) {
 	r.Errors = append(r.Errors, fcsError)
 }
 
-func (r *FCSGeneralResponse) HasFatalError() bool {
+func (r *FCSGeneralRequest) HasFatalError() bool {
 	return len(r.Errors) > 0 && r.Fatal
 }

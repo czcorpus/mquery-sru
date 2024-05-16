@@ -71,24 +71,23 @@ func (a *FCSSubHandlerV20) produceErrorResponse(ctx *gin.Context, code int, xslt
 
 func (a *FCSSubHandlerV20) Handle(
 	ctx *gin.Context,
-	fcsGeneralResponse general.FCSGeneralResponse,
+	fcsGeneralRequest general.FCSGeneralRequest,
 	xslt map[string]string,
 ) {
-	fcsGeneralResponse.DiagXMLContext = "sruResponse"
-	fcsResponse := &FCSResponse{
-		General:           fcsGeneralResponse,
+	fcsRequest := &FCSRequest{
+		General:           fcsGeneralRequest,
 		RecordXMLEscaping: RecordXMLEscapingXML,
 		Operation:         OperationExplain,
 	}
 
-	if fcsResponse.General.HasFatalError() {
-		a.produceErrorResponse(ctx, general.ConformantStatusBadRequest, fcsGeneralResponse.XSLT, fcsGeneralResponse.Errors)
+	if fcsRequest.General.HasFatalError() {
+		a.produceErrorResponse(ctx, general.ConformantStatusBadRequest, fcsGeneralRequest.XSLT, fcsGeneralRequest.Errors)
 		return
 	}
 
 	var operation Operation = OperationExplain
 	if ctx.Request.URL.Query().Has("operation") {
-		operation = getTypedArg(ctx, "operation", fcsResponse.Operation)
+		operation = getTypedArg(ctx, "operation", fcsRequest.Operation)
 
 	} else if ctx.Request.URL.Query().Has(SearchRetrArgQuery.String()) {
 		operation = OperationSearchRetrive
@@ -97,42 +96,42 @@ func (a *FCSSubHandlerV20) Handle(
 		operation = OperationScan
 	}
 	if err := operation.Validate(); err != nil {
-		fcsResponse.General.AddError(general.FCSError{
+		fcsRequest.General.AddError(general.FCSError{
 			Code:    general.DCUnsupportedOperation,
 			Ident:   "operation",
 			Message: fmt.Sprintf("Unsupported operation: %s", operation),
 		})
-		a.produceErrorResponse(ctx, general.ConformantStatusBadRequest, fcsGeneralResponse.XSLT, fcsGeneralResponse.Errors)
+		a.produceErrorResponse(ctx, general.ConformantStatusBadRequest, fcsGeneralRequest.XSLT, fcsGeneralRequest.Errors)
 		return
 	}
-	fcsResponse.Operation = operation
-	fcsResponse.General.XSLT = xslt[operation.String()]
+	fcsRequest.Operation = operation
+	fcsRequest.General.XSLT = xslt[operation.String()]
 	logging.AddLogEvent(ctx, "operation", operation)
 
-	recordXMLEscaping := getTypedArg(ctx, "recordXMLEscaping", fcsResponse.RecordXMLEscaping)
+	recordXMLEscaping := getTypedArg(ctx, "recordXMLEscaping", fcsRequest.RecordXMLEscaping)
 	if err := recordXMLEscaping.Validate(); err != nil {
-		fcsResponse.General.AddError(general.FCSError{
+		fcsRequest.General.AddError(general.FCSError{
 			Code:    general.DCUnsupportedRecordPacking,
 			Ident:   "recordXMLEscaping",
 			Message: err.Error(),
 		})
-		a.produceErrorResponse(ctx, general.ConformantStatusBadRequest, fcsGeneralResponse.XSLT, fcsGeneralResponse.Errors)
+		a.produceErrorResponse(ctx, general.ConformantStatusBadRequest, fcsGeneralRequest.XSLT, fcsGeneralRequest.Errors)
 		return
 	}
-	fcsResponse.RecordXMLEscaping = recordXMLEscaping
+	fcsRequest.RecordXMLEscaping = recordXMLEscaping
 	logging.AddLogEvent(ctx, "recordXMLEscaping", recordXMLEscaping)
 
 	var response any
 	var code int
-	switch fcsResponse.Operation {
+	switch fcsRequest.Operation {
 	case OperationExplain:
-		response, code = a.explain(ctx, fcsResponse)
+		response, code = a.explain(ctx, fcsRequest)
 	case OperationSearchRetrive:
-		response, code = a.searchRetrieve(ctx, fcsResponse)
+		response, code = a.searchRetrieve(ctx, fcsRequest)
 	case OperationScan:
-		response, code = a.scan(ctx, fcsResponse)
+		response, code = a.scan(ctx, fcsRequest)
 	}
-	a.produceXMLResponse(ctx, code, fcsGeneralResponse.XSLT, response)
+	a.produceXMLResponse(ctx, code, fcsGeneralRequest.XSLT, response)
 }
 
 func NewFCSSubHandlerV20(

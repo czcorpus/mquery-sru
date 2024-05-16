@@ -20,57 +20,125 @@
 package v12
 
 import (
+	"encoding/xml"
 	"net/http"
 
+	"github.com/czcorpus/cnc-gokit/collections"
 	"github.com/czcorpus/mquery-sru/corpus"
 	"github.com/czcorpus/mquery-sru/general"
+	"github.com/czcorpus/mquery-sru/handler/v12/schema"
 
 	"github.com/gin-gonic/gin"
 )
 
-func (a *FCSSubHandlerV12) explain(ctx *gin.Context, fcsResponse *FCSResponse) int {
-	// prepare response data
-	fcsResponse.Explain = &FCSExplain{
-		ServerName:          a.serverInfo.ServerHost,
-		ServerPort:          a.serverInfo.ServerPort,
-		Database:            a.serverInfo.Database,
-		DatabaseTitle:       a.serverInfo.DatabaseTitle,
-		DatabaseDescription: a.serverInfo.DatabaseDescription,
-		DatabaseAuthor:      a.serverInfo.DatabaseAuthor,
-		PrimaryLanguage:     a.serverInfo.PrimaryLanguage,
-		MaximumRecords:      a.corporaConf.MaximumRecords,
-		NumberOfRecords:     corpus.ExplainOpNumberOfRecords,
-		PosAttrs:            a.corporaConf.Resources.GetCommonPosAttrs2(),
+func (a *FCSSubHandlerV12) explain(ctx *gin.Context, fcsResponse *FCSRequest) (schema.XMLExplainResponse, int) {
+	ans := schema.XMLExplainResponse{
+		XMLNSSRU: "http://www.loc.gov/zing/srw/",
+		Version:  "1.2",
+		ExplainRecord: &schema.XMLExplainRecord{
+			Schema:        "http://explain.z3950.org/dtd/2.0/",
+			RecordPacking: string(fcsResponse.RecordPacking),
+			Data: schema.XMLExplainData{
+				XMLNSZR: "http://explain.z3950.org/dtd/2.0/",
+				ServerInfo: schema.XMLExplainServerInfo{
+					Protocol:  "SRU",
+					Version:   "2.0",
+					Transport: "http",
+					Host:      a.serverInfo.ServerHost,
+					Port:      a.serverInfo.ServerPort,
+					Database:  a.serverInfo.Database,
+				},
+				DatabaseInfo: schema.XMLExplainDatabaseInfo{
+					Titles: general.MapItems(
+						a.serverInfo.DatabaseTitle,
+						func(k string, v string) schema.XMLMultilingual {
+							return schema.XMLMultilingual{Language: k, Primary: a.serverInfo.PrimaryLanguage == k, Value: v}
+						},
+					),
+					Descriptions: general.MapItems(
+						a.serverInfo.DatabaseDescription,
+						func(k string, v string) schema.XMLMultilingual {
+							return schema.XMLMultilingual{Language: k, Primary: a.serverInfo.PrimaryLanguage == k, Value: v}
+						},
+					),
+					Authors: general.MapItems(
+						a.serverInfo.DatabaseAuthor,
+						func(k string, v string) schema.XMLMultilingual {
+							return schema.XMLMultilingual{Language: k, Primary: a.serverInfo.PrimaryLanguage == k, Value: v}
+						},
+					),
+				},
+				SchemaInfo: schema.XMLExplainSchemaInfo{
+					Schema: schema.XMLExplainDefinition{
+						Identifier: "http://clarin.eu/fcs/resource",
+						Name:       "fcs",
+						Titles: []schema.XMLMultilingual{
+							{Language: "en", Value: "CLARIN Federated Content Search", Primary: true},
+						},
+					},
+				},
+				ConfigInfo: schema.XMLExplainConfigInfo{Values: []schema.XMLExplainConfig{
+					schema.XMLExplainConfig{
+						XMLName: xml.Name{Local: "zr:default"},
+						Type:    "numberOfRecords",
+						Value:   corpus.ExplainOpNumberOfRecords,
+					},
+					schema.XMLExplainConfig{
+						XMLName: xml.Name{Local: "zr:setting"},
+						Type:    "maximumRecords",
+						Value:   a.corporaConf.MaximumRecords,
+					},
+				}},
+			},
+		},
+		EchoedRequest: &schema.XMLExplainEchoedRequest{
+			Version: "1.2",
+		},
 	}
 
 	// check if all parameters are supported
 	for key, _ := range ctx.Request.URL.Query() {
 		if err := ExplainArg(key).Validate(); err != nil {
-			fcsResponse.General.AddError(general.FCSError{
-				Code:    general.DCUnsupportedParameter,
-				Ident:   key,
-				Message: err.Error(),
-			})
-			return general.ConformantStatusBadRequest
+			ans.Diagnostics = schema.NewXMLDiagnostics()
+			ans.Diagnostics.AddDiagnostic(general.DCUnsupportedParameter, 0, key, err.Error())
+			return ans, general.ConformantStatusBadRequest
 		}
 	}
 
-	// get resources
+	// extra data
 	if ctx.Query(ExplainArgFCSEndpointDescription.String()) == "true" {
-		fcsResponse.Explain.ExtraResponseData = true
-		for _, corpusConf := range a.corporaConf.Resources {
-			fcsResponse.Explain.Resources = append(
-				fcsResponse.Explain.Resources,
-				FCSResourceInfo{
-					PID:             corpusConf.PID,
-					Title:           corpusConf.FullName,
-					Description:     corpusConf.Description,
-					URI:             corpusConf.URI,
-					Languages:       corpusConf.Languages,
-					AvailableLayers: corpusConf.GetDefinedLayersAsRefString(),
+		ans.EndpointDescription = &schema.XMLExplainEndpointDescription{
+			XMLNSED: "http://clarin.eu/fcs/endpoint-description",
+			Version: "2",
+
+			Capabilities: []string{
+				"http://clarin.eu/fcs/capability/basic-search",
+			},
+			SupportedDataViews: []schema.XMLExplainSupportedDataView{
+				{ID: "hits", DeliveryPolicy: "send-by-default", Value: "application/x-clarin-fcs-hits+xml"},
+			},
+			Resources: collections.SliceMap(
+				a.corporaConf.Resources,
+				func(corpusConf *corpus.CorpusSetup, i int) schema.XMLExplainResource {
+					return schema.XMLExplainResource{
+						PID:             corpusConf.PID,
+						LandingPage:     corpusConf.URI,
+						Languages:       corpusConf.Languages,
+						AvailableLayers: schema.XMLExplainAvailableValues{Values: corpusConf.GetDefinedLayersAsRefString()},
+						Titles: general.MapItems(
+							corpusConf.FullName, func(lang, title string) schema.XMLMultilingual2 {
+								return schema.XMLMultilingual2{Language: lang, Value: title}
+							},
+						),
+						Descriptions: general.MapItems(
+							corpusConf.Description, func(lang, title string) schema.XMLMultilingual2 {
+								return schema.XMLMultilingual2{Language: lang, Value: title}
+							},
+						),
+					}
 				},
-			)
+			),
 		}
 	}
-	return http.StatusOK
+	return ans, http.StatusOK
 }

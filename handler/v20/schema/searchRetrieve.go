@@ -73,11 +73,6 @@ type XMLSRBasicDataViewResult struct {
 	Data      string   `xml:",innerxml"`
 }
 
-type XMLSRBasicHit struct {
-	XMLName xml.Name `xml:"hits:Hit"`
-	Value   string   `xml:",chardata"`
-}
-
 type XMLSRAdvancedDataViewResult struct {
 	XMLName  xml.Name          `xml:"adv:Advanced"`
 	Unit     string            `xml:"unit,attr"`

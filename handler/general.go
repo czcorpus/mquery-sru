@@ -41,7 +41,7 @@ const (
 type FCSSubHandler interface {
 	Handle(
 		ctx *gin.Context,
-		fcsResponse general.FCSGeneralResponse,
+		fcsGeneralRequest general.FCSGeneralRequest,
 		xslt map[string]string,
 	)
 }
@@ -61,37 +61,36 @@ func (a *FCSHandler) FCSHandler(ctx *gin.Context) {
 }
 
 func (a *FCSHandler) handleWithXSLT(ctx *gin.Context, xslt map[string]string) {
-	resp := general.FCSGeneralResponse{
+	req := general.FCSGeneralRequest{
 		Version: ctx.DefaultQuery("version", DefaultVersion),
 		Fatal:   false,
 		Errors:  make([]general.FCSError, 0, 10),
 	}
-	handler, ok := a.versions[resp.Version]
+	handler, ok := a.versions[req.Version]
 	if !ok {
 		handler = a.versions[DefaultVersion]
-		resp.Version = DefaultVersion
-		resp.AddError(general.FCSError{
+		req.Version = DefaultVersion
+		req.AddError(general.FCSError{
 			Code:    general.DCUnsupportedVersion,
 			Ident:   DefaultVersion,
-			Message: "Unsupported version " + resp.Version,
+			Message: "Unsupported version " + req.Version,
 		})
 	}
-	logging.AddLogEvent(ctx, "version", resp.Version)
-	handler.Handle(ctx, resp, xslt)
+	logging.AddLogEvent(ctx, "version", req.Version)
+	handler.Handle(ctx, req, xslt)
 }
 
 func NewFCSHandler(
 	serverInfo *cnf.ServerInfo,
 	corporaConf *corpus.CorporaSetup,
 	radapter *rdb.Adapter,
-	projectRootDir string,
 ) *FCSHandler {
 	return &FCSHandler{
 		conf:     corporaConf,
 		radapter: radapter,
 		versions: map[string]FCSSubHandler{
 			Version12: v12.NewFCSSubHandlerV12(
-				serverInfo, corporaConf, radapter, projectRootDir),
+				serverInfo, corporaConf, radapter),
 			Version20: v20.NewFCSSubHandlerV20(
 				serverInfo, corporaConf, radapter),
 		},
