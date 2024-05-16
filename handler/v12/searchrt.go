@@ -20,14 +20,19 @@
 package v12
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/bytedance/sonic"
+	"github.com/czcorpus/cnc-gokit/collections"
 	"github.com/czcorpus/cnc-gokit/logging"
 	"github.com/czcorpus/mquery-sru/backlink"
 	"github.com/czcorpus/mquery-sru/corpus"
+	"github.com/czcorpus/mquery-sru/corpus/conc"
 	"github.com/czcorpus/mquery-sru/general"
+	"github.com/czcorpus/mquery-sru/handler/v12/schema"
 	"github.com/czcorpus/mquery-sru/mango"
 	"github.com/czcorpus/mquery-sru/query"
 	"github.com/czcorpus/mquery-sru/query/compiler"
@@ -67,65 +72,52 @@ func (a *FCSSubHandlerV12) translateQuery(
 	return ast, fcsErr
 }
 
-func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResponse) int {
+func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequest) (schema.XMLSRResponse, int) {
 	logArgs := make(map[string]interface{})
 	logging.AddLogEvent(ctx, "args", logArgs)
+	ans := schema.NewXMLSRResponse()
+
 	// check if all parameters are supported
-	for key := range ctx.Request.URL.Query() {
+	for key, _ := range ctx.Request.URL.Query() {
 		if err := SearchRetrArg(key).Validate(); err != nil {
-			fcsResponse.General.AddError(general.FCSError{
-				Code:    general.DCUnsupportedParameter,
-				Ident:   key,
-				Message: err.Error(),
-			})
-			return general.ConformantStatusBadRequest
+			ans.Diagnostics = schema.NewXMLDiagnostics()
+			ans.Diagnostics.AddDiagnostic(general.DCUnsupportedParameter, 0, key, err.Error())
+			return ans, general.ConformantStatusBadRequest
 		}
 	}
 
 	// handle query parameter
 	fcsQuery := ctx.Query(SearchRetrArgQuery.String())
 	if len(fcsQuery) == 0 {
-		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.DCMandatoryParameterNotSupplied,
-			Ident:   "fcs_query",
-			Message: "Mandatory parameter not supplied",
-		})
-		return general.ConformantStatusBadRequest
+		ans.Diagnostics = schema.NewXMLDiagnostics()
+		ans.Diagnostics.AddDiagnostic(general.DCMandatoryParameterNotSupplied, 0, "fcs_query", general.DCMandatoryParameterNotSupplied.AsMessage())
+		return ans, general.ConformantStatusBadRequest
 	}
-	fcsResponse.SearchRetrieve.EchoedSRRequest.Query = fcsQuery
+	ans.EchoedRequest.Query = fcsQuery
 	logArgs[SearchRetrArgQuery.String()] = fcsQuery
 
 	// handle start record parameter
 	xStartRecord := ctx.DefaultQuery(SearchRetrStartRecord.String(), "1")
 	startRecord, err := strconv.Atoi(xStartRecord)
 	if err != nil {
-		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.DCUnsupportedParameterValue,
-			Ident:   SearchRetrStartRecord.String(),
-			Message: general.DCUnsupportedParameterValue.AsMessage(),
-		})
-		return general.ConformantUnprocessableEntity
+		ans.Diagnostics = schema.NewXMLDiagnostics()
+		ans.Diagnostics.AddDiagnostic(general.DCUnsupportedParameterValue, 0, SearchRetrStartRecord.String(), general.DCUnsupportedParameterValue.AsMessage())
+		return ans, general.ConformantUnprocessableEntity
 	}
 	if startRecord < 1 {
-		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.DCUnsupportedParameterValue,
-			Ident:   SearchRetrStartRecord.String(),
-			Message: general.DCUnsupportedParameterValue.AsMessage(),
-		})
-		return general.ConformantUnprocessableEntity
+		ans.Diagnostics = schema.NewXMLDiagnostics()
+		ans.Diagnostics.AddDiagnostic(general.DCUnsupportedParameterValue, 0, SearchRetrStartRecord.String(), general.DCUnsupportedParameterValue.AsMessage())
+		return ans, general.ConformantUnprocessableEntity
 	}
-	fcsResponse.SearchRetrieve.EchoedSRRequest.StartRecord = startRecord
+	ans.EchoedRequest.StartRecord = startRecord
 	logArgs[SearchRetrStartRecord.String()] = startRecord
 
 	// handle record schema parameter
 	recordSchema := ctx.DefaultQuery(SearchRetrArgRecordSchema.String(), general.RecordSchema)
 	if recordSchema != general.RecordSchema {
-		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.DCUnknownSchemaForRetrieval,
-			Ident:   SearchMaximumRecords.String(),
-			Message: general.DCUnknownSchemaForRetrieval.AsMessage(),
-		})
-		return general.ConformantUnprocessableEntity
+		ans.Diagnostics = schema.NewXMLDiagnostics()
+		ans.Diagnostics.AddDiagnostic(general.DCUnknownSchemaForRetrieval, 0, SearchMaximumRecords.String(), general.DCUnknownSchemaForRetrieval.AsMessage())
+		return ans, general.ConformantUnprocessableEntity
 	}
 
 	// handle max records parameter
@@ -133,21 +125,24 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	if xMaximumRecords := ctx.Query(SearchMaximumRecords.String()); len(xMaximumRecords) > 0 {
 		maximumRecords, err = strconv.Atoi(xMaximumRecords)
 		if err != nil {
-			fcsResponse.General.AddError(general.FCSError{
-				Code:    general.DCUnsupportedParameterValue,
-				Ident:   SearchMaximumRecords.String(),
-				Message: general.DCUnsupportedParameterValue.AsMessage(),
-			})
-			return general.ConformantUnprocessableEntity
+			ans.Diagnostics = schema.NewXMLDiagnostics()
+			ans.Diagnostics.AddDiagnostic(general.DCUnsupportedParameterValue, 0, SearchMaximumRecords.String(), general.DCUnsupportedParameterValue.AsMessage())
+			return ans, general.ConformantUnprocessableEntity
 		}
 	}
 	if maximumRecords < 1 {
-		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.DCUnsupportedParameterValue,
-			Ident:   SearchMaximumRecords.String(),
-			Message: general.DCUnsupportedParameterValue.AsMessage(),
-		})
-		return general.ConformantUnprocessableEntity
+		ans.Diagnostics = schema.NewXMLDiagnostics()
+		ans.Diagnostics.AddDiagnostic(general.DCUnsupportedParameterValue, 0, SearchMaximumRecords.String(), general.DCUnsupportedParameterValue.AsMessage())
+		return ans, general.ConformantUnprocessableEntity
+
+	}
+	if maximumRecords > mango.MaxRecordsInternalLimit {
+		// TODO the error type is not probably very accurate
+		// as the actual result can be very small. But we still
+		// have to limit max. number of records...
+		ans.Diagnostics = schema.NewXMLDiagnostics()
+		ans.Diagnostics.AddDiagnostic(general.DCTooManyMatchingRecords, 0, fmt.Sprintf("%d", mango.MaxRecordsInternalLimit), general.DCTooManyMatchingRecords.AsMessage())
+		return ans, general.ConformantUnprocessableEntity
 	}
 	logArgs[SearchMaximumRecords.String()] = maximumRecords
 
@@ -158,8 +153,8 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 		for _, pid := range corporaPids {
 			res, err := a.corporaConf.Resources.GetResourceByPID(pid)
 			if err == corpus.ErrResourceNotFound {
-				fcsResponse.SearchRetrieve.Results = []FCSSearchRow{}
-				return http.StatusOK
+				ans.Records = &[]schema.XMLSRRecord{}
+				return ans, http.StatusOK
 			}
 			corpora = append(corpora, res.ID)
 		}
@@ -169,40 +164,23 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 	}
 
 	// get searchable corpora and attrs
-	if len(corpora) > 0 {
-		for _, v := range corpora {
-			_, err := a.corporaConf.Resources.GetResource(v)
-			if err != nil {
-				fcsResponse.General.AddError(general.FCSError{
-					Code:    general.DCUnsupportedParameterValue,
-					Ident:   SearchRetrArgFCSContext.String(),
-					Message: "Unknown context " + v,
-				})
-				return general.ConformantStatusBadRequest
-			}
-		}
-
-	} else {
-		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.DCUnsupportedParameterValue,
-			Ident:   SearchRetrArgFCSContext.String(),
-			Message: "Empty context",
-		})
-		return general.ConformantStatusBadRequest
+	if len(corpora) == 0 {
+		ans.Diagnostics = schema.NewXMLDiagnostics()
+		ans.Diagnostics.AddDiagnostic(general.DCUnsupportedContextSet, 0, SearchRetrArgFCSContext.String(), general.DCUnsupportedContextSet.AsMessage())
+		return ans, general.ConformantStatusBadRequest
 	}
 	retrieveAttrs, err := a.corporaConf.Resources.GetCommonPosAttrNames(corpora...)
 	if err != nil {
-		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.DCGeneralSystemError,
-			Ident:   err.Error(),
-			Message: general.DCGeneralSystemError.AsMessage(),
-		})
-		return http.StatusInternalServerError
+		ans.Diagnostics = schema.NewXMLDiagnostics()
+		ans.Diagnostics.AddDiagnostic(general.DCGeneralSystemError, 0, err.Error(), general.DCGeneralSystemError.AsMessage())
+		return ans, http.StatusInternalServerError
 	}
 
 	logArgs["corpus"] = a.serverInfo.Database
 	logArgs["sources"] = corpora
 	logArgs[SearchRetrArgFCSContext.String()] = ctx.Query(SearchRetrArgFCSContext.String())
+	log.Warn().Msg("Data views are not implemented yet!")
+	logArgs[SearchRetrArgFCSDataViews.String()] = ctx.Query(SearchRetrArgFCSDataViews.String())
 
 	ranges := query.CalculatePartialRanges(corpora, startRecord-1, maximumRecords)
 
@@ -212,26 +190,22 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 
 		ast, fcsErr := a.translateQuery(rng.Rsc, fcsQuery)
 		if fcsErr != nil {
-			fcsResponse.General.AddError(*fcsErr)
-			return general.ConformantUnprocessableEntity
+			ans.Diagnostics = schema.NewXMLDiagnostics()
+			ans.Diagnostics.AddDiagnostic(fcsErr.Code, fcsErr.Type, fcsErr.Ident, fcsErr.Message)
+			return ans, general.ConformantUnprocessableEntity
 		}
+
 		query := ast.Generate()
 		if len(ast.Errors()) > 0 {
-			fcsResponse.General.AddError(general.FCSError{
-				Code:    general.DCQueryCannotProcess,
-				Ident:   SearchRetrArgQuery.String(),
-				Message: ast.Errors()[0].Error(),
-			})
-			return general.ConformantUnprocessableEntity
+			ans.Diagnostics = schema.NewXMLDiagnostics()
+			ans.Diagnostics.AddDiagnostic(general.DCQueryCannotProcess, 0, SearchRetrArgQuery.String(), ast.Errors()[0].Error())
+			return ans, general.ConformantUnprocessableEntity
 		}
 		rscConf, err := a.corporaConf.Resources.GetResource(rng.Rsc)
 		if err != nil {
-			fcsResponse.General.AddError(general.FCSError{
-				Code:    general.DCGeneralSystemError,
-				Ident:   err.Error(),
-				Message: general.DCGeneralSystemError.AsMessage(),
-			})
-			return general.ConformandGeneralServerError
+			ans.Diagnostics = schema.NewXMLDiagnostics()
+			ans.Diagnostics.AddDiagnostic(general.DCGeneralSystemError, 0, err.Error(), general.DCGeneralSystemError.AsMessage())
+			return ans, general.ConformandGeneralServerError
 		}
 		args, err := sonic.Marshal(rdb.ConcExampleArgs{
 			CorpusPath:        a.corporaConf.GetRegistryPath(rng.Rsc),
@@ -243,89 +217,68 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 			ViewContextStruct: rscConf.ViewContextStruct,
 		})
 		if err != nil {
-			fcsResponse.General.AddError(general.FCSError{
-				Code:    general.DCGeneralSystemError,
-				Ident:   err.Error(),
-				Message: "General system error",
-			})
-			return general.ConformandGeneralServerError
+			ans.Diagnostics = schema.NewXMLDiagnostics()
+			ans.Diagnostics.AddDiagnostic(general.DCGeneralSystemError, 0, err.Error(), general.DCGeneralSystemError.AsMessage())
+			return ans, http.StatusInternalServerError
 		}
 		wait, err := a.radapter.PublishQuery(rdb.Query{
 			Func: "concExample",
 			Args: args,
 		})
 		if err != nil {
-			fcsResponse.General.AddError(general.FCSError{
-				Code:    general.DCGeneralSystemError,
-				Ident:   err.Error(),
-				Message: "General system error",
-			})
-			return general.ConformandGeneralServerError
+			ans.Diagnostics = schema.NewXMLDiagnostics()
+			ans.Diagnostics.AddDiagnostic(general.DCGeneralSystemError, 0, err.Error(), general.DCGeneralSystemError.AsMessage())
+			return ans, http.StatusInternalServerError
 		}
 		waits[i] = wait
 	}
-
 	// using fromResource, we will cycle through available resources' results and their lines
 	fromResource := result.NewRoundRobinLineSel(maximumRecords, ranges.PIDList()...)
 	usedQueries := make(map[string]string) // maps resource ID to Manatee CQL query
-
+	var totalConcSize int
 	for i, wait := range waits {
 		rawResult := <-wait
 		result, err := rdb.DeserializeConcExampleResult(rawResult)
 		if err != nil {
-			fcsResponse.General.AddError(general.FCSError{
-				Code:    general.DCGeneralSystemError,
-				Ident:   err.Error(),
-				Message: general.DCGeneralSystemError.AsMessage(),
-			})
-			return http.StatusInternalServerError
+			ans.Diagnostics = schema.NewXMLDiagnostics()
+			ans.Diagnostics.AddDiagnostic(general.DCGeneralSystemError, 0, err.Error(), general.DCGeneralSystemError.AsMessage())
+			return ans, http.StatusInternalServerError
 		}
 		if err := result.Err(); err != nil {
 			if err.Error() == mango.ErrRowsRangeOutOfConc.Error() {
 				fromResource.RscSetErrorAt(i, err)
 
 			} else {
-				fcsResponse.General.AddError(general.FCSError{
-					Code:    general.DCQueryCannotProcess,
-					Ident:   err.Error(),
-					Message: general.DCQueryCannotProcess.AsMessage(),
-				})
-				return http.StatusInternalServerError
+				ans.Diagnostics = schema.NewXMLDiagnostics()
+				ans.Diagnostics.AddDiagnostic(general.DCQueryCannotProcess, 0, err.Error(), general.DCQueryCannotProcess.AsMessage())
+				return ans, http.StatusInternalServerError
 			}
 		}
 		fromResource.SetRscLines(ranges[i].Rsc, result)
 		usedQueries[ranges[i].Rsc] = result.Query
+		totalConcSize += result.ConcSize
 	}
+
+	ans.NumberOfRecords = totalConcSize
 	if fromResource.AllHasOutOfRangeError() {
-		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.DCFirstRecordPosOutOfRange,
-			Ident:   fromResource.GetFirstError().Error(),
-			Message: general.DCFirstRecordPosOutOfRange.AsMessage(),
-		})
-		return general.ConformantUnprocessableEntity
+		ans.Diagnostics = schema.NewXMLDiagnostics()
+		ans.Diagnostics.AddDiagnostic(general.DCFirstRecordPosOutOfRange, 0, fromResource.GetFirstError().Error(), general.DCFirstRecordPosOutOfRange.AsMessage())
+		return ans, general.ConformantUnprocessableEntity
 
 	} else if fromResource.HasFatalError() {
-		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.DCQueryCannotProcess,
-			Ident:   fromResource.GetFirstError().Error(),
-			Message: general.DCQueryCannotProcess.AsMessage(),
-		})
-		return general.ConformandGeneralServerError
+		ans.Diagnostics = schema.NewXMLDiagnostics()
+		ans.Diagnostics.AddDiagnostic(general.DCQueryCannotProcess, 0, fromResource.GetFirstError().Error(), general.DCQueryCannotProcess.AsMessage())
+		return ans, general.ConformandGeneralServerError
 	}
 
 	// transform results
-	fcsResponse.SearchRetrieve.Results = make([]FCSSearchRow, 0, maximumRecords)
-
-	for len(fcsResponse.SearchRetrieve.Results) < maximumRecords && fromResource.Next() {
-		segmentPos := 1
+	records := make([]schema.XMLSRRecord, 0, maximumRecords)
+	for len(records) < maximumRecords && fromResource.Next() {
 		res, err := a.corporaConf.Resources.GetResource(fromResource.CurrRscName())
 		if err != nil {
-			fcsResponse.General.AddError(general.FCSError{
-				Code:    general.DCGeneralSystemError,
-				Ident:   err.Error(),
-				Message: general.DCGeneralSystemError.AsMessage(),
-			})
-			return http.StatusInternalServerError
+			ans.Diagnostics = schema.NewXMLDiagnostics()
+			ans.Diagnostics.AddDiagnostic(general.DCGeneralSystemError, 0, err.Error(), general.DCGeneralSystemError.AsMessage())
+			return ans, http.StatusInternalServerError
 		}
 		item := fromResource.CurrLine()
 		var refURL string
@@ -337,20 +290,37 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResp
 				log.Error().Err(err).Msg("failed to generate ResourceFragment URL")
 			}
 		}
-		row := FCSSearchRow{
-			Position: len(fcsResponse.SearchRetrieve.Results) + 1,
-			PID:      res.PID,
-			Ref:      refURL,
-		}
-		for _, t := range item.Text {
-			token := Token{
-				Text: t.Word,
-				Hit:  t.Strong,
-			}
-			segmentPos += len(t.Word) + 1 // with space between words
-			row.Tokens = append(row.Tokens, token)
-		}
-		fcsResponse.SearchRetrieve.Results = append(fcsResponse.SearchRetrieve.Results, row)
+		records = append(records, schema.XMLSRRecord{
+			Schema:        "http://clarin.eu/fcs/resource",
+			RecordPacking: string(fcsResponse.RecordPacking),
+			Data: schema.XMLSRResource{
+				XMLNSFCS: "http://clarin.eu/fcs/resource",
+				PID:      res.PID,
+				ResourceFragment: schema.XMLSRResourceFragment{
+					Ref: refURL,
+					DataViews: schema.XMLSRDataView{
+						Type: "application/x-clarin-fcs-hits+xml",
+						Result: schema.XMLSRBasicDataViewResult{
+							XMLNSHits: "http://clarin.eu/fcs/dataview/hits",
+							Data: strings.Join(
+								collections.SliceMap(
+									item.Text,
+									func(token *conc.Token, i int) string {
+										if token.Strong {
+											return "<hits:Hit>" + token.Word + "</hits:Hit>"
+										}
+										return token.Word
+									},
+								),
+								" ",
+							),
+						},
+					},
+				},
+			},
+			RecordPosition: len(records) + startRecord,
+		})
 	}
-	return http.StatusOK
+	ans.Records = &records
+	return ans, http.StatusOK
 }

@@ -111,7 +111,7 @@ func (a *FCSSubHandlerV20) getAttrByLayers(commonPosAttrs []corpus.PosAttr, laye
 	return "??"
 }
 
-func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSResponse) (schema.XMLSRResponse, int) {
+func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequest) (schema.XMLSRResponse, int) {
 	logArgs := make(map[string]interface{})
 	logging.AddLogEvent(ctx, "args", logArgs)
 	ans := schema.NewXMLSRResponse()

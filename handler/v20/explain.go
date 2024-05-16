@@ -31,7 +31,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSResponse) (schema.XMLExplainResponse, int) {
+func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSRequest) (schema.XMLExplainResponse, int) {
 	ans := schema.XMLExplainResponse{
 		XMLNSSRUResponse: "http://docs.oasis-open.org/ns/search-ws/sruResponse",
 		Version:          "2.0",

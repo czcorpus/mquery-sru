@@ -26,7 +26,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (a *FCSSubHandlerV20) scan(ctx *gin.Context, fcsResponse *FCSResponse) (schema.XMLScanResponse, int) {
+func (a *FCSSubHandlerV20) scan(ctx *gin.Context, fcsResponse *FCSRequest) (schema.XMLScanResponse, int) {
 	ans := schema.NewXMLScanResponse()
 	for key, _ := range ctx.Request.URL.Query() {
 		if err := ScanArg(key).Validate(); err != nil {
