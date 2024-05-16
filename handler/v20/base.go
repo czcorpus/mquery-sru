@@ -20,17 +20,17 @@
 package v20
 
 import (
+	"encoding/xml"
 	"fmt"
 	"net/http"
-	"path/filepath"
-	"text/template"
 
 	"github.com/czcorpus/cnc-gokit/logging"
 	"github.com/czcorpus/mquery-sru/cnf"
 	"github.com/czcorpus/mquery-sru/corpus"
 	"github.com/czcorpus/mquery-sru/general"
-	"github.com/czcorpus/mquery-sru/handler/common"
+	"github.com/czcorpus/mquery-sru/handler/v20/schema"
 	"github.com/czcorpus/mquery-sru/rdb"
+	"github.com/rs/zerolog/log"
 
 	"github.com/gin-gonic/gin"
 )
@@ -39,18 +39,34 @@ type FCSSubHandlerV20 struct {
 	serverInfo  *cnf.ServerInfo
 	corporaConf *corpus.CorporaSetup
 	radapter    *rdb.Adapter
-	tmpl        *template.Template
 }
 
-func (a *FCSSubHandlerV20) produceResponse(ctx *gin.Context, fcsResponse *FCSResponse, code int) {
-	ctx.Writer.WriteHeader(code)
-	// TODO in case an error occurs in executing of the template, how can we rewrite
-	// an already written status header? (see docs for ctx.Write)
-	if err := a.tmpl.ExecuteTemplate(ctx.Writer, "fcs-2.0.xml", fcsResponse); err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
+func (a *FCSSubHandlerV20) produceXMLResponse(ctx *gin.Context, code int, xslt string, data any) {
+	xmlAns, err := xml.MarshalIndent(data, "", "  ")
+	if err != nil {
+		log.Err(err).Msg("failed to encode a result to XML")
+		http.Error(ctx.Writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	ctx.Writer.WriteHeader(code)
+	_, err = ctx.Writer.Write([]byte(xml.Header + general.GetXSLTHeader(xslt) + string(xmlAns)))
+	if err != nil {
+		log.Err(err).Msg("failed to write XML to response")
+		http.Error(ctx.Writer, err.Error(), http.StatusInternalServerError)
+	}
 	ctx.Writer.Header().Set("Content-Type", "application/xml")
+}
+
+func (a *FCSSubHandlerV20) produceErrorResponse(ctx *gin.Context, code int, xslt string, fcsErrors []general.FCSError) {
+	ans := schema.XMLExplainResponse{
+		XMLNSSRUResponse: "http://docs.oasis-open.org/ns/search-ws/sruResponse",
+		Version:          "2.0",
+		Diagnostics:      schema.NewXMLDiagnostics(),
+	}
+	for _, fcsErr := range fcsErrors {
+		ans.Diagnostics.AddDiagnostic(fcsErr.Code, fcsErr.Type, fcsErr.Ident, fcsErr.Message)
+	}
+	a.produceXMLResponse(ctx, code, xslt, ans)
 }
 
 func (a *FCSSubHandlerV20) Handle(
@@ -66,7 +82,7 @@ func (a *FCSSubHandlerV20) Handle(
 	}
 
 	if fcsResponse.General.HasFatalError() {
-		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
+		a.produceErrorResponse(ctx, general.ConformantStatusBadRequest, fcsGeneralResponse.XSLT, fcsGeneralResponse.Errors)
 		return
 	}
 
@@ -86,7 +102,7 @@ func (a *FCSSubHandlerV20) Handle(
 			Ident:   "operation",
 			Message: fmt.Sprintf("Unsupported operation: %s", operation),
 		})
-		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
+		a.produceErrorResponse(ctx, general.ConformantStatusBadRequest, fcsGeneralResponse.XSLT, fcsGeneralResponse.Errors)
 		return
 	}
 	fcsResponse.Operation = operation
@@ -100,38 +116,33 @@ func (a *FCSSubHandlerV20) Handle(
 			Ident:   "recordXMLEscaping",
 			Message: err.Error(),
 		})
-		a.produceResponse(ctx, fcsResponse, general.ConformantStatusBadRequest)
+		a.produceErrorResponse(ctx, general.ConformantStatusBadRequest, fcsGeneralResponse.XSLT, fcsGeneralResponse.Errors)
 		return
 	}
 	fcsResponse.RecordXMLEscaping = recordXMLEscaping
 	logging.AddLogEvent(ctx, "recordXMLEscaping", recordXMLEscaping)
 
-	code := http.StatusOK
+	var response any
+	var code int
 	switch fcsResponse.Operation {
 	case OperationExplain:
-		code = a.explain(ctx, fcsResponse)
+		response, code = a.explain(ctx, fcsResponse)
 	case OperationSearchRetrive:
-		code = a.searchRetrieve(ctx, fcsResponse)
+		response, code = a.searchRetrieve(ctx, fcsResponse)
 	case OperationScan:
-		code = a.scan(ctx, fcsResponse)
+		response, code = a.scan(ctx, fcsResponse)
 	}
-	a.produceResponse(ctx, fcsResponse, code)
+	a.produceXMLResponse(ctx, code, fcsGeneralResponse.XSLT, response)
 }
 
 func NewFCSSubHandlerV20(
 	generalConf *cnf.ServerInfo,
 	corporaConf *corpus.CorporaSetup,
 	radapter *rdb.Adapter,
-	projectRootDir string,
 ) *FCSSubHandlerV20 {
-	path := filepath.Join(projectRootDir, "handler", "v20", "templates")
 	return &FCSSubHandlerV20{
 		serverInfo:  generalConf,
 		corporaConf: corporaConf,
 		radapter:    radapter,
-		tmpl: template.Must(
-			template.New("").
-				Funcs(common.GetTemplateFunctions()).
-				ParseGlob(path + "/*")),
 	}
 }

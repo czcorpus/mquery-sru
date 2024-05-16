@@ -16,14 +16,30 @@
 //  You should have received a copy of the GNU General Public License
 //  along with MQUERY.  If not, see <https://www.gnu.org/licenses/>.
 
-package v20
+package general
 
-import (
-	"github.com/czcorpus/mquery-sru/general"
-)
+import "fmt"
 
-type FCSResponse struct {
-	General           general.FCSGeneralResponse
-	RecordXMLEscaping RecordXMLEscaping
-	Operation         Operation
+func MapItems[K string, V any, T any](data map[K]V, mapFn func(k K, v V) T) []T {
+	ans := make([]T, len(data))
+	i := 0
+	for k, v := range data {
+		ans[i] = mapFn(k, v)
+		i++
+	}
+	return ans
+}
+
+func ReturnIf[T any](cond bool, ifTrue T, ifFalse T) T {
+	if cond {
+		return ifTrue
+	}
+	return ifFalse
+}
+
+func GetXSLTHeader(xslt string) string {
+	if xslt != "" {
+		return fmt.Sprintf("<?xml-stylesheet type=\"text/xsl\" href=\"%s\"?>\n", xslt)
+	}
+	return ""
 }

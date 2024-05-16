@@ -22,58 +22,44 @@ import (
 	"strconv"
 
 	"github.com/czcorpus/mquery-sru/general"
+	"github.com/czcorpus/mquery-sru/handler/v20/schema"
 	"github.com/gin-gonic/gin"
 )
 
-func (a *FCSSubHandlerV20) scan(ctx *gin.Context, fcsResponse *FCSResponse) int {
-	fcsResponse.General.DiagXMLContext = "scan"
+func (a *FCSSubHandlerV20) scan(ctx *gin.Context, fcsResponse *FCSResponse) (schema.XMLScanResponse, int) {
+	ans := schema.NewXMLScanResponse()
 	for key, _ := range ctx.Request.URL.Query() {
 		if err := ScanArg(key).Validate(); err != nil {
-			fcsResponse.General.AddError(general.FCSError{
-				Code:    general.DCUnsupportedParameter,
-				Ident:   key,
-				Message: err.Error(),
-			})
-			return general.ConformantStatusBadRequest
+			ans.Diagnostics = schema.NewXMLDiagnostics()
+			ans.Diagnostics.AddDiagnostic(general.DCUnsupportedParameter, 0, key, err.Error())
+			return ans, general.ConformantStatusBadRequest
 		}
 	}
 
 	xMaxTerms := ctx.DefaultQuery(ScanArgMaximumTerms.String(), "1000")
 	_, err := strconv.Atoi(xMaxTerms)
 	if err != nil {
-		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.DCUnsupportedParameterValue,
-			Ident:   ScanArgMaximumTerms.String(),
-			Message: general.DCUnsupportedParameterValue.AsMessage(),
-		})
-		return general.ConformantUnprocessableEntity
+		ans.Diagnostics = schema.NewXMLDiagnostics()
+		ans.Diagnostics.AddDiagnostic(general.DCUnsupportedParameter, 0, ScanArgMaximumTerms.String(), general.DCUnsupportedParameterValue.AsMessage())
+		return ans, general.ConformantUnprocessableEntity
 	}
 
 	xResponsePos := ctx.DefaultQuery(ScanArgResponsePosition.String(), "1")
 	_, err = strconv.Atoi(xResponsePos)
 	if err != nil {
-		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.DCUnsupportedParameterValue,
-			Ident:   ScanArgResponsePosition.String(),
-			Message: general.DCUnsupportedParameterValue.AsMessage(),
-		})
-		return general.ConformantUnprocessableEntity
+		ans.Diagnostics = schema.NewXMLDiagnostics()
+		ans.Diagnostics.AddDiagnostic(general.DCUnsupportedParameterValue, 0, ScanArgResponsePosition.String(), general.DCUnsupportedParameterValue.AsMessage())
+		return ans, general.ConformantUnprocessableEntity
 	}
 
 	scanClause := ctx.Query(ScanArgScanClause.String())
 	if scanClause == "" {
-		fcsResponse.General.AddError(general.FCSError{
-			Code:    general.DCMandatoryParameterNotSupplied,
-			Ident:   ScanArgScanClause.String(),
-			Message: general.DCMandatoryParameterNotSupplied.AsMessage(),
-		})
-		return general.ConformantUnprocessableEntity
+		ans.Diagnostics = schema.NewXMLDiagnostics()
+		ans.Diagnostics.AddDiagnostic(general.DCMandatoryParameterNotSupplied, 0, ScanArgScanClause.String(), general.DCMandatoryParameterNotSupplied.AsMessage())
+		return ans, general.ConformantUnprocessableEntity
 	}
 
-	fcsResponse.General.AddError(general.FCSError{
-		Code:    general.DCUnsupportedIndex,
-		Ident:   ScanArgScanClause.String(),
-		Message: general.DCUnsupportedIndex.AsMessage(),
-	})
-	return general.ConformantUnprocessableEntity
+	ans.Diagnostics = schema.NewXMLDiagnostics()
+	ans.Diagnostics.AddDiagnostic(general.DCUnsupportedIndex, 0, ScanArgScanClause.String(), general.DCUnsupportedIndex.AsMessage())
+	return ans, general.ConformantUnprocessableEntity
 }

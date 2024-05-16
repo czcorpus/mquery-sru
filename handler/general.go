@@ -93,7 +93,7 @@ func NewFCSHandler(
 			Version12: v12.NewFCSSubHandlerV12(
 				serverInfo, corporaConf, radapter, projectRootDir),
 			Version20: v20.NewFCSSubHandlerV20(
-				serverInfo, corporaConf, radapter, projectRootDir),
+				serverInfo, corporaConf, radapter),
 		},
 	}
 }

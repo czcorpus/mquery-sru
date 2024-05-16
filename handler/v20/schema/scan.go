@@ -1,5 +1,5 @@
-// Copyright 2023 Martin Zimandl <martin.zimandl@gmail.com>
-// Copyright 2023 Institute of the Czech National Corpus,
+// Copyright 2024 Martin Zimandl <martin.zimandl@gmail.com>
+// Copyright 2024 Institute of the Czech National Corpus,
 //                Faculty of Arts, Charles University
 //   This file is part of MQUERY.
 //
@@ -16,14 +16,20 @@
 //  You should have received a copy of the GNU General Public License
 //  along with MQUERY.  If not, see <https://www.gnu.org/licenses/>.
 
-package v20
+package schema
 
-import (
-	"github.com/czcorpus/mquery-sru/general"
-)
+import "encoding/xml"
 
-type FCSResponse struct {
-	General           general.FCSGeneralResponse
-	RecordXMLEscaping RecordXMLEscaping
-	Operation         Operation
+type XMLScanResponse struct {
+	XMLName           xml.Name        `xml:"scan:scanResponse"`
+	XMLNSScanResponse string          `xml:"xmlns:scan,attr"`
+	Version           string          `xml:"scan:version"`
+	Diagnostics       *XMLDiagnostics `xml:"scan:diagnostics,omitempty"`
+}
+
+func NewXMLScanResponse() XMLScanResponse {
+	return XMLScanResponse{
+		XMLNSScanResponse: "http://docs.oasis-open.org/ns/search-ws/scan",
+		Version:           "2.0",
+	}
 }
