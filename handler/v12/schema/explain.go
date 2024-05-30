@@ -104,7 +104,7 @@ type XMLExplainConfig struct {
 // --------------------- Echoed Explain Request ---------------------
 
 type XMLExplainEchoedRequest struct {
-	Version string `xml:"sruResponse:version"`
+	Version string `xml:"sru:version"`
 }
 
 // --------------------- Extra Response Data ---------------------
