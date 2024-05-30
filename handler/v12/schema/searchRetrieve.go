@@ -21,9 +21,9 @@ package schema
 import "encoding/xml"
 
 type XMLSRResponse struct {
-	XMLName          xml.Name `xml:"sruResponse:searchRetrieveResponse"`
-	XMLNSSRUResponse string   `xml:"xmlns:sruResponse,attr"`
-	Version          string   `xml:"sruResponse:version"`
+	XMLName          xml.Name `xml:"sru:searchRetrieveResponse"`
+	XMLNSSRUResponse string   `xml:"xmlns:sru,attr"`
+	Version          string   `xml:"sru:version"`
 
 	NumberOfRecords int                `xml:"sru:numberOfRecords"`
 	Records         *[]XMLSRRecord     `xml:"sru:records>sru:record,omitempty"`
