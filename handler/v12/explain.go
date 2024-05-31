@@ -97,7 +97,7 @@ func (a *FCSSubHandlerV12) explain(ctx *gin.Context, fcsResponse *FCSRequest) (s
 	}
 
 	// check if all parameters are supported
-	for key, _ := range ctx.Request.URL.Query() {
+	for key := range ctx.Request.URL.Query() {
 		if err := ExplainArg(key).Validate(); err != nil {
 			ans.Diagnostics = schema.NewXMLDiagnostics()
 			ans.Diagnostics.AddDiagnostic(general.DCUnsupportedParameter, 0, key, err.Error())
@@ -113,18 +113,32 @@ func (a *FCSSubHandlerV12) explain(ctx *gin.Context, fcsResponse *FCSRequest) (s
 
 			Capabilities: []string{
 				"http://clarin.eu/fcs/capability/basic-search",
+				"http://clarin.eu/fcs/capability/advanced-search",
 			},
 			SupportedDataViews: []schema.XMLExplainSupportedDataView{
 				{ID: "hits", DeliveryPolicy: "send-by-default", Value: "application/x-clarin-fcs-hits+xml"},
+				{ID: "adv", DeliveryPolicy: "send-by-default", Value: "application/x-clarin-fcs-adv+xml"},
 			},
+			SupportedLayers: collections.SliceMap(
+				a.corporaConf.Resources.GetCommonPosAttrs2(),
+				func(posAttr corpus.PosAttr, i int) schema.XMLExplainSupportedLayer {
+					return schema.XMLExplainSupportedLayer{
+						ID:        posAttr.ID,
+						Qualifier: posAttr.Name,
+						ResultID:  posAttr.Layer.GetResultID(),
+						Value:     string(posAttr.Layer),
+					}
+				},
+			),
 			Resources: collections.SliceMap(
 				a.corporaConf.Resources,
 				func(corpusConf *corpus.CorpusSetup, i int) schema.XMLExplainResource {
 					return schema.XMLExplainResource{
-						PID:             corpusConf.PID,
-						LandingPage:     corpusConf.URI,
-						Languages:       corpusConf.Languages,
-						AvailableLayers: schema.XMLExplainAvailableValues{Values: corpusConf.GetDefinedLayersAsRefString()},
+						PID:                corpusConf.PID,
+						LandingPage:        corpusConf.URI,
+						Languages:          corpusConf.Languages,
+						AvailableLayers:    schema.XMLExplainAvailableValues{Values: corpusConf.GetDefinedLayersAsRefString()},
+						AvailableDataViews: schema.XMLExplainAvailableValues{Values: "hits adv"},
 						Titles: general.MapItems(
 							corpusConf.FullName, func(lang, title string) schema.XMLMultilingual2 {
 								return schema.XMLMultilingual2{Language: lang, Value: title}
