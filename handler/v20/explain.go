@@ -153,10 +153,11 @@ func (a *FCSSubHandlerV20) explain(ctx *gin.Context, fcsResponse *FCSRequest) (s
 				a.corporaConf.Resources,
 				func(corpusConf *corpus.CorpusSetup, i int) schema.XMLExplainResource {
 					return schema.XMLExplainResource{
-						PID:             corpusConf.PID,
-						LandingPage:     corpusConf.URI,
-						Languages:       corpusConf.Languages,
-						AvailableLayers: schema.XMLExplainAvailableValues{Values: corpusConf.GetDefinedLayersAsRefString()},
+						PID:                corpusConf.PID,
+						LandingPage:        corpusConf.URI,
+						Languages:          corpusConf.Languages,
+						AvailableLayers:    schema.XMLExplainAvailableValues{Values: corpusConf.GetDefinedLayersAsRefString()},
+						AvailableDataViews: schema.XMLExplainAvailableValues{Values: "hits adv"},
 						Titles: general.MapItems(
 							corpusConf.FullName, func(lang, title string) schema.XMLMultilingual2 {
 								return schema.XMLMultilingual2{Language: lang, Value: title}

@@ -107,6 +107,15 @@ type XMLExplainEchoedRequest struct {
 	Version string `xml:"sru:version"`
 }
 
+// -------------------- XMLExplainSupportedLayer ---------------------
+
+type XMLExplainSupportedLayer struct {
+	ID        string `xml:"id,attr"`
+	Qualifier string `xml:"qualifier,attr"`
+	ResultID  string `xml:"result-id,attr"`
+	Value     string `xml:",chardata"`
+}
+
 // --------------------- Extra Response Data ---------------------
 
 type XMLExplainEndpointDescription struct {
@@ -115,6 +124,7 @@ type XMLExplainEndpointDescription struct {
 
 	Capabilities       []string                      `xml:"ed:Capabilities>ed:Capability"`
 	SupportedDataViews []XMLExplainSupportedDataView `xml:"ed:SupportedDataViews>ed:SupportedDataView"`
+	SupportedLayers    []XMLExplainSupportedLayer    `xml:"ed:SupportedLayers>ed:SupportedLayer"`
 	Resources          []XMLExplainResource          `xml:"ed:Resources>ed:Resource"`
 }
 
