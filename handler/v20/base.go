@@ -57,12 +57,21 @@ func (a *FCSSubHandlerV20) produceXMLResponse(ctx *gin.Context, code int, xslt s
 	ctx.Writer.Header().Set("Content-Type", "application/xml")
 }
 
-func (a *FCSSubHandlerV20) produceErrorResponse(ctx *gin.Context, code int, xslt string, fcsErrors []general.FCSError) {
+func (a *FCSSubHandlerV20) produceExplainErrorResponse(ctx *gin.Context, code int, xslt string, fcsErrors []general.FCSError) {
 	ans := schema.XMLExplainResponse{
 		XMLNSSRUResponse: "http://docs.oasis-open.org/ns/search-ws/sruResponse",
 		Version:          "2.0",
 		Diagnostics:      schema.NewXMLDiagnostics(),
 	}
+	for _, fcsErr := range fcsErrors {
+		ans.Diagnostics.AddDiagnostic(fcsErr.Code, fcsErr.Type, fcsErr.Ident, fcsErr.Message)
+	}
+	a.produceXMLResponse(ctx, code, xslt, ans)
+}
+
+func (a *FCSSubHandlerV20) produceSRErrorResponse(ctx *gin.Context, code int, xslt string, fcsErrors []general.FCSError) {
+	ans := schema.NewMinimalXMLSRResponse()
+	ans.Diagnostics = schema.NewXMLDiagnostics()
 	for _, fcsErr := range fcsErrors {
 		ans.Diagnostics.AddDiagnostic(fcsErr.Code, fcsErr.Type, fcsErr.Ident, fcsErr.Message)
 	}
@@ -75,13 +84,13 @@ func (a *FCSSubHandlerV20) Handle(
 	xslt map[string]string,
 ) {
 	fcsRequest := &FCSRequest{
-		General:           fcsGeneralRequest,
+		General:           &fcsGeneralRequest,
 		RecordXMLEscaping: RecordXMLEscapingXML,
 		Operation:         OperationExplain,
 	}
 
 	if fcsRequest.General.HasFatalError() {
-		a.produceErrorResponse(ctx, general.ConformantStatusBadRequest, fcsGeneralRequest.XSLT, fcsGeneralRequest.Errors)
+		a.produceExplainErrorResponse(ctx, general.ConformantStatusBadRequest, fcsGeneralRequest.XSLT, fcsGeneralRequest.Errors)
 		return
 	}
 
@@ -95,13 +104,15 @@ func (a *FCSSubHandlerV20) Handle(
 	} else if ctx.Request.URL.Query().Has(ScanArgScanClause.String()) {
 		operation = OperationScan
 	}
+
 	if err := operation.Validate(); err != nil {
 		fcsRequest.General.AddError(general.FCSError{
 			Code:    general.DCUnsupportedOperation,
 			Ident:   "operation",
 			Message: fmt.Sprintf("Unsupported operation: %s", operation),
 		})
-		a.produceErrorResponse(ctx, general.ConformantStatusBadRequest, fcsGeneralRequest.XSLT, fcsGeneralRequest.Errors)
+		a.produceExplainErrorResponse(
+			ctx, general.ConformantStatusBadRequest, fcsGeneralRequest.XSLT, fcsGeneralRequest.Errors)
 		return
 	}
 	fcsRequest.Operation = operation
@@ -115,7 +126,14 @@ func (a *FCSSubHandlerV20) Handle(
 			Ident:   "recordXMLEscaping",
 			Message: err.Error(),
 		})
-		a.produceErrorResponse(ctx, general.ConformantStatusBadRequest, fcsGeneralRequest.XSLT, fcsGeneralRequest.Errors)
+		if operation == OperationSearchRetrive {
+			a.produceSRErrorResponse(
+				ctx, general.ConformantStatusBadRequest, fcsGeneralRequest.XSLT, fcsGeneralRequest.Errors)
+
+		} else {
+			a.produceExplainErrorResponse(
+				ctx, general.ConformantStatusBadRequest, fcsGeneralRequest.XSLT, fcsGeneralRequest.Errors)
+		}
 		return
 	}
 	fcsRequest.RecordXMLEscaping = recordXMLEscaping
@@ -123,6 +141,7 @@ func (a *FCSSubHandlerV20) Handle(
 
 	var response any
 	var code int
+
 	switch fcsRequest.Operation {
 	case OperationExplain:
 		response, code = a.explain(ctx, fcsRequest)

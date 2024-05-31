@@ -36,7 +36,15 @@ type XMLDiagnostics struct {
 	Diagnostics []XMLDiagnostic `xml:"diag:diagnostic"`
 }
 
-func (d *XMLDiagnostics) AddDiagnostic(code general.DiagnosticCode, typ general.DiagnosticType, ident string, message string) {
+// AddDiagnostic add diagnostics output with a custom
+// message. For most situations AddDfltMsgDiagnostics
+// should be preferable.
+func (d *XMLDiagnostics) AddDiagnostic(
+	code general.DiagnosticCode,
+	typ general.DiagnosticType,
+	ident string,
+	message string,
+) {
 	uri := []string{}
 	if code > 0 {
 		uri = append(uri, fmt.Sprintf("info:srw/diagnostic/1/%d", code))
@@ -49,6 +57,17 @@ func (d *XMLDiagnostics) AddDiagnostic(code general.DiagnosticCode, typ general.
 		Details: ident,
 		Message: strutil.SmartTruncate(message, 200),
 	})
+}
+
+// AddDfltMsgDiagnostics adds a diagnostics code along with
+// its attached default message. For custom message,
+// use AddDiagnostic.
+func (d *XMLDiagnostics) AddDfltMsgDiagnostic(
+	code general.DiagnosticCode,
+	typ general.DiagnosticType,
+	ident string,
+) {
+	d.AddDiagnostic(code, typ, ident, code.AsMessage())
 }
 
 func NewXMLDiagnostics() *XMLDiagnostics {

@@ -25,12 +25,16 @@ type XMLSRResponse struct {
 	XMLNSSRUResponse string   `xml:"xmlns:sruResponse,attr"`
 	Version          string   `xml:"sruResponse:version"`
 
-	NumberOfRecords      int                `xml:"sruResponse:numberOfRecords"`
-	Records              *[]XMLSRRecord     `xml:"sruResponse:records>sruResponse:record,omitempty"`
-	NextRecordPosition   int                `xml:"sruResponse:nextRecordPosition,omitempty"`
-	EchoedRequest        XMLSREchoedRequest `xml:"sruResponse:echoedSearchRetrieveRequest"`
-	Diagnostics          *XMLDiagnostics    `xml:"sruResponse:diagnostics,omitempty"`
-	ResultCountPrecision string             `xml:"sruResponse:resultCountPrecision"`
+	NumberOfRecords int `xml:"sruResponse:numberOfRecords"`
+
+	// Records
+	// note: we need a pointer here to allow the marshaler skip the 'records' parent
+	// in case there are no 'record' children
+	Records              *[]XMLSRRecord      `xml:"sruResponse:records>sruResponse:record,omitempty"`
+	NextRecordPosition   int                 `xml:"sruResponse:nextRecordPosition,omitempty"`
+	EchoedRequest        *XMLSREchoedRequest `xml:"sruResponse:echoedSearchRetrieveRequest,omitempty"`
+	Diagnostics          *XMLDiagnostics     `xml:"sruResponse:diagnostics,omitempty"`
+	ResultCountPrecision string              `xml:"sruResponse:resultCountPrecision"`
 }
 
 func NewXMLSRResponse() XMLSRResponse {
@@ -38,7 +42,15 @@ func NewXMLSRResponse() XMLSRResponse {
 		XMLNSSRUResponse:     "http://docs.oasis-open.org/ns/search-ws/sruResponse",
 		Version:              "2.0",
 		ResultCountPrecision: "info:srw/vocabulary/resultCountPrecision/1/exact",
-		EchoedRequest:        XMLSREchoedRequest{Version: "2.0"},
+		EchoedRequest:        &XMLSREchoedRequest{Version: "2.0"},
+	}
+}
+
+func NewMinimalXMLSRResponse() XMLSRResponse {
+	return XMLSRResponse{
+		XMLNSSRUResponse:     "http://docs.oasis-open.org/ns/search-ws/sruResponse",
+		ResultCountPrecision: "info:srw/vocabulary/resultCountPrecision/1/exact",
+		Version:              "2.0",
 	}
 }
 

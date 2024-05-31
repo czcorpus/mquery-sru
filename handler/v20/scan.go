@@ -26,12 +26,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (a *FCSSubHandlerV20) scan(ctx *gin.Context, fcsResponse *FCSRequest) (schema.XMLScanResponse, int) {
+func (a *FCSSubHandlerV20) scan(ctx *gin.Context, _ *FCSRequest) (schema.XMLScanResponse, int) {
 	ans := schema.NewXMLScanResponse()
 	for key, _ := range ctx.Request.URL.Query() {
 		if err := ScanArg(key).Validate(); err != nil {
 			ans.Diagnostics = schema.NewXMLDiagnostics()
-			ans.Diagnostics.AddDiagnostic(general.DCUnsupportedParameter, 0, key, err.Error())
+			ans.Diagnostics.AddDiagnostic(
+				general.DCUnsupportedParameter, 0, key, err.Error())
 			return ans, general.ConformantStatusBadRequest
 		}
 	}
@@ -40,7 +41,8 @@ func (a *FCSSubHandlerV20) scan(ctx *gin.Context, fcsResponse *FCSRequest) (sche
 	_, err := strconv.Atoi(xMaxTerms)
 	if err != nil {
 		ans.Diagnostics = schema.NewXMLDiagnostics()
-		ans.Diagnostics.AddDiagnostic(general.DCUnsupportedParameter, 0, ScanArgMaximumTerms.String(), general.DCUnsupportedParameterValue.AsMessage())
+		ans.Diagnostics.AddDfltMsgDiagnostic(
+			general.DCUnsupportedParameterValue, 0, ScanArgMaximumTerms.String())
 		return ans, general.ConformantUnprocessableEntity
 	}
 
@@ -48,18 +50,21 @@ func (a *FCSSubHandlerV20) scan(ctx *gin.Context, fcsResponse *FCSRequest) (sche
 	_, err = strconv.Atoi(xResponsePos)
 	if err != nil {
 		ans.Diagnostics = schema.NewXMLDiagnostics()
-		ans.Diagnostics.AddDiagnostic(general.DCUnsupportedParameterValue, 0, ScanArgResponsePosition.String(), general.DCUnsupportedParameterValue.AsMessage())
+		ans.Diagnostics.AddDfltMsgDiagnostic(
+			general.DCUnsupportedParameterValue, 0, ScanArgResponsePosition.String())
 		return ans, general.ConformantUnprocessableEntity
 	}
 
 	scanClause := ctx.Query(ScanArgScanClause.String())
 	if scanClause == "" {
 		ans.Diagnostics = schema.NewXMLDiagnostics()
-		ans.Diagnostics.AddDiagnostic(general.DCMandatoryParameterNotSupplied, 0, ScanArgScanClause.String(), general.DCMandatoryParameterNotSupplied.AsMessage())
+		ans.Diagnostics.AddDfltMsgDiagnostic(
+			general.DCMandatoryParameterNotSupplied, 0, ScanArgScanClause.String())
 		return ans, general.ConformantUnprocessableEntity
 	}
 
 	ans.Diagnostics = schema.NewXMLDiagnostics()
-	ans.Diagnostics.AddDiagnostic(general.DCUnsupportedIndex, 0, ScanArgScanClause.String(), general.DCUnsupportedIndex.AsMessage())
+	ans.Diagnostics.AddDfltMsgDiagnostic(
+		general.DCUnsupportedIndex, 0, ScanArgScanClause.String())
 	return ans, general.ConformantUnprocessableEntity
 }
