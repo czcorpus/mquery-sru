@@ -40,7 +40,8 @@ func (a *FCSSubHandlerV12) scan(ctx *gin.Context, fcsResponse *FCSRequest) (sche
 	_, err := strconv.Atoi(xMaxTerms)
 	if err != nil {
 		ans.Diagnostics = schema.NewXMLDiagnostics()
-		ans.Diagnostics.AddDiagnostic(general.DCUnsupportedParameter, 0, ScanArgMaximumTerms.String(), general.DCUnsupportedParameterValue.AsMessage())
+		ans.Diagnostics.AddDfltMsgDiagnostic(
+			general.DCUnsupportedParameterValue, 0, ScanArgMaximumTerms.String())
 		return ans, general.ConformantUnprocessableEntity
 	}
 
@@ -48,18 +49,21 @@ func (a *FCSSubHandlerV12) scan(ctx *gin.Context, fcsResponse *FCSRequest) (sche
 	_, err = strconv.Atoi(xResponsePos)
 	if err != nil {
 		ans.Diagnostics = schema.NewXMLDiagnostics()
-		ans.Diagnostics.AddDiagnostic(general.DCUnsupportedParameterValue, 0, ScanArgResponsePosition.String(), general.DCUnsupportedParameterValue.AsMessage())
+		ans.Diagnostics.AddDfltMsgDiagnostic(
+			general.DCUnsupportedParameterValue, 0, ScanArgResponsePosition.String())
 		return ans, general.ConformantUnprocessableEntity
 	}
 
 	scanClause := ctx.Query(ScanArgScanClause.String())
 	if scanClause == "" {
 		ans.Diagnostics = schema.NewXMLDiagnostics()
-		ans.Diagnostics.AddDiagnostic(general.DCMandatoryParameterNotSupplied, 0, ScanArgScanClause.String(), general.DCMandatoryParameterNotSupplied.AsMessage())
+		ans.Diagnostics.AddDfltMsgDiagnostic(
+			general.DCMandatoryParameterNotSupplied, 0, ScanArgScanClause.String())
 		return ans, general.ConformantUnprocessableEntity
 	}
 
 	ans.Diagnostics = schema.NewXMLDiagnostics()
-	ans.Diagnostics.AddDiagnostic(general.DCUnsupportedIndex, 0, ScanArgScanClause.String(), general.DCUnsupportedIndex.AsMessage())
+	ans.Diagnostics.AddDfltMsgDiagnostic(
+		general.DCUnsupportedIndex, 0, ScanArgScanClause.String())
 	return ans, general.ConformantUnprocessableEntity
 }

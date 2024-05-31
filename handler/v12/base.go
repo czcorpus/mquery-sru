@@ -57,11 +57,25 @@ func (a *FCSSubHandlerV12) produceXMLResponse(ctx *gin.Context, code int, xslt s
 	ctx.Writer.Header().Set("Content-Type", "application/xml")
 }
 
-func (a *FCSSubHandlerV12) produceErrorResponse(ctx *gin.Context, code int, xslt string, fcsErrors []general.FCSError) {
+func (a *FCSSubHandlerV12) produceExplainErrorResponse(
+	ctx *gin.Context, code int, xslt string, fcsErrors []general.FCSError) {
 	ans := schema.XMLExplainResponse{
 		XMLNSSRU:    "http://www.loc.gov/zing/srw/",
 		Version:     "1.2",
 		Diagnostics: schema.NewXMLDiagnostics(),
+	}
+	for _, fcsErr := range fcsErrors {
+		ans.Diagnostics.AddDiagnostic(fcsErr.Code, fcsErr.Type, fcsErr.Ident, fcsErr.Message)
+	}
+	a.produceXMLResponse(ctx, code, xslt, ans)
+}
+
+func (a *FCSSubHandlerV12) produceSRErrorResponse(
+	ctx *gin.Context, code int, xslt string, fcsErrors []general.FCSError) {
+	ans := schema.XMLSRResponse{
+		XMLNSSRUResponse: "http://www.loc.gov/zing/srw/",
+		Version:          "1.2",
+		Diagnostics:      schema.NewXMLDiagnostics(),
 	}
 	for _, fcsErr := range fcsErrors {
 		ans.Diagnostics.AddDiagnostic(fcsErr.Code, fcsErr.Type, fcsErr.Ident, fcsErr.Message)
@@ -75,12 +89,13 @@ func (a *FCSSubHandlerV12) Handle(
 	xslt map[string]string,
 ) {
 	fcsResponse := &FCSRequest{
-		General:       fcsGeneralRequest,
+		General:       &fcsGeneralRequest,
 		RecordPacking: RecordPackingXML,
 		Operation:     OperationExplain,
 	}
 	if fcsResponse.General.HasFatalError() {
-		a.produceErrorResponse(ctx, general.ConformantStatusBadRequest, fcsGeneralRequest.XSLT, fcsGeneralRequest.Errors)
+		a.produceExplainErrorResponse(
+			ctx, general.ConformantStatusBadRequest, fcsGeneralRequest.XSLT, fcsGeneralRequest.Errors)
 		return
 	}
 
@@ -100,7 +115,8 @@ func (a *FCSSubHandlerV12) Handle(
 			Ident:   "operation",
 			Message: fmt.Sprintf("Unsupported operation: %s", operation),
 		})
-		a.produceErrorResponse(ctx, general.ConformantStatusBadRequest, fcsGeneralRequest.XSLT, fcsGeneralRequest.Errors)
+		a.produceExplainErrorResponse(
+			ctx, general.ConformantStatusBadRequest, fcsGeneralRequest.XSLT, fcsGeneralRequest.Errors)
 		return
 	}
 	fcsResponse.Operation = operation
@@ -114,7 +130,14 @@ func (a *FCSSubHandlerV12) Handle(
 			Ident:   "recordPacking",
 			Message: err.Error(),
 		})
-		a.produceErrorResponse(ctx, general.ConformantStatusBadRequest, fcsGeneralRequest.XSLT, fcsGeneralRequest.Errors)
+		if operation == OperationSearchRetrive {
+			a.produceSRErrorResponse(
+				ctx, general.ConformantStatusBadRequest, fcsGeneralRequest.XSLT, fcsGeneralRequest.Errors)
+
+		} else {
+			a.produceExplainErrorResponse(
+				ctx, general.ConformantStatusBadRequest, fcsGeneralRequest.XSLT, fcsGeneralRequest.Errors)
+		}
 		return
 	}
 	fcsResponse.RecordPacking = recordPacking

@@ -90,7 +90,8 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 	fcsQuery := ctx.Query(SearchRetrArgQuery.String())
 	if len(fcsQuery) == 0 {
 		ans.Diagnostics = schema.NewXMLDiagnostics()
-		ans.Diagnostics.AddDiagnostic(general.DCMandatoryParameterNotSupplied, 0, "fcs_query", general.DCMandatoryParameterNotSupplied.AsMessage())
+		ans.Diagnostics.AddDfltMsgDiagnostic(
+			general.DCMandatoryParameterNotSupplied, 0, "fcs_query")
 		return ans, general.ConformantStatusBadRequest
 	}
 	ans.EchoedRequest.Query = fcsQuery
@@ -101,12 +102,14 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 	startRecord, err := strconv.Atoi(xStartRecord)
 	if err != nil {
 		ans.Diagnostics = schema.NewXMLDiagnostics()
-		ans.Diagnostics.AddDiagnostic(general.DCUnsupportedParameterValue, 0, SearchRetrStartRecord.String(), general.DCUnsupportedParameterValue.AsMessage())
+		ans.Diagnostics.AddDfltMsgDiagnostic(
+			general.DCUnsupportedParameterValue, 0, SearchRetrStartRecord.String())
 		return ans, general.ConformantUnprocessableEntity
 	}
 	if startRecord < 1 {
 		ans.Diagnostics = schema.NewXMLDiagnostics()
-		ans.Diagnostics.AddDiagnostic(general.DCUnsupportedParameterValue, 0, SearchRetrStartRecord.String(), general.DCUnsupportedParameterValue.AsMessage())
+		ans.Diagnostics.AddDfltMsgDiagnostic(
+			general.DCUnsupportedParameterValue, 0, SearchRetrStartRecord.String())
 		return ans, general.ConformantUnprocessableEntity
 	}
 	ans.EchoedRequest.StartRecord = startRecord
@@ -116,7 +119,8 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 	recordSchema := ctx.DefaultQuery(SearchRetrArgRecordSchema.String(), general.RecordSchema)
 	if recordSchema != general.RecordSchema {
 		ans.Diagnostics = schema.NewXMLDiagnostics()
-		ans.Diagnostics.AddDiagnostic(general.DCUnknownSchemaForRetrieval, 0, SearchMaximumRecords.String(), general.DCUnknownSchemaForRetrieval.AsMessage())
+		ans.Diagnostics.AddDfltMsgDiagnostic(
+			general.DCUnknownSchemaForRetrieval, 0, SearchMaximumRecords.String())
 		return ans, general.ConformantUnprocessableEntity
 	}
 
@@ -126,13 +130,15 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 		maximumRecords, err = strconv.Atoi(xMaximumRecords)
 		if err != nil {
 			ans.Diagnostics = schema.NewXMLDiagnostics()
-			ans.Diagnostics.AddDiagnostic(general.DCUnsupportedParameterValue, 0, SearchMaximumRecords.String(), general.DCUnsupportedParameterValue.AsMessage())
+			ans.Diagnostics.AddDfltMsgDiagnostic(
+				general.DCUnsupportedParameterValue, 0, SearchMaximumRecords.String())
 			return ans, general.ConformantUnprocessableEntity
 		}
 	}
 	if maximumRecords < 1 {
 		ans.Diagnostics = schema.NewXMLDiagnostics()
-		ans.Diagnostics.AddDiagnostic(general.DCUnsupportedParameterValue, 0, SearchMaximumRecords.String(), general.DCUnsupportedParameterValue.AsMessage())
+		ans.Diagnostics.AddDfltMsgDiagnostic(
+			general.DCUnsupportedParameterValue, 0, SearchMaximumRecords.String())
 		return ans, general.ConformantUnprocessableEntity
 
 	}
@@ -141,7 +147,8 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 		// as the actual result can be very small. But we still
 		// have to limit max. number of records...
 		ans.Diagnostics = schema.NewXMLDiagnostics()
-		ans.Diagnostics.AddDiagnostic(general.DCTooManyMatchingRecords, 0, fmt.Sprintf("%d", mango.MaxRecordsInternalLimit), general.DCTooManyMatchingRecords.AsMessage())
+		ans.Diagnostics.AddDfltMsgDiagnostic(
+			general.DCTooManyMatchingRecords, 0, fmt.Sprintf("%d", mango.MaxRecordsInternalLimit))
 		return ans, general.ConformantUnprocessableEntity
 	}
 	logArgs[SearchMaximumRecords.String()] = maximumRecords
@@ -153,7 +160,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 		for _, pid := range corporaPids {
 			res, err := a.corporaConf.Resources.GetResourceByPID(pid)
 			if err == corpus.ErrResourceNotFound {
-				ans.Records = &[]schema.XMLSRRecord{}
+				ans.Records = nil
 				return ans, http.StatusOK
 			}
 			corpora = append(corpora, res.ID)
@@ -166,13 +173,15 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 	// get searchable corpora and attrs
 	if len(corpora) == 0 {
 		ans.Diagnostics = schema.NewXMLDiagnostics()
-		ans.Diagnostics.AddDiagnostic(general.DCUnsupportedContextSet, 0, SearchRetrArgFCSContext.String(), general.DCUnsupportedContextSet.AsMessage())
+		ans.Diagnostics.AddDfltMsgDiagnostic(
+			general.DCUnsupportedContextSet, 0, SearchRetrArgFCSContext.String())
 		return ans, general.ConformantStatusBadRequest
 	}
 	retrieveAttrs, err := a.corporaConf.Resources.GetCommonPosAttrNames(corpora...)
 	if err != nil {
 		ans.Diagnostics = schema.NewXMLDiagnostics()
-		ans.Diagnostics.AddDiagnostic(general.DCGeneralSystemError, 0, err.Error(), general.DCGeneralSystemError.AsMessage())
+		ans.Diagnostics.AddDfltMsgDiagnostic(
+			general.DCGeneralSystemError, 0, err.Error())
 		return ans, http.StatusInternalServerError
 	}
 
@@ -198,13 +207,15 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 		query := ast.Generate()
 		if len(ast.Errors()) > 0 {
 			ans.Diagnostics = schema.NewXMLDiagnostics()
-			ans.Diagnostics.AddDiagnostic(general.DCQueryCannotProcess, 0, SearchRetrArgQuery.String(), ast.Errors()[0].Error())
+			ans.Diagnostics.AddDiagnostic(
+				general.DCQueryCannotProcess, 0, SearchRetrArgQuery.String(), ast.Errors()[0].Error())
 			return ans, general.ConformantUnprocessableEntity
 		}
 		rscConf, err := a.corporaConf.Resources.GetResource(rng.Rsc)
 		if err != nil {
 			ans.Diagnostics = schema.NewXMLDiagnostics()
-			ans.Diagnostics.AddDiagnostic(general.DCGeneralSystemError, 0, err.Error(), general.DCGeneralSystemError.AsMessage())
+			ans.Diagnostics.AddDfltMsgDiagnostic(
+				general.DCGeneralSystemError, 0, err.Error())
 			return ans, general.ConformandGeneralServerError
 		}
 		args, err := sonic.Marshal(rdb.ConcExampleArgs{
@@ -218,7 +229,8 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 		})
 		if err != nil {
 			ans.Diagnostics = schema.NewXMLDiagnostics()
-			ans.Diagnostics.AddDiagnostic(general.DCGeneralSystemError, 0, err.Error(), general.DCGeneralSystemError.AsMessage())
+			ans.Diagnostics.AddDfltMsgDiagnostic(
+				general.DCGeneralSystemError, 0, err.Error())
 			return ans, http.StatusInternalServerError
 		}
 		wait, err := a.radapter.PublishQuery(rdb.Query{
@@ -227,7 +239,8 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 		})
 		if err != nil {
 			ans.Diagnostics = schema.NewXMLDiagnostics()
-			ans.Diagnostics.AddDiagnostic(general.DCGeneralSystemError, 0, err.Error(), general.DCGeneralSystemError.AsMessage())
+			ans.Diagnostics.AddDfltMsgDiagnostic(
+				general.DCGeneralSystemError, 0, err.Error())
 			return ans, http.StatusInternalServerError
 		}
 		waits[i] = wait
@@ -241,7 +254,8 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 		result, err := rdb.DeserializeConcExampleResult(rawResult)
 		if err != nil {
 			ans.Diagnostics = schema.NewXMLDiagnostics()
-			ans.Diagnostics.AddDiagnostic(general.DCGeneralSystemError, 0, err.Error(), general.DCGeneralSystemError.AsMessage())
+			ans.Diagnostics.AddDfltMsgDiagnostic(
+				general.DCGeneralSystemError, 0, err.Error())
 			return ans, http.StatusInternalServerError
 		}
 		if err := result.Err(); err != nil {
@@ -250,7 +264,8 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 
 			} else {
 				ans.Diagnostics = schema.NewXMLDiagnostics()
-				ans.Diagnostics.AddDiagnostic(general.DCQueryCannotProcess, 0, err.Error(), general.DCQueryCannotProcess.AsMessage())
+				ans.Diagnostics.AddDfltMsgDiagnostic(
+					general.DCQueryCannotProcess, 0, err.Error())
 				return ans, http.StatusInternalServerError
 			}
 		}
@@ -262,12 +277,14 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 	ans.NumberOfRecords = totalConcSize
 	if fromResource.AllHasOutOfRangeError() {
 		ans.Diagnostics = schema.NewXMLDiagnostics()
-		ans.Diagnostics.AddDiagnostic(general.DCFirstRecordPosOutOfRange, 0, fromResource.GetFirstError().Error(), general.DCFirstRecordPosOutOfRange.AsMessage())
+		ans.Diagnostics.AddDfltMsgDiagnostic(
+			general.DCFirstRecordPosOutOfRange, 0, fromResource.GetFirstError().Error())
 		return ans, general.ConformantUnprocessableEntity
 
 	} else if fromResource.HasFatalError() {
 		ans.Diagnostics = schema.NewXMLDiagnostics()
-		ans.Diagnostics.AddDiagnostic(general.DCQueryCannotProcess, 0, fromResource.GetFirstError().Error(), general.DCQueryCannotProcess.AsMessage())
+		ans.Diagnostics.AddDfltMsgDiagnostic(
+			general.DCQueryCannotProcess, 0, fromResource.GetFirstError().Error())
 		return ans, general.ConformandGeneralServerError
 	}
 
@@ -277,7 +294,8 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 		res, err := a.corporaConf.Resources.GetResource(fromResource.CurrRscName())
 		if err != nil {
 			ans.Diagnostics = schema.NewXMLDiagnostics()
-			ans.Diagnostics.AddDiagnostic(general.DCGeneralSystemError, 0, err.Error(), general.DCGeneralSystemError.AsMessage())
+			ans.Diagnostics.AddDfltMsgDiagnostic(
+				general.DCGeneralSystemError, 0, err.Error())
 			return ans, http.StatusInternalServerError
 		}
 		item := fromResource.CurrLine()
@@ -321,6 +339,8 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 			RecordPosition: len(records) + startRecord,
 		})
 	}
-	ans.Records = &records
+	if len(records) > 0 {
+		ans.Records = &records
+	}
 	return ans, http.StatusOK
 }

@@ -25,10 +25,14 @@ type XMLSRResponse struct {
 	XMLNSSRUResponse string   `xml:"xmlns:sru,attr"`
 	Version          string   `xml:"sru:version"`
 
-	NumberOfRecords int                `xml:"sru:numberOfRecords"`
-	Records         *[]XMLSRRecord     `xml:"sru:records>sru:record,omitempty"`
-	EchoedRequest   XMLSREchoedRequest `xml:"sru:echoedSearchRetrieveRequest"`
-	Diagnostics     *XMLDiagnostics    `xml:"sru:diagnostics,omitempty"`
+	NumberOfRecords int `xml:"sru:numberOfRecords"`
+
+	// Records
+	// note: we need a pointer here to allow the marshaler skip the 'records' parent
+	// in case there are no 'record' children
+	Records       *[]XMLSRRecord     `xml:"sru:records>sru:record,omitempty"`
+	EchoedRequest XMLSREchoedRequest `xml:"sru:echoedSearchRetrieveRequest"`
+	Diagnostics   *XMLDiagnostics    `xml:"sru:diagnostics,omitempty"`
 }
 
 func NewXMLSRResponse() XMLSRResponse {

@@ -23,7 +23,7 @@ import (
 )
 
 type FCSRequest struct {
-	General       general.FCSGeneralRequest
+	General       *general.FCSGeneralRequest
 	RecordPacking RecordPacking
 	Operation     Operation
 }
