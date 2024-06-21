@@ -184,6 +184,8 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 			general.DCGeneralSystemError, 0, err.Error())
 		return ans, http.StatusInternalServerError
 	}
+	// add text layer as another attr
+	retrieveAttrs = append(retrieveAttrs, retrieveAttrs[0])
 
 	logArgs["corpus"] = a.serverInfo.Database
 	logArgs["sources"] = corpora
