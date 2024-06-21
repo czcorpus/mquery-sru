@@ -184,7 +184,8 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 			general.DCGeneralSystemError, 0, err.Error())
 		return ans, http.StatusInternalServerError
 	}
-	// add text layer as another attr
+	// add text layer as another attr,
+	// otherwise we won't be able to parse it due to Manatee output formatting
 	retrieveAttrs = append(retrieveAttrs, retrieveAttrs[0])
 
 	logArgs["corpus"] = a.serverInfo.Database
