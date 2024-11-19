@@ -134,15 +134,10 @@ type Conf struct {
 	ServerInfo     *ServerInfo          `json:"serverInfo"`
 	CorporaSetup   *corpus.CorporaSetup `json:"corpora"`
 	Redis          *rdb.Conf            `json:"redis"`
-	LogFile        string               `json:"logFile"`
-	LogLevel       logging.LogLevel     `json:"logLevel"`
+	Logging        logging.LoggingConf  `json:"logging"`
 	TimeZone       string               `json:"timeZone"`
 
 	srcPath string
-}
-
-func (conf *Conf) IsDebugMode() bool {
-	return conf.LogLevel == "debug"
 }
 
 func (conf *Conf) TimezoneLocation() *time.Location {

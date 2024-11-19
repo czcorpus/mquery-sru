@@ -76,7 +76,8 @@
         "name": "kontext",
         "corpusTable": "kontext_corpus"
     },
-    "logFile": "dev.log",
-    "logLevel": "debug",
-    "jobLogsDir": "job-logs"
+    "logging": {
+        "path": "dev.log",
+        "level": "debug"
+    }
 }

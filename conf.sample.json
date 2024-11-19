@@ -72,7 +72,9 @@
         "channelResultPrefix": "res",
         "queryAnswerTimeoutSecs": 15
     },
-    "logFile": null,
-    "logLevel": "debug",
+    "logging": {
+        "path": "",
+        "level": "debug"
+    },
     "timeZone": "UTC"
 }
