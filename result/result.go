@@ -19,9 +19,7 @@
 package result
 
 import (
-	"errors"
-
-	"github.com/czcorpus/mquery-sru/corpus/conc"
+	"github.com/czcorpus/mquery-common/concordance"
 )
 
 const (
@@ -33,42 +31,13 @@ const (
 	ResultTypeError        = "Error"
 )
 
-type ResultType string
-
-func (rt ResultType) IsValid() bool {
-	return rt == ResultTypeFx || rt == ResultTypeFy || rt == ResultTypeFxy
+type ConcResult struct {
+	Lines    []concordance.Line `json:"lines"`
+	ConcSize int                `json:"concSize"`
+	Query    string             `json:"query"`
+	Error    error              `json:"error"`
 }
 
-func (rt ResultType) String() string {
-	return string(rt)
-}
-
-type SerializableResult interface {
-	Type() ResultType
-	Err() error
-}
-
-// ----
-
-type ConcExample struct {
-	Lines      []conc.ConcordanceLine `json:"lines"`
-	ConcSize   int                    `json:"concSize"`
-	ResultType ResultType             `json:"resultType"`
-	Query      string                 `json:"query"`
-	Error      string                 `json:"error"`
-}
-
-func (res *ConcExample) Err() error {
-	if res.Error != "" {
-		return errors.New(res.Error)
-	}
-	return nil
-}
-
-func (res *ConcExample) Type() ResultType {
-	return res.ResultType
-}
-
-func (res *ConcExample) NumLines() int {
+func (res *ConcResult) NumLines() int {
 	return len(res.Lines)
 }

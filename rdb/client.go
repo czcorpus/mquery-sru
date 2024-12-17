@@ -19,13 +19,14 @@
 package rdb
 
 import (
+	"bytes"
 	"context"
+	"encoding/gob"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
-	"github.com/bytedance/sonic"
 	"github.com/czcorpus/mquery-sru/result"
 
 	"github.com/google/uuid"
@@ -48,13 +49,12 @@ var (
 )
 
 type Query struct {
-	ResultType result.ResultType `json:"resultType"`
-	Channel    string            `json:"channel"`
-	Func       string            `json:"func"`
-	Args       json.RawMessage   `json:"args"`
+	Channel string        `json:"channel"`
+	Func    string        `json:"func"`
+	Args    ConcQueryArgs `json:"args"`
 }
 
-type ConcExampleArgs struct {
+type ConcQueryArgs struct {
 	CorpusPath        string   `json:"corpusPath"`
 	Query             string   `json:"query"`
 	Attrs             []string `json:"attrs"`
@@ -65,7 +65,7 @@ type ConcExampleArgs struct {
 }
 
 func (q Query) ToJSON() (string, error) {
-	ans, err := sonic.Marshal(q)
+	ans, err := json.Marshal(q)
 	if err != nil {
 		return "", err
 	}
@@ -74,7 +74,10 @@ func (q Query) ToJSON() (string, error) {
 
 func DecodeQuery(q string) (Query, error) {
 	var ans Query
-	err := sonic.Unmarshal([]byte(q), &ans)
+	var buff bytes.Buffer
+	buff.WriteString(q)
+	dec := gob.NewDecoder(&buff)
+	err := dec.Decode(&ans)
 	return ans, err
 }
 
@@ -137,7 +140,7 @@ func (a *Adapter) SomeoneListens(query Query) (bool, error) {
 // process fails during the calculation, a respective error
 // is packed into the WorkerResult value. The error returned
 // by this method means that the publishing itself failed.
-func (a *Adapter) PublishQuery(query Query) (<-chan *WorkerResult, error) {
+func (a *Adapter) PublishQuery(query Query) (<-chan result.ConcResult, error) {
 	query.Channel = fmt.Sprintf("%s:%s", a.channelResultPrefix, uuid.New().String())
 	log.Debug().
 		Str("channel", query.Channel).
@@ -145,16 +148,17 @@ func (a *Adapter) PublishQuery(query Query) (<-chan *WorkerResult, error) {
 		Any("args", query.Args).
 		Msg("publishing query")
 
-	msg, err := query.ToJSON()
+	var msg bytes.Buffer
+	enc := gob.NewEncoder(&msg)
+	err := enc.Encode(query)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to publish query: %w", err)
 	}
 	sub := a.redis.Subscribe(a.ctx, query.Channel)
-
-	if err := a.redis.LPush(a.ctx, DefaultQueueKey, msg).Err(); err != nil {
+	if err := a.redis.LPush(a.ctx, DefaultQueueKey, msg.String()).Err(); err != nil {
 		return nil, err
 	}
-	ansChan := make(chan *WorkerResult)
+	ansChan := make(chan result.ConcResult)
 
 	// now we wait for response and send result via `ans`
 	go func() {
@@ -163,7 +167,7 @@ func (a *Adapter) PublishQuery(query Query) (<-chan *WorkerResult, error) {
 			close(ansChan)
 		}()
 
-		ans := new(WorkerResult)
+		var ans result.ConcResult
 		tmr := time.NewTimer(a.queryAnswerTimeout)
 
 		for {
@@ -175,26 +179,22 @@ func (a *Adapter) PublishQuery(query Query) (<-chan *WorkerResult, error) {
 					Msg("received result")
 				cmd := a.redis.Get(a.ctx, item.Payload)
 				if cmd.Err() != nil {
-					ans.AttachValue(
-						&result.ErrorResult{
-							ResultType: query.ResultType,
-							Error:      cmd.Err().Error(),
-						},
-					)
+					ans.Error = cmd.Err()
 
 				} else {
-					err := sonic.Unmarshal([]byte(cmd.Val()), &ans)
+					var buf bytes.Buffer
+					buf.WriteString(cmd.Val())
+					dec := gob.NewDecoder(&buf)
+					err := dec.Decode(&ans)
 					if err != nil {
-						ans.AttachValue(&result.ErrorResult{Error: err.Error()})
+						ans.Error = err
 					}
 				}
 				ansChan <- ans
 				tmr.Stop()
 				return
 			case <-tmr.C:
-				ans.AttachValue(&result.ErrorResult{
-					Error: fmt.Sprintf("worker result timeouted (%v)", DefaultQueryAnswerTimeout),
-				})
+				ans.Error = fmt.Errorf("worker result timeouted (%d)", DefaultQueryAnswerTimeout)
 				ansChan <- ans
 				return
 			}
@@ -226,16 +226,19 @@ func (a *Adapter) DequeueQuery() (Query, error) {
 // PublishResult sends notification via Redis PUBSUB mechanism
 // and also stores the result so a notified listener can retrieve
 // it.
-func (a *Adapter) PublishResult(channelName string, value *WorkerResult) error {
+func (a *Adapter) PublishResult(channelName string, value *result.ConcResult) error {
 	log.Debug().
 		Str("channel", channelName).
-		Str("resultType", value.ResultType.String()).
+		Str("resultType", "concordance").
 		Msg("publishing result")
-	data, err := sonic.Marshal(value)
+
+	var msg bytes.Buffer
+	enc := gob.NewEncoder(&msg)
+	err := enc.Encode(value)
 	if err != nil {
 		return fmt.Errorf("failed to serialize result: %w", err)
 	}
-	a.redis.Set(a.ctx, channelName, string(data), DefaultResultExpiration)
+	a.redis.Set(a.ctx, channelName, msg.String(), DefaultResultExpiration)
 	return a.redis.Publish(a.ctx, channelName, channelName).Err()
 }
 

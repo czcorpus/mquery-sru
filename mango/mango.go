@@ -28,6 +28,9 @@ import (
 	"fmt"
 	"strings"
 	"unsafe"
+
+	"github.com/czcorpus/cnc-gokit/collections"
+	"github.com/czcorpus/mquery-common/concordance"
 )
 
 const (
@@ -45,22 +48,34 @@ type GoConcSize struct {
 	CorpusSize int64
 }
 
-type GoConcExamples struct {
+type GoConcordance struct {
 	Lines    []string
 	ConcSize int
 }
 
-func GetConcExamples(
+func GetConcordance(
 	corpusPath, query string,
 	attrs []string,
+	structs []string,
+	refs []string,
 	fromLine, maxItems, maxContext int,
 	viewContextStruct string,
-) (GoConcExamples, error) {
+) (GoConcordance, error) {
+	if !collections.SliceContains(refs, "#") {
+		refs = append([]string{"#"}, refs...)
+	}
 	ans := C.conc_examples(
-		C.CString(corpusPath), C.CString(query), C.CString(strings.Join(attrs, ",")),
-		C.longlong(fromLine), C.longlong(maxItems), C.longlong(maxContext),
+		C.CString(corpusPath),
+		C.CString(query),
+		C.CString(strings.Join(attrs, ",")),
+		C.CString(strings.Join(structs, ",")),
+		C.CString(strings.Join(refs, ",")),
+		C.CString(concordance.RefsEndMark),
+		C.longlong(fromLine),
+		C.longlong(maxItems),
+		C.longlong(maxContext),
 		C.CString(viewContextStruct))
-	var ret GoConcExamples
+	var ret GoConcordance
 	ret.Lines = make([]string, 0, maxItems)
 	ret.ConcSize = int(ans.concSize)
 	if ans.err != nil {
@@ -80,7 +95,7 @@ func GetConcExamples(
 		// we must test str len as our c++ wrapper may return it
 		// e.g. in case our offset is higher than actual num of lines
 		if len(str) > 0 {
-			ret.Lines = append(ret.Lines, C.GoString(tmp[i]))
+			ret.Lines = append(ret.Lines, str)
 		}
 	}
 	return ret, nil

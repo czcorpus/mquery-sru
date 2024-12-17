@@ -22,12 +22,31 @@
 #include "concord/concget.hh"
 #include "query/cqpeval.hh"
 #include "mango.h"
+#include <cmath>
 
 using namespace std;
 
+
+/**
+ * @brief Based on provided query, return at most `limit` sentences matching the query.
+ *
+ * @param corpusPath
+ * @param query
+ * @param attrs Positional attributes (comma-separated) to be attached to returned tokens
+ * @param limit
+ * @return KWICRowsRetval
+ */
 KWICRowsRetval conc_examples(
-    const char* corpusPath, const char* query, const char* attrs, PosInt fromLine, PosInt limit,
-        PosInt maxContext, const char* viewContextStruct) {
+    const char* corpusPath,
+    const char* query,
+    const char* attrs,
+    const char* structs,
+    const char* refs,
+    const char* refsSplitter,
+    PosInt fromLine,
+    PosInt limit,
+    PosInt maxContext,
+    const char* viewContextStruct) {
 
     string cPath(corpusPath);
     try {
@@ -59,15 +78,18 @@ KWICRowsRetval conc_examples(
         }
         conc->shuffle();
         PosInt concSize = conc->size();
+        std::string cppContextStruct(viewContextStruct);
+        std::string halfLeft = "-" + std::to_string(int(std::floor(maxContext / 2.0)));
+        std::string halfRight = std::to_string(int(std::ceil(maxContext / 2.0)));
         KWICLines* kl = new KWICLines(
             corp,
             conc->RS(true, fromLine, fromLine+limit),
-            ("-1:"+std::string(viewContextStruct)).c_str(),
-            ("1:"+std::string(viewContextStruct)).c_str(),
+            cppContextStruct.empty() ? halfLeft.c_str() : ("-1:"+cppContextStruct).c_str(),
+            cppContextStruct.empty() ? halfRight.c_str() : ("1:"+cppContextStruct).c_str(),
             attrs,
             attrs,
-            "",
-            "#",
+            structs,
+            refs,
             maxContext,
             false
         );
@@ -82,7 +104,7 @@ KWICRowsRetval conc_examples(
             auto rgt = kl->get_right();
             std::ostringstream buffer;
 
-            buffer << kl->get_refs() << " ";
+            buffer << kl->get_refs() << refsSplitter;
 
             for (size_t i = 0; i < lft.size(); ++i) {
                 if (i > 0) {

@@ -21,106 +21,108 @@ package result
 import (
 	"testing"
 
-	"github.com/czcorpus/mquery-sru/corpus/conc"
-
+	"github.com/czcorpus/mquery-common/concordance"
 	"github.com/stretchr/testify/assert"
 )
 
 func createSingleResourceEmptyResult() *RoundRobinLineSel {
 	r := NewRoundRobinLineSel(3, "corp1")
-	r.SetRscLines("corp1", ConcExample{Lines: []conc.ConcordanceLine{}})
+	r.SetRscLines("corp1", ConcResult{Lines: []concordance.Line{}})
 	return r
 }
 
 func createSingleResource() *RoundRobinLineSel {
 	r := NewRoundRobinLineSel(4, "corp1")
-	r.SetRscLines("corp1", ConcExample{Lines: []conc.ConcordanceLine{
-		{Text: conc.TokenSlice{&conc.Token{Word: "foo1"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "foo2"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "foo3"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "foo4"}}},
+	r.SetRscLines("corp1", ConcResult{Lines: []concordance.Line{
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "foo1"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "foo2"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "foo3"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "foo4"}}},
 	}})
 	return r
 }
 
 func createTwoResourcesOneEmpty() *RoundRobinLineSel {
 	r := NewRoundRobinLineSel(4, "corp1", "corp2")
-	r.SetRscLines("corp1", ConcExample{Lines: []conc.ConcordanceLine{
-		{Text: conc.TokenSlice{&conc.Token{Word: "foo1"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "foo2"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "foo3"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "foo4"}}},
+	r.SetRscLines("corp1", ConcResult{Lines: []concordance.Line{
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "foo1"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "foo2"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "foo3"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "foo4"}}},
 	}})
-	r.SetRscLines("corp2", ConcExample{Lines: []conc.ConcordanceLine{}})
+	r.SetRscLines("corp2", ConcResult{Lines: []concordance.Line{}})
 	return r
 }
 
 func createTwoResourcesSecondSmaller() *RoundRobinLineSel {
 	r := NewRoundRobinLineSel(8, "corp1", "corp2") // 8 = "we expect 8 (but we get less)"
-	r.SetRscLines("corp1", ConcExample{Lines: []conc.ConcordanceLine{
-		{Text: conc.TokenSlice{&conc.Token{Word: "foo1"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "foo2"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "foo3"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "foo4"}}},
+	r.SetRscLines("corp1", ConcResult{Lines: []concordance.Line{
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "foo1"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "foo2"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "foo3"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "foo4"}}},
 	}})
-	r.SetRscLines("corp2", ConcExample{Lines: []conc.ConcordanceLine{
-		{Text: conc.TokenSlice{&conc.Token{Word: "bar1"}}},
+	r.SetRscLines("corp2", ConcResult{Lines: []concordance.Line{
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "bar1"}}},
 	}})
 	return r
 }
 
 func createTwoResourcesFirstSmaller() *RoundRobinLineSel {
 	r := NewRoundRobinLineSel(8, "corp1", "corp2") // 8 = "we expect 8 (but we get less)"
-	r.SetRscLines("corp1", ConcExample{Lines: []conc.ConcordanceLine{
-		{Text: conc.TokenSlice{&conc.Token{Word: "foo1"}}},
+	r.SetRscLines("corp1", ConcResult{Lines: []concordance.Line{
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "foo1"}}},
 	}})
-	r.SetRscLines("corp2", ConcExample{Lines: []conc.ConcordanceLine{
-		{Text: conc.TokenSlice{&conc.Token{Word: "bar1"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "bar2"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "bar3"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "bar4"}}},
+	r.SetRscLines("corp2", ConcResult{Lines: []concordance.Line{
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "bar1"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "bar2"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "bar3"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "bar4"}}},
 	}})
 	return r
 }
 
 func createResource() *RoundRobinLineSel {
 	r := NewRoundRobinLineSel(9, "corp1", "corp2", "corp3")
-	r.SetRscLines("corp1", ConcExample{Lines: []conc.ConcordanceLine{
-		{Text: conc.TokenSlice{&conc.Token{Word: "foo1"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "foo2"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "foo3"}}},
+	r.SetRscLines("corp1", ConcResult{Lines: []concordance.Line{
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "foo1"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "foo2"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "foo3"}}},
 	}})
-	r.SetRscLines("corp2", ConcExample{Lines: []conc.ConcordanceLine{
-		{Text: conc.TokenSlice{&conc.Token{Word: "bar1"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "bar2"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "bar3"}}},
+	r.SetRscLines("corp2", ConcResult{Lines: []concordance.Line{
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "bar1"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "bar2"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "bar3"}}},
 	}})
-	r.SetRscLines("corp3", ConcExample{Lines: []conc.ConcordanceLine{
-		{Text: conc.TokenSlice{&conc.Token{Word: "baz1"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "baz2"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "baz3"}}},
+	r.SetRscLines("corp3", ConcResult{Lines: []concordance.Line{
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "baz1"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "baz2"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "baz3"}}},
 	}})
 	return r
 }
 
 func createResourceWithSomeEmpty() *RoundRobinLineSel {
 	r := NewRoundRobinLineSel(9, "corp1", "corp2", "corp3")
-	r.SetRscLines("corp1", ConcExample{Lines: []conc.ConcordanceLine{}})
-	r.SetRscLines("corp2", ConcExample{Lines: []conc.ConcordanceLine{
-		{Text: conc.TokenSlice{&conc.Token{Word: "bar1"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "bar2"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "bar3"}}},
+	r.SetRscLines("corp1", ConcResult{Lines: []concordance.Line{}})
+	r.SetRscLines("corp2", ConcResult{Lines: []concordance.Line{
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "bar1"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "bar2"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "bar3"}}},
 	}})
-	r.SetRscLines("corp3", ConcExample{Lines: []conc.ConcordanceLine{
-		{Text: conc.TokenSlice{&conc.Token{Word: "baz1"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "baz2"}}},
-		{Text: conc.TokenSlice{&conc.Token{Word: "baz3"}}},
+	r.SetRscLines("corp3", ConcResult{Lines: []concordance.Line{
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "baz1"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "baz2"}}},
+		{Text: concordance.TokenSlice{&concordance.Token{Word: "baz3"}}},
 	}})
 	return r
 }
 
-func firstWord(line *conc.ConcordanceLine) string {
-	return line.Text[0].Word
+func firstWord(line *concordance.Line) string {
+	if v, ok := line.Text[0].(*concordance.Token); ok {
+		return v.Word
+	}
+	return ""
 }
 
 func TestTypicalSetup(t *testing.T) {
@@ -190,7 +192,7 @@ func TestSetRscLinesPanicsIfIterationStarted(t *testing.T) {
 	r := createResource()
 	r.Next()
 	assert.Panics(t, func() {
-		r.SetRscLines("corp1", ConcExample{Lines: []conc.ConcordanceLine{}})
+		r.SetRscLines("corp1", ConcResult{Lines: []concordance.Line{}})
 	})
 }
 

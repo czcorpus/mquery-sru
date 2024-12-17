@@ -55,10 +55,16 @@ typedef struct KWICRowsRetval {
  * @return KWICRowsRetval
  */
 KWICRowsRetval conc_examples(
-    const char* corpusPath, const char*query, const char* attrs, PosInt fromLine, PosInt limit,
-    PosInt maxContext, const char* viewContextStruct);
-
-
+    const char* corpusPath,
+    const char*query,
+    const char* attrs,
+    const char* structs,
+    const char* refs,
+    const char* refsSplitter,
+    PosInt fromLine,
+    PosInt limit,
+    PosInt maxContext,
+    const char* viewContextStruct);
 /**
  * @brief This function frees all the allocated memory
  * for a concordance example. It is intended to be called

@@ -19,12 +19,12 @@
 package cnf
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/bytedance/sonic"
 	"github.com/czcorpus/mquery-sru/corpus"
 	"github.com/czcorpus/mquery-sru/rdb"
 
@@ -172,7 +172,7 @@ func LoadConfig(path string) *Conf {
 	}
 	var conf Conf
 	conf.srcPath = path
-	err = sonic.Unmarshal(rawData, &conf)
+	err = json.Unmarshal(rawData, &conf)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Cannot load config")
 	}
