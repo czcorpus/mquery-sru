@@ -25,12 +25,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bytedance/sonic"
 	"github.com/czcorpus/cnc-gokit/collections"
 	"github.com/czcorpus/cnc-gokit/logging"
+	"github.com/czcorpus/mquery-common/concordance"
 	"github.com/czcorpus/mquery-sru/backlink"
 	"github.com/czcorpus/mquery-sru/corpus"
-	"github.com/czcorpus/mquery-sru/corpus/conc"
 	"github.com/czcorpus/mquery-sru/general"
 	"github.com/czcorpus/mquery-sru/handler/v12/schema"
 	"github.com/czcorpus/mquery-sru/mango"
@@ -197,7 +196,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 	ranges := query.CalculatePartialRanges(corpora, startRecord-1, maximumRecords)
 
 	// make searches
-	waits := make([]<-chan *rdb.WorkerResult, len(ranges))
+	waits := make([]<-chan result.ConcResult, len(ranges))
 	for i, rng := range ranges {
 
 		ast, fcsErr := a.translateQuery(rng.Rsc, fcsQuery)
@@ -221,24 +220,17 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 				general.DCGeneralSystemError, 0, err.Error())
 			return ans, general.ConformandGeneralServerError
 		}
-		args, err := sonic.Marshal(rdb.ConcExampleArgs{
-			CorpusPath:        a.corporaConf.GetRegistryPath(rng.Rsc),
-			Query:             query,
-			Attrs:             retrieveAttrs,
-			StartLine:         rng.From,
-			MaxItems:          maximumRecords,
-			MaxContext:        a.corporaConf.MaximumContext,
-			ViewContextStruct: rscConf.ViewContextStruct,
-		})
-		if err != nil {
-			ans.Diagnostics = schema.NewXMLDiagnostics()
-			ans.Diagnostics.AddDfltMsgDiagnostic(
-				general.DCGeneralSystemError, 0, err.Error())
-			return ans, http.StatusInternalServerError
-		}
 		wait, err := a.radapter.PublishQuery(rdb.Query{
 			Func: "concExample",
-			Args: args,
+			Args: rdb.ConcQueryArgs{
+				CorpusPath:        a.corporaConf.GetRegistryPath(rng.Rsc),
+				Query:             query,
+				Attrs:             retrieveAttrs,
+				StartLine:         rng.From,
+				MaxItems:          maximumRecords,
+				MaxContext:        a.corporaConf.MaximumContext,
+				ViewContextStruct: rscConf.ViewContextStruct,
+			},
 		})
 		if err != nil {
 			ans.Diagnostics = schema.NewXMLDiagnostics()
@@ -253,16 +245,9 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 	usedQueries := make(map[string]string) // maps resource ID to Manatee CQL query
 	var totalConcSize int
 	for i, wait := range waits {
-		rawResult := <-wait
-		result, err := rdb.DeserializeConcExampleResult(rawResult)
-		if err != nil {
-			ans.Diagnostics = schema.NewXMLDiagnostics()
-			ans.Diagnostics.AddDfltMsgDiagnostic(
-				general.DCGeneralSystemError, 0, err.Error())
-			return ans, http.StatusInternalServerError
-		}
-		if err := result.Err(); err != nil {
-			if err.Error() == mango.ErrRowsRangeOutOfConc.Error() {
+		result := <-wait
+		if result.Error != nil {
+			if result.Error == mango.ErrRowsRangeOutOfConc {
 				fromResource.RscSetErrorAt(i, err)
 
 			} else {
@@ -325,8 +310,9 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 							XMLNSHits: "http://clarin.eu/fcs/dataview/hits",
 							Data: strings.Join(
 								collections.SliceMap(
-									item.Text,
-									func(token *conc.Token, i int) string {
+									item.Text.Tokens(),
+									func(token *concordance.Token, i int) string {
+										fmt.Println("TOK: ", token)
 										if token.Strong {
 											return "<hits:Hit>" + token.Word + "</hits:Hit>"
 										}

@@ -24,8 +24,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/bytedance/sonic"
-	"github.com/czcorpus/mquery-sru/corpus/conc"
+	"github.com/czcorpus/mquery-common/concordance"
 	"github.com/czcorpus/mquery-sru/mango"
 	"github.com/czcorpus/mquery-sru/rdb"
 	"github.com/czcorpus/mquery-sru/result"
@@ -53,17 +52,12 @@ type Worker struct {
 	currJobLog *result.JobLog
 }
 
-func (w *Worker) publishResult(res result.SerializableResult, channel string) error {
-	ans, err := rdb.CreateWorkerResult(res)
-	if err != nil {
-		return err
-	}
-
+func (w *Worker) publishResult(res *result.ConcResult, channel string) error {
 	w.currJobLog.End = time.Now()
-	w.currJobLog.Err = res.Err()
+	w.currJobLog.Err = res.Error
 	w.jobLogger.Log(*w.currJobLog)
 	w.currJobLog = nil
-	return w.radapter.PublishResult(channel, ans)
+	return w.radapter.PublishResult(channel, res)
 }
 
 func (w *Worker) tryNextQuery() error {
@@ -99,23 +93,9 @@ func (w *Worker) tryNextQuery() error {
 		Func:     query.Func,
 		Begin:    time.Now(),
 	}
-
-	switch query.Func {
-	case "concExample":
-		var args rdb.ConcExampleArgs
-		if err := sonic.Unmarshal(query.Args, &args); err != nil {
-			return err
-		}
-		ans := w.concExample(args)
-		ans.ResultType = query.ResultType
-		if err := w.publishResult(ans, query.Channel); err != nil {
-			return err
-		}
-	default:
-		ans := &result.ErrorResult{Error: fmt.Sprintf("unknown query function: %s", query.Func)}
-		if err = w.publishResult(ans, query.Channel); err != nil {
-			return err
-		}
+	ans := w.ConcResult(query.Args)
+	if err := w.publishResult(ans, query.Channel); err != nil {
+		return fmt.Errorf("failed to publish result: %w", err)
 	}
 	return nil
 }
@@ -136,29 +116,37 @@ func (w *Worker) Listen() {
 	}
 }
 
-func (w *Worker) concExample(args rdb.ConcExampleArgs) (ans *result.ConcExample) {
-	ans = new(result.ConcExample)
+func (w *Worker) ConcResult(args rdb.ConcQueryArgs) (ans *result.ConcResult) {
+	ans = new(result.ConcResult)
 	defer func() {
 		if r := recover(); r != nil {
-			ans = &result.ConcExample{
-				Error: fmt.Sprintf("%v", r),
-				Lines: make([]conc.ConcordanceLine, 0),
+			ans = &result.ConcResult{
+				Error: fmt.Errorf("%v", r),
+				Lines: make([]concordance.Line, 0),
 			}
 		}
 	}()
-	concEx, err := mango.GetConcExamples(
-		args.CorpusPath, args.Query, args.Attrs, args.StartLine, args.MaxItems,
-		args.MaxContext, args.ViewContextStruct)
+	concEx, err := mango.GetConcordance(
+		args.CorpusPath,
+		args.Query,
+		args.Attrs,
+		[]string{},
+		[]string{},
+		args.StartLine,
+		args.MaxItems,
+		args.MaxContext,
+		args.ViewContextStruct,
+	)
 	if err != nil {
-		ans.Error = err.Error()
+		ans.Error = err
 		return
 	}
 	log.Debug().
 		Str("query", args.Query).
 		Int("concSize", concEx.ConcSize).
 		Msg("obtained concordance result")
-	parser := conc.NewLineParser(args.Attrs)
-	ans.Lines = parser.Parse(concEx)
+	parser := concordance.NewLineParser(args.Attrs)
+	ans.Lines = parser.Parse(concEx.Lines)
 	ans.ConcSize = concEx.ConcSize
 	ans.Query = args.Query
 	return

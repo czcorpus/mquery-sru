@@ -21,7 +21,7 @@ package result
 import (
 	"fmt"
 
-	"github.com/czcorpus/mquery-sru/corpus/conc"
+	"github.com/czcorpus/mquery-common/concordance"
 	"github.com/czcorpus/mquery-sru/mango"
 )
 
@@ -29,7 +29,7 @@ type item struct {
 	Name     string
 	CurrLine int
 	Err      error
-	Lines    ConcExample
+	Lines    ConcResult
 	Started  bool
 }
 
@@ -56,7 +56,7 @@ func (r *RoundRobinLineSel) DescribeCurr() string {
 // CurrLine returns the current line from a current resource
 // during an iteration. It is intended to be called within a loop
 // controlled by method `Next()`
-func (r *RoundRobinLineSel) CurrLine() *conc.ConcordanceLine {
+func (r *RoundRobinLineSel) CurrLine() *concordance.Line {
 	if r.nextOutputLineIdx >= r.maxLines+1 { // lineCounter is always ahead by 1 (that's why `+1`)
 		return nil
 	}
@@ -85,7 +85,7 @@ func (r *RoundRobinLineSel) iterationStarted() bool {
 // SetRscLines sets concordance data for a resource (corpus).
 // The method can be called only if the `Next()` method has not
 // been called yet. Otherwise the call panics.
-func (r *RoundRobinLineSel) SetRscLines(rsc string, c ConcExample) {
+func (r *RoundRobinLineSel) SetRscLines(rsc string, c ConcResult) {
 	if r.iterationStarted() {
 		panic("cannot add resource lines to an already iterating RoundRobinLineSel")
 	}

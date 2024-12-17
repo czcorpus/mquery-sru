@@ -24,6 +24,7 @@ package main
 
 import (
 	"context"
+	"encoding/gob"
 	"flag"
 	"fmt"
 	"net/http"
@@ -36,6 +37,7 @@ import (
 
 	"github.com/czcorpus/cnc-gokit/logging"
 	"github.com/czcorpus/cnc-gokit/uniresp"
+	"github.com/czcorpus/mquery-common/concordance"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
@@ -65,6 +67,9 @@ func getEnv(name string) string {
 }
 
 func init() {
+	gob.Register(&concordance.Token{})
+	gob.Register(&concordance.Struct{})
+	gob.Register(&concordance.CloseStruct{})
 }
 
 func runApiServer(
