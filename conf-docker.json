@@ -63,14 +63,14 @@
         ]
     },
     "redis": {
-        "host": "mquery-sru_redis_1",
+        "host": "mquery-sru-redis-1",
         "port": 6379,
         "db": 7,
         "cachePath": "/var/lib/manatee/cache.masm",
         "queryAnswerTimeoutSecs": 600
     },
     "db": {
-        "host": "kontext_mariadb_1:3306",
+        "host": "kontext-mariadb-1:3306",
         "user": "kontext",
         "password": "kontext-secret",
         "name": "kontext",
