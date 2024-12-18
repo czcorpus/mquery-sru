@@ -103,13 +103,6 @@
         "cachePath": "/var/lib/manatee/cache.masm",
         "queryAnswerTimeoutSecs": 600
     },
-    "db": {
-        "host": "kontext-mariadb-1:3306",
-        "user": "kontext",
-        "password": "kontext-secret",
-        "name": "kontext",
-        "corpusTable": "kontext_corpus"
-    },
     "logging": {
         "path": "",
         "level": "debug"
