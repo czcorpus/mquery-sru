@@ -73,9 +73,8 @@ func init() {
 }
 
 func runApiServer(
+	ctx context.Context,
 	conf *cnf.Conf,
-	syscallChan chan os.Signal,
-	exitEvent chan os.Signal,
 	radapter *rdb.Adapter,
 ) {
 	log.Info().Msg("Starting MQuery-SRU server")
@@ -88,7 +87,7 @@ func runApiServer(
 	if len(conf.TrustedProxies) > 0 {
 		if err := engine.SetTrustedProxies(conf.TrustedProxies); err != nil {
 			log.Error().Err(err).Msg("Failed to set trusted proxies")
-			syscallChan <- syscall.SIGTERM
+			ctx.
 			return
 		}
 	}
@@ -213,10 +212,10 @@ func main() {
 	}
 	log.Info().Msg("MQuery-SRU initialization...")
 	cnf.ValidateAndDefaults(conf)
-	syscallChan := make(chan os.Signal, 1)
-	signal.Notify(syscallChan, os.Interrupt)
-	signal.Notify(syscallChan, syscall.SIGTERM)
-	exitEvent := make(chan os.Signal)
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	testConnCancel := make(chan bool)
 	go func() {
 		evt := <-syscallChan
