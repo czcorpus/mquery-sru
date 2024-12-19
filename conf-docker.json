@@ -7,12 +7,8 @@
         "serverHost": "my",
         "serverPort": "80",
         "database": "fcs",
-        "databaseTitle": {
-            "en": "CNC FCS"
-        },
-        "databaseDescription": {
-            "en": "CNC API for FCS"
-        },
+        "databaseTitle": {"en": "CNC FCS"},
+        "databaseDescription": {"en": "CNC API for FCS"},
         "primaryLanguage": "en",
         "externalUrlPath": ""
     },
@@ -22,11 +18,15 @@
             {
                 "id": "syn2020",
                 "pid": "syn2020",
-                "fullName": {"en": "syn2020", "cs": "syn2020"},
+                "fullName": {
+                    "en": "SYN 2020",
+                    "cs": "SYN 2020"
+                },
                 "description": {
                     "en": "A synchronous representative and reference corpus of contemporary written Czech, containing 100 million text words.",
                     "cs": "Synchronní reprezentativní a referenční korpus současné psané češtiny, obsahující 100 milionů textových slov."
                 },
+                "viewContextStruct": "s",
                 "languages": ["ces"],
                 "uri": "http://wiki.korpus.cz/doku.php/cnk:syn2020",
                 "posAttrs": [
@@ -57,27 +57,23 @@
                     }
                 ],
                 "structureMapping": {
-
+                    "utteranceStruct": "s",
+                    "paragraphStruct": "p",
+                    "turnStruct": "p",
+                    "textStruct": "doc",
+                    "sessionStruct": "doc"
                 }
             }
         ]
     },
     "redis": {
-        "host": "mquery-sru_redis_1",
+        "host": "mquery-sru-redis-1",
         "port": 6379,
         "db": 7,
         "cachePath": "/var/lib/manatee/cache.masm",
         "queryAnswerTimeoutSecs": 600
     },
-    "db": {
-        "host": "kontext_mariadb_1:3306",
-        "user": "kontext",
-        "password": "kontext-secret",
-        "name": "kontext",
-        "corpusTable": "kontext_corpus"
-    },
     "logging": {
-        "path": "dev.log",
         "level": "debug"
     }
 }
