@@ -81,6 +81,16 @@ func DecodeQuery(q string) (Query, error) {
 	return ans, err
 }
 
+type TimeoutError struct {
+	Msg string
+}
+
+func (err TimeoutError) Error() string {
+	return err.Msg
+}
+
+// --------------------
+
 // Adapter provides functions for query producers and consumers
 // using Redis database. It leverages Redis' PUBSUB functionality
 // to notify about incoming data.
@@ -93,27 +103,21 @@ type Adapter struct {
 	queryAnswerTimeout  time.Duration
 }
 
-func (a *Adapter) TestConnection(timeout time.Duration, cancel chan bool) error {
-
+func (a *Adapter) TestConnection(totalTimeout time.Duration, timeoutPerTry time.Duration) error {
+	ctx, cancelFn := context.WithTimeout(a.ctx, totalTimeout)
+	defer cancelFn()
 	tick := time.NewTicker(2 * time.Second)
-	timeoutCh := time.After(timeout)
-	ctx2, cancelFunc := context.WithCancel(a.ctx)
-	go func() {
-		v := <-cancel
-		if v {
-			cancelFunc()
-			tick.Stop()
-		}
-	}()
 	for {
 		select {
-		case <-timeoutCh:
+		case <-ctx.Done():
 			return fmt.Errorf("failed to connect to the Redis server at %s", a.conf.ServerInfo())
 		case <-tick.C:
 			log.Info().
 				Str("server", a.conf.ServerInfo()).
 				Msg("waiting for Redis server...")
+			ctx2, cancelFn2 := context.WithTimeout(ctx, timeoutPerTry)
 			_, err := a.redis.Ping(ctx2).Result()
+			cancelFn2()
 			if err != nil {
 				log.Error().Err(err).Msg("...failed to get response from Redis server")
 
@@ -137,9 +141,12 @@ func (a *Adapter) SomeoneListens(query Query) (bool, error) {
 
 // PublishQuery publishes a new query and returns a channel
 // by which a respective result will be returned. In case the
-// process fails during the calculation, a respective error
-// is packed into the WorkerResult value. The error returned
-// by this method means that the publishing itself failed.
+// process fails during the calculation, a corresponding error
+// is added to the ConcResult value.
+// If the PublishQuery method itself returns an error, it means,
+// that the publishing itself failed and the client won't obtain
+// any information about the calculation (in which case it relies
+// on timeout)
 func (a *Adapter) PublishQuery(query Query) (<-chan result.ConcResult, error) {
 	query.Channel = fmt.Sprintf("%s:%s", a.channelResultPrefix, uuid.New().String())
 	log.Debug().
@@ -154,8 +161,11 @@ func (a *Adapter) PublishQuery(query Query) (<-chan result.ConcResult, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to publish query: %w", err)
 	}
-	sub := a.redis.Subscribe(a.ctx, query.Channel)
-	if err := a.redis.LPush(a.ctx, DefaultQueueKey, msg.String()).Err(); err != nil {
+
+	ctx2, cancel := context.WithTimeout(a.ctx, a.queryAnswerTimeout)
+	defer cancel()
+	sub := a.redis.Subscribe(ctx2, query.Channel)
+	if err := a.redis.LPush(ctx2, DefaultQueueKey, msg.String()).Err(); err != nil {
 		return nil, err
 	}
 	ansChan := make(chan result.ConcResult)
@@ -167,8 +177,9 @@ func (a *Adapter) PublishQuery(query Query) (<-chan result.ConcResult, error) {
 			close(ansChan)
 		}()
 
+		ctx3, cancel := context.WithTimeout(a.ctx, a.queryAnswerTimeout)
+		defer cancel()
 		var ans result.ConcResult
-		tmr := time.NewTimer(a.queryAnswerTimeout)
 
 		for {
 			select {
@@ -177,7 +188,7 @@ func (a *Adapter) PublishQuery(query Query) (<-chan result.ConcResult, error) {
 					Str("channel", query.Channel).
 					Bool("closedChannel", !ok).
 					Msg("received result")
-				cmd := a.redis.Get(a.ctx, item.Payload)
+				cmd := a.redis.Get(ctx3, item.Payload)
 				if cmd.Err() != nil {
 					ans.Error = cmd.Err()
 
@@ -189,19 +200,25 @@ func (a *Adapter) PublishQuery(query Query) (<-chan result.ConcResult, error) {
 					if err != nil {
 						ans.Error = err
 					}
+					log.Debug().
+						Str("channel", query.Channel).
+						Int("concSize", ans.ConcSize).
+						Str("query", ans.Query).
+						Msg("decoded result")
 				}
 				ansChan <- ans
-				tmr.Stop()
 				return
-			case <-tmr.C:
-				ans.Error = fmt.Errorf("worker result timeouted (%d)", DefaultQueryAnswerTimeout)
+			case <-ctx3.Done():
+				ans.Error = fmt.Errorf("waiting for worker response timeout")
 				ansChan <- ans
+			case <-a.ctx.Done():
+				log.Warn().Msg("publishing query interrupted due to cancellation")
 				return
 			}
 		}
 
 	}()
-	return ansChan, a.redis.Publish(a.ctx, a.channelQuery, MsgNewQuery).Err()
+	return ansChan, a.redis.Publish(ctx2, a.channelQuery, MsgNewQuery).Err()
 }
 
 // DequeueQuery looks for a query queued for processing.
@@ -250,7 +267,7 @@ func (a *Adapter) Subscribe() <-chan *redis.Message {
 
 // NewAdapter is a recommended factory function
 // for creating new `Adapter` instances
-func NewAdapter(conf *Conf) *Adapter {
+func NewAdapter(ctx context.Context, conf *Conf) *Adapter {
 	chRes := conf.ChannelResultPrefix
 	chQuery := conf.ChannelQuery
 	if chRes == "" {
@@ -279,7 +296,7 @@ func NewAdapter(conf *Conf) *Adapter {
 			Password: conf.Password,
 			DB:       conf.DB,
 		}),
-		ctx:                 context.Background(),
+		ctx:                 ctx,
 		channelQuery:        chQuery,
 		channelResultPrefix: chRes,
 		queryAnswerTimeout:  queryAnswerTimeout,

@@ -312,7 +312,6 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 								collections.SliceMap(
 									item.Text.Tokens(),
 									func(token *concordance.Token, i int) string {
-										fmt.Println("TOK: ", token)
 										if token.Strong {
 											return "<hits:Hit>" + token.Word + "</hits:Hit>"
 										}

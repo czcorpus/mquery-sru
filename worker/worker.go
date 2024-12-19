@@ -19,9 +19,9 @@
 package worker
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
-	"os"
 	"time"
 
 	"github.com/czcorpus/mquery-common/concordance"
@@ -46,8 +46,8 @@ type Worker struct {
 	ID         string
 	messages   <-chan *redis.Message
 	radapter   *rdb.Adapter
-	exitEvent  chan os.Signal
-	ticker     time.Ticker
+	ctx        context.Context
+	ticker     *time.Ticker
 	jobLogger  jobLogger
 	currJobLog *result.JobLog
 }
@@ -105,8 +105,9 @@ func (w *Worker) Listen() {
 		select {
 		case <-w.ticker.C:
 			w.tryNextQuery()
-		case <-w.exitEvent:
-			log.Info().Msg("worker exiting")
+		case <-w.ctx.Done():
+			w.ticker.Stop()
+			log.Info().Msg("worker exiting due to cancellation")
 			return
 		case msg := <-w.messages:
 			if msg.Payload == rdb.MsgNewQuery {
@@ -153,18 +154,18 @@ func (w *Worker) ConcResult(args rdb.ConcQueryArgs) (ans *result.ConcResult) {
 }
 
 func NewWorker(
+	ctx context.Context,
 	workerID string,
 	radapter *rdb.Adapter,
 	messages <-chan *redis.Message,
-	exitEvent chan os.Signal,
 	jobLogger jobLogger,
 ) *Worker {
 	return &Worker{
 		ID:        workerID,
 		radapter:  radapter,
 		messages:  messages,
-		exitEvent: exitEvent,
-		ticker:    *time.NewTicker(DefaultTickerInterval),
+		ctx:       ctx,
+		ticker:    time.NewTicker(DefaultTickerInterval),
 		jobLogger: jobLogger,
 	}
 }
