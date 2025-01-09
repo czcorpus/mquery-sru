@@ -35,6 +35,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/czcorpus/cnc-gokit/collections"
 	"github.com/czcorpus/cnc-gokit/logging"
 	"github.com/czcorpus/cnc-gokit/uniresp"
 	"github.com/czcorpus/mquery-common/concordance"
@@ -42,6 +43,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/czcorpus/mquery-sru/cnf"
+	"github.com/czcorpus/mquery-sru/corpus"
 	"github.com/czcorpus/mquery-sru/general"
 	"github.com/czcorpus/mquery-sru/handler"
 	"github.com/czcorpus/mquery-sru/handler/form"
@@ -214,6 +216,16 @@ func main() {
 	}
 	log.Info().Msg("MQuery-SRU initialization...")
 	cnf.ValidateAndDefaults(conf)
+
+	log.Info().
+		Strs(
+			"corpora",
+			collections.SliceMap(
+				conf.CorporaSetup.Resources,
+				func(item *corpus.CorpusSetup, i int) string { return item.ID },
+			),
+		).
+		Msgf("providing %d resources/corpora", len(conf.CorporaSetup.Resources))
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()

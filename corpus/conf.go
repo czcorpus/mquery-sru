@@ -423,6 +423,13 @@ type CorporaSetup struct {
 
 	// Resources is a description of configured corpora/resources
 	Resources SrchResources `json:"resources"`
+
+	// ResourcesConfDir is an alternative to Resources allowing to use
+	// a separate configuration file for each corpus. Both values can
+	// be used simultaneously but to maintain readability, it is better
+	// to stick with one of the two (inline solution for one or two corpora
+	// and this one for more)
+	ResourcesConfDir string `json:"resourcesConfDir"`
 }
 
 func (cs *CorporaSetup) GetRegistryPath(corpusID string) string {
