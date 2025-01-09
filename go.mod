@@ -7,7 +7,7 @@ toolchain go1.23.0
 require (
 	github.com/czcorpus/cnc-gokit v0.11.2
 	github.com/czcorpus/manabuild v0.1.0
-	github.com/czcorpus/mquery-common v0.4.2
+	github.com/czcorpus/mquery-common v0.4.3
 	github.com/gin-gonic/gin v1.10.0
 	github.com/google/uuid v1.3.0
 	github.com/mna/pigeon v1.2.1

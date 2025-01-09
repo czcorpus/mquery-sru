@@ -75,9 +75,8 @@ func init() {
 }
 
 func runApiServer(
+	ctx context.Context,
 	conf *cnf.Conf,
-	syscallChan chan os.Signal,
-	exitEvent chan os.Signal,
 	radapter *rdb.Adapter,
 ) {
 	log.Info().Msg("Starting MQuery-SRU server")
@@ -90,7 +89,6 @@ func runApiServer(
 	if len(conf.TrustedProxies) > 0 {
 		if err := engine.SetTrustedProxies(conf.TrustedProxies); err != nil {
 			log.Error().Err(err).Msg("Failed to set trusted proxies")
-			syscallChan <- syscall.SIGTERM
 			return
 		}
 	}
@@ -127,17 +125,20 @@ func runApiServer(
 		WriteTimeout: time.Duration(conf.ServerWriteTimeoutSecs) * time.Second,
 		ReadTimeout:  time.Duration(conf.ServerReadTimeoutSecs) * time.Second,
 	}
+
+	srvErrChan := make(chan error, 1)
+
 	go func() {
 		log.Info().Msgf("listening at %s:%d", conf.ListenAddress, conf.ListenPort)
-		err := srv.ListenAndServe()
-		if err != nil {
-			log.Error().Err(err).Msg("")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			srvErrChan <- err
 		}
-		syscallChan <- syscall.SIGTERM
 	}()
 
 	select {
-	case <-exitEvent:
+	case err := <-srvErrChan:
+		log.Error().Err(err).Msg("Server error")
+	case <-ctx.Done():
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		err := srv.Shutdown(ctx)
@@ -147,11 +148,11 @@ func runApiServer(
 	}
 }
 
-func runWorker(conf *cnf.Conf, workerID string, radapter *rdb.Adapter, exitEvent chan os.Signal) {
+func runWorker(ctx context.Context, conf *cnf.Conf, workerID string, radapter *rdb.Adapter) {
 	log.Info().Msg("Starting MQuery-SRU worker")
 	ch := radapter.Subscribe()
 	logger := monitoring.NewWorkerJobLogger(conf.TimezoneLocation())
-	w := worker.NewWorker(workerID, radapter, ch, exitEvent, logger)
+	w := worker.NewWorker(ctx, workerID, radapter, ch, logger)
 	w.Listen()
 }
 
@@ -226,34 +227,24 @@ func main() {
 		).
 		Msgf("providing %d resources/corpora", len(conf.CorporaSetup.Resources))
 
-	syscallChan := make(chan os.Signal, 1)
-	signal.Notify(syscallChan, os.Interrupt)
-	signal.Notify(syscallChan, syscall.SIGTERM)
-	exitEvent := make(chan os.Signal)
-	testConnCancel := make(chan bool)
-	go func() {
-		evt := <-syscallChan
-		testConnCancel <- true
-		close(testConnCancel)
-		exitEvent <- evt
-		close(exitEvent)
-	}()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
-	radapter := rdb.NewAdapter(conf.Redis)
+	radapter := rdb.NewAdapter(ctx, conf.Redis)
 
 	switch action {
 	case "server":
-		err := radapter.TestConnection(20*time.Second, testConnCancel)
+		err := radapter.TestConnection(50*time.Second, 10*time.Second)
 		if err != nil {
 			log.Fatal().Err(err).Msg("failed to connect to Redis")
 		}
-		runApiServer(conf, syscallChan, exitEvent, radapter)
+		runApiServer(ctx, conf, radapter)
 	case "worker":
-		err := radapter.TestConnection(20*time.Second, testConnCancel)
+		err := radapter.TestConnection(50*time.Second, 10*time.Second)
 		if err != nil {
 			log.Fatal().Err(err).Msg("failed to connect to Redis")
 		}
-		runWorker(conf, getWorkerID(), radapter, exitEvent)
+		runWorker(ctx, conf, getWorkerID(), radapter)
 	default:
 		log.Fatal().Msgf("Unknown action %s", action)
 	}
