@@ -21,6 +21,7 @@ package cnf
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -162,6 +163,28 @@ func (conf *Conf) GetSourcePath() string {
 	return filepath.Join(cwd, conf.srcPath)
 }
 
+func loadResources(path string) ([]*corpus.CorpusSetup, error) {
+	ans := make([]*corpus.CorpusSetup, 0, 20)
+	items, err := os.ReadDir(path)
+	if err != nil {
+		return ans, fmt.Errorf("failed to list resource conf directory: %w", err)
+	}
+	for _, item := range items {
+		fmt.Println("item: ", item.Name())
+		rawConf, err := os.ReadFile(filepath.Join(path, item.Name()))
+		if err != nil {
+			return ans, fmt.Errorf("failed to list resource conf file %s: %w", item.Name(), err)
+		}
+		var cs corpus.CorpusSetup
+		err = json.Unmarshal(rawConf, &cs)
+		if err != nil {
+			return ans, fmt.Errorf("failed to parse resource conf file %s: %w", item.Name(), err)
+		}
+		ans = append(ans, &cs)
+	}
+	return ans, nil
+}
+
 func LoadConfig(path string) *Conf {
 	if path == "" {
 		log.Fatal().Msg("Cannot load config - path not specified")
@@ -175,6 +198,13 @@ func LoadConfig(path string) *Conf {
 	err = json.Unmarshal(rawData, &conf)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Cannot load config")
+	}
+	if conf.CorporaSetup.ResourcesConfDir != "" {
+		rsrcs, err := loadResources(conf.CorporaSetup.ResourcesConfDir)
+		if err != nil {
+			log.Fatal().Err(err).Msg("Cannot load individual resource configs")
+		}
+		conf.CorporaSetup.Resources = append(conf.CorporaSetup.Resources, rsrcs...)
 	}
 	return &conf
 }
