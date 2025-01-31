@@ -74,11 +74,13 @@ func init() {
 	gob.Register(&concordance.CloseStruct{})
 }
 
-func watchdogIdentificationMiddleware(headerName string, token string) gin.HandlerFunc {
+func watchdogIdentificationMiddleware(WatchdogReqFilterConf *cnf.WatchdogReqFilter) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if c.GetHeader(headerName) == token {
-			logging.AddLogEvent(c, "isWatchdogQuery", true)
-		}
+		logging.AddLogEvent(
+			c,
+			"isWatchdogQuery",
+			WatchdogReqFilterConf != nil && c.GetHeader(WatchdogReqFilterConf.HTTPIdHeaderName) == WatchdogReqFilterConf.HTTPIdHeaderToken,
+		)
 		c.Next()
 	}
 }
@@ -103,13 +105,7 @@ func runApiServer(
 	}
 	engine.Use(gin.Recovery())
 	engine.Use(logging.GinMiddleware())
-	if conf.WatchdogReqFilter != nil {
-		log.Info().Msg("Watchdog request identification enabled")
-		engine.Use(watchdogIdentificationMiddleware(
-			conf.WatchdogReqFilter.HTTPIdHeaderName,
-			conf.WatchdogReqFilter.HTTPIdHeaderToken,
-		))
-	}
+	engine.Use(watchdogIdentificationMiddleware(conf.WatchdogReqFilter))
 	engine.NoMethod(uniresp.NoMethodHandler)
 	engine.NoRoute(uniresp.NotFoundHandler)
 
