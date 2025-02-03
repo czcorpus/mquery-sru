@@ -77,11 +77,10 @@ func init() {
 
 func watchdogIdentificationMiddleware(WatchdogReqFilterConf *cnf.WatchdogReqFilter) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		logging.AddLogEvent(
-			c,
-			"isWatchdogQuery",
-			WatchdogReqFilterConf != nil && c.GetHeader(WatchdogReqFilterConf.HTTPIdHeaderName) == WatchdogReqFilterConf.HTTPIdHeaderToken,
-		)
+		if WatchdogReqFilterConf != nil &&
+			c.GetHeader(WatchdogReqFilterConf.HTTPIdHeaderName) == WatchdogReqFilterConf.HTTPIdHeaderToken {
+			logging.AddCustomEntry(c, "isWatchdogQuery", true)
+		}
 		c.Next()
 	}
 }
