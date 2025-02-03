@@ -104,21 +104,29 @@ func (w *Worker) Listen() {
 	for {
 		select {
 		case <-w.ticker.C:
-			w.tryNextQuery()
+			if err := w.tryNextQuery(); err != nil {
+				log.Error().
+					Err(err).
+					Msg("failed to process query")
+			}
 		case <-w.ctx.Done():
 			w.ticker.Stop()
 			log.Info().Msg("worker exiting due to cancellation")
 			return
 		case msg := <-w.messages:
 			if msg.Payload == rdb.MsgNewQuery {
-				w.tryNextQuery()
+				if err := w.tryNextQuery(); err != nil {
+					log.Error().
+						Err(err).
+						Msg("failed to process query")
+				}
 			}
 		}
 	}
 }
 
 func (w *Worker) ConcResult(args rdb.ConcQueryArgs) (ans *result.ConcResult) {
-	ans = new(result.ConcResult)
+	ans = &result.ConcResult{Query: args.Query}
 	defer func() {
 		if r := recover(); r != nil {
 			ans = &result.ConcResult{
@@ -138,18 +146,18 @@ func (w *Worker) ConcResult(args rdb.ConcQueryArgs) (ans *result.ConcResult) {
 		args.MaxContext,
 		args.ViewContextStruct,
 	)
+	log.Debug().
+		Str("query", args.Query).
+		Int("concSize", concEx.ConcSize).
+		Err(err).
+		Msg("obtained concordance result")
 	if err != nil {
 		ans.Error = err
 		return
 	}
-	log.Debug().
-		Str("query", args.Query).
-		Int("concSize", concEx.ConcSize).
-		Msg("obtained concordance result")
 	parser := concordance.NewLineParser(args.Attrs)
 	ans.Lines = parser.Parse(concEx.Lines)
 	ans.ConcSize = concEx.ConcSize
-	ans.Query = args.Query
 	return
 }
 

@@ -72,15 +72,15 @@ func init() {
 	gob.Register(&concordance.Token{})
 	gob.Register(&concordance.Struct{})
 	gob.Register(&concordance.CloseStruct{})
+	gob.Register(&rdb.TransmittedError{})
 }
 
 func watchdogIdentificationMiddleware(WatchdogReqFilterConf *cnf.WatchdogReqFilter) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		logging.AddLogEvent(
-			c,
-			"isWatchdogQuery",
-			WatchdogReqFilterConf != nil && c.GetHeader(WatchdogReqFilterConf.HTTPIdHeaderName) == WatchdogReqFilterConf.HTTPIdHeaderToken,
-		)
+		if WatchdogReqFilterConf != nil &&
+			c.GetHeader(WatchdogReqFilterConf.HTTPIdHeaderName) == WatchdogReqFilterConf.HTTPIdHeaderToken {
+			logging.AddCustomEntry(c, "isWatchdogQuery", true)
+		}
 		c.Next()
 	}
 }
