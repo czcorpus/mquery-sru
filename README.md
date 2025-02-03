@@ -4,8 +4,8 @@ MQuery-SRU is an easy to set up endpoint for [Clarin FCS](https://www.clarin.eu/
 
 ## Features
 
-* Full support for the FCQ-QL query language
-    * definable mapping between FCQ-QL layers and Manatee-open positional attributes
+* Full support for the [FCS-QL](https://clarin-eric.github.io/fcs-misc/fcs-core-2.0-specs/fcs-core-2.0.html#_fcs_ql_ebnf) query language
+    * definable mapping between FCS-QL layers and Manatee-open positional attributes
 * Level 1 support for basic search via CQL (Context Query
 Language)
 * simultaneous search in multiple defined corpora
