@@ -91,6 +91,17 @@ func (err TimeoutError) Error() string {
 
 // --------------------
 
+type TransmittedError struct {
+	Message string
+	Type    string
+}
+
+func (err *TransmittedError) Error() string {
+	return fmt.Sprintf("TransmittedError(%s: %s)", err.Type, err.Message)
+}
+
+//
+
 // Adapter provides functions for query producers and consumers
 // using Redis database. It leverages Redis' PUBSUB functionality
 // to notify about incoming data.
@@ -249,11 +260,16 @@ func (a *Adapter) PublishResult(channelName string, value *result.ConcResult) er
 		Str("resultType", "concordance").
 		Msg("publishing result")
 
+	if value.Error != nil {
+		value.Error = &TransmittedError{
+			Message: value.Error.Error(), Type: fmt.Sprintf("%T", value.Error)}
+	}
+
 	var msg bytes.Buffer
 	enc := gob.NewEncoder(&msg)
 	err := enc.Encode(value)
 	if err != nil {
-		return fmt.Errorf("failed to serialize result: %w", err)
+		return fmt.Errorf("failed to serialize (GOB) result: %w", err)
 	}
 	a.redis.Set(a.ctx, channelName, msg.String(), DefaultResultExpiration)
 	return a.redis.Publish(a.ctx, channelName, channelName).Err()

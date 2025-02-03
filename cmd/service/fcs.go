@@ -72,6 +72,7 @@ func init() {
 	gob.Register(&concordance.Token{})
 	gob.Register(&concordance.Struct{})
 	gob.Register(&concordance.CloseStruct{})
+	gob.Register(&rdb.TransmittedError{})
 }
 
 func watchdogIdentificationMiddleware(WatchdogReqFilterConf *cnf.WatchdogReqFilter) gin.HandlerFunc {
