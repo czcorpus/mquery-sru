@@ -20,6 +20,7 @@
 package v20
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -289,8 +290,8 @@ func (a *FCSSubHandlerV20) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 	var totalConcSize int
 	for i, wait := range waits {
 		result := <-wait
-		if result.Error == mango.ErrRowsRangeOutOfConc {
-			fromResource.RscSetErrorAt(i, err)
+		if errors.Is(result.Error, mango.ErrRowsRangeOutOfConc) {
+			fromResource.RscSetErrorAt(i, result.Error)
 
 		} else if result.Error != nil {
 			ans.Diagnostics = schema.NewXMLDiagnostics()

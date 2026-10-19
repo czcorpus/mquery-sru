@@ -49,12 +49,18 @@ KWICRowsRetval conc_examples(
     const char* viewContextStruct) {
 
     string cPath(corpusPath);
+    Corpus* corp = nullptr;
+    Concordance* conc = nullptr;
+    KWICLines* kl = nullptr;
+    char** lines = nullptr;
     try {
-        Corpus* corp = new Corpus(cPath);
-        Concordance* conc = new Concordance(
+        corp = new Corpus(cPath);
+        conc = new Concordance(
             corp, corp->filter_query(eval_cqpquery(query, corp)));
         conc->sync();
         if (conc->size() == 0 && fromLine == 0) {
+            delete conc;
+            delete corp;
             KWICRowsRetval ans {
                 nullptr,
                 0,
@@ -63,25 +69,27 @@ KWICRowsRetval conc_examples(
             };
             return ans;
         }
-        if (conc->size() < fromLine) {
-            const char* msg = "line range out of result size";
-            char* dynamicStr = static_cast<char*>(malloc(strlen(msg) + 1));
-            strcpy(dynamicStr, msg);
+        if (conc->size() <= fromLine) {
+            delete conc;
+            delete corp;
             KWICRowsRetval ans {
                 nullptr,
                 0,
                 0,
-                dynamicStr,
+                strdup("line range out of result size"),
                 1
             };
             return ans;
         }
         conc->shuffle();
         PosInt concSize = conc->size();
+        if (limit + fromLine > concSize) {
+            limit = concSize - fromLine;
+        }
         std::string cppContextStruct(viewContextStruct);
         std::string halfLeft = "-" + std::to_string(int(std::floor(maxContext / 2.0)));
         std::string halfRight = std::to_string(int(std::ceil(maxContext / 2.0)));
-        KWICLines* kl = new KWICLines(
+        kl = new KWICLines(
             corp,
             conc->RS(true, fromLine, fromLine+limit),
             cppContextStruct.empty() ? halfLeft.c_str() : ("-1:"+cppContextStruct).c_str(),
@@ -93,12 +101,11 @@ KWICRowsRetval conc_examples(
             maxContext,
             false
         );
-        if (conc->size() < limit) {
-            limit = conc->size();
-        }
-        char** lines = (char**)malloc(limit * sizeof(char*));
+        // calloc so that unfilled items are nullptr and the whole array
+        // can be safely released via conc_examples_free
+        lines = (char**)calloc(limit, sizeof(char*));
         int i = 0;
-        while (kl->nextline()) {
+        while (i < limit && kl->nextline()) {
             auto lft = kl->get_left();
             auto kwc = kl->get_kwic();
             auto rgt = kl->get_right();
@@ -126,9 +133,6 @@ KWICRowsRetval conc_examples(
             }
             lines[i] = strdup(buffer.str().c_str());
             i++;
-            if (i == limit) {
-                break;
-            }
         }
         // We've allocated memory for `limit` rows,
         // but it's possible that there is less rows
@@ -137,6 +141,7 @@ KWICRowsRetval conc_examples(
         for (int i2 = i; i2 < limit; i2++) {
             lines[i2] = strdup("");
         }
+        delete kl;
         delete conc;
         delete corp;
         KWICRowsRetval ans {
@@ -149,6 +154,12 @@ KWICRowsRetval conc_examples(
         return ans;
 
     } catch (std::exception &e) {
+        if (lines != nullptr) {
+            conc_examples_free(lines, limit);
+        }
+        delete kl;
+        delete conc;
+        delete corp;
         KWICRowsRetval ans {
             nullptr,
             0,

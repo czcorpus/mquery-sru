@@ -100,6 +100,13 @@ func (err *TransmittedError) Error() string {
 	return fmt.Sprintf("TransmittedError(%s: %s)", err.Type, err.Message)
 }
 
+// Is allows `errors.Is` to match a transmitted error against
+// the original (sentinel) error. As the error identity is lost
+// during the serialization, we compare the original message.
+func (err *TransmittedError) Is(target error) bool {
+	return target != nil && err.Message == target.Error()
+}
+
 //
 
 // Adapter provides functions for query producers and consumers

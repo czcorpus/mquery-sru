@@ -25,7 +25,6 @@ import "C"
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"unsafe"
 
@@ -40,6 +39,23 @@ const (
 var (
 	ErrRowsRangeOutOfConc = errors.New("rows range is out of concordance size")
 )
+
+// cStrings keeps track of C strings allocated for a C function call
+// so they can be released at once (typically via `defer cs.free()`).
+type cStrings []*C.char
+
+func (cs *cStrings) new(s string) *C.char {
+	ans := C.CString(s)
+	*cs = append(*cs, ans)
+	return ans
+}
+
+func (cs *cStrings) free() {
+	for _, s := range *cs {
+		C.free(unsafe.Pointer(s))
+	}
+	*cs = nil
+}
 
 // ---
 
@@ -61,37 +77,50 @@ func GetConcordance(
 	fromLine, maxItems, maxContext int,
 	viewContextStruct string,
 ) (GoConcordance, error) {
+	if fromLine < 0 {
+		panic("GetConcordance - invalid fromLine value")
+	}
+	if maxItems < 0 {
+		panic("GetConcordance - invalid maxItems value")
+	}
+	if maxContext < 0 {
+		panic("GetConcordance - invalid maxContext value")
+	}
 	if !collections.SliceContains(refs, "#") {
 		refs = append([]string{"#"}, refs...)
 	}
+	var cs cStrings
+	defer cs.free()
 	ans := C.conc_examples(
-		C.CString(corpusPath),
-		C.CString(query),
-		C.CString(strings.Join(attrs, ",")),
-		C.CString(strings.Join(structs, ",")),
-		C.CString(strings.Join(refs, ",")),
-		C.CString(concordance.RefsEndMark),
+		cs.new(corpusPath),
+		cs.new(query),
+		cs.new(strings.Join(attrs, ",")),
+		cs.new(strings.Join(structs, ",")),
+		cs.new(strings.Join(refs, ",")),
+		cs.new(concordance.RefsEndMark),
 		C.longlong(fromLine),
 		C.longlong(maxItems),
 		C.longlong(maxContext),
-		C.CString(viewContextStruct))
+		cs.new(viewContextStruct))
 	var ret GoConcordance
 	ret.Lines = make([]string, 0, maxItems)
 	ret.ConcSize = int(ans.concSize)
 	if ans.err != nil {
-		err := fmt.Errorf(C.GoString(ans.err))
+		err := errors.New(C.GoString(ans.err))
 		defer C.free(unsafe.Pointer(ans.err))
 		if ans.errorCode == 1 {
 			return ret, ErrRowsRangeOutOfConc
 		}
 		return ret, err
 
+	} else if ans.value == nil {
+		return ret, nil
+
 	} else {
 		defer C.conc_examples_free(ans.value, C.int(ans.size))
 	}
-	tmp := (*[MaxRecordsInternalLimit]*C.char)(unsafe.Pointer(ans.value))
-	for i := 0; i < int(ans.size); i++ {
-		str := C.GoString(tmp[i])
+	for _, cstr := range unsafe.Slice((**C.char)(unsafe.Pointer(ans.value)), int(ans.size)) {
+		str := C.GoString(cstr)
 		// we must test str len as our c++ wrapper may return it
 		// e.g. in case our offset is higher than actual num of lines
 		if len(str) > 0 {
