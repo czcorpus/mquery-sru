@@ -20,6 +20,7 @@
 package v12
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -247,13 +248,13 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 	for i, wait := range waits {
 		result := <-wait
 		if result.Error != nil {
-			if result.Error == mango.ErrRowsRangeOutOfConc {
-				fromResource.RscSetErrorAt(i, err)
+			if errors.Is(result.Error, mango.ErrRowsRangeOutOfConc) {
+				fromResource.RscSetErrorAt(i, result.Error)
 
 			} else {
 				ans.Diagnostics = schema.NewXMLDiagnostics()
 				ans.Diagnostics.AddDfltMsgDiagnostic(
-					general.DCQueryCannotProcess, 0, err.Error())
+					general.DCQueryCannotProcess, 0, result.Error.Error())
 				return ans, http.StatusInternalServerError
 			}
 		}

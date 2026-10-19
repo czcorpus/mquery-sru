@@ -1,19 +1,17 @@
 module github.com/czcorpus/mquery-sru
 
-go 1.21
-
-toolchain go1.23.0
+go 1.25.5
 
 require (
-	github.com/czcorpus/cnc-gokit v0.11.2
+	github.com/czcorpus/cnc-gokit v0.19.0
 	github.com/czcorpus/manabuild v0.1.0
-	github.com/czcorpus/mquery-common v0.4.3
+	github.com/czcorpus/mquery-common v0.10.2
 	github.com/gin-gonic/gin v1.10.0
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.6.0
 	github.com/mna/pigeon v1.2.1
 	github.com/redis/go-redis/v9 v9.0.5
 	github.com/rs/zerolog v1.31.0
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.11.1
 )
 
 require (

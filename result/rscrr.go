@@ -19,6 +19,7 @@
 package result
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/czcorpus/mquery-common/concordance"
@@ -127,7 +128,7 @@ func (r *RoundRobinLineSel) HasFatalError() bool {
 func (r *RoundRobinLineSel) AllHasOutOfRangeError() bool {
 	var numMatch int
 	for _, v := range r.items {
-		if v.Err != nil && v.Err.Error() == mango.ErrRowsRangeOutOfConc.Error() {
+		if errors.Is(v.Err, mango.ErrRowsRangeOutOfConc) {
 			numMatch++
 		}
 	}
