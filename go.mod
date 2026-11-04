@@ -4,7 +4,7 @@ go 1.25.5
 
 require (
 	github.com/czcorpus/cnc-gokit v0.19.0
-	github.com/czcorpus/manabuild v0.1.0
+	github.com/czcorpus/manabuild v0.2.1
 	github.com/czcorpus/mquery-common v0.10.2
 	github.com/gin-gonic/gin v1.10.0
 	github.com/google/uuid v1.6.0
