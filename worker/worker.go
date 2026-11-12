@@ -151,13 +151,15 @@ func (w *Worker) ConcResult(args rdb.ConcQueryArgs) (ans *result.ConcResult) {
 		Int("concSize", concEx.ConcSize).
 		Err(err).
 		Msg("obtained concordance result")
+	// the size is valid even in case of ErrRowsRangeOutOfConc and
+	// the caller needs it to calculate offsets
+	ans.ConcSize = concEx.ConcSize
 	if err != nil {
 		ans.Error = err
 		return
 	}
 	parser := concordance.NewLineParser(args.Attrs)
 	ans.Lines = parser.Parse(concEx.Lines)
-	ans.ConcSize = concEx.ConcSize
 	return
 }
 
