@@ -184,9 +184,12 @@ func (a *Adapter) PublishQuery(query Query) (<-chan result.ConcResult, error) {
 	defer cancel()
 	sub := a.redis.Subscribe(ctx2, query.Channel)
 	if err := a.redis.LPush(ctx2, DefaultQueueKey, msg.String()).Err(); err != nil {
+		sub.Close()
 		return nil, err
 	}
-	ansChan := make(chan result.ConcResult)
+	// buffered so the goroutine below never blocks (and leaks) in case
+	// the receiver is no longer interested (e.g. it returned early on error)
+	ansChan := make(chan result.ConcResult, 1)
 
 	// now we wait for response and send result via `ans`
 	go func() {
@@ -206,6 +209,11 @@ func (a *Adapter) PublishQuery(query Query) (<-chan result.ConcResult, error) {
 					Str("channel", query.Channel).
 					Bool("closedChannel", !ok).
 					Msg("received result")
+				if !ok {
+					ans.Error = fmt.Errorf("result subscription closed unexpectedly")
+					ansChan <- ans
+					return
+				}
 				cmd := a.redis.Get(ctx3, item.Payload)
 				if cmd.Err() != nil {
 					ans.Error = cmd.Err()
@@ -229,6 +237,7 @@ func (a *Adapter) PublishQuery(query Query) (<-chan result.ConcResult, error) {
 			case <-ctx3.Done():
 				ans.Error = fmt.Errorf("waiting for worker response timeout")
 				ansChan <- ans
+				return
 			case <-a.ctx.Done():
 				log.Warn().Msg("publishing query interrupted due to cancellation")
 				return
