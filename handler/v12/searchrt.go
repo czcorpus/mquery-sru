@@ -197,6 +197,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 	ranges := query.CalculatePartialRanges(corpora, startRecord-1, maximumRecords)
 
 	// make searches
+	pidByID := make(map[string]string, len(ranges))
 	waits := make([]<-chan result.ConcResult, len(ranges))
 	for i, rng := range ranges {
 
@@ -221,6 +222,7 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 				general.DCGeneralSystemError, 0, err.Error())
 			return ans, general.ConformandGeneralServerError
 		}
+		pidByID[rng.Rsc] = rscConf.PID
 		wait, err := a.radapter.PublishQuery(rdb.Query{
 			Func: "concExample",
 			Args: rdb.ConcQueryArgs{
@@ -245,17 +247,27 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 	fromResource := result.NewRoundRobinLineSel(maximumRecords, ranges.PIDList()...)
 	usedQueries := make(map[string]string) // maps resource ID to Manatee CQL query
 	var totalConcSize int
+	// failures of individual resources are not fatal (unless all
+	// the resources fail) - we return what we have along with
+	// respective non-fatal diagnostics
+	failedResources := make([]general.ResourceError, 0, len(waits))
 	for i, wait := range waits {
 		result := <-wait
 		if result.Error != nil {
-			if errors.Is(result.Error, mango.ErrRowsRangeOutOfConc) {
-				fromResource.RscSetErrorAt(i, result.Error)
-
-			} else {
-				ans.Diagnostics = schema.NewXMLDiagnostics()
-				ans.Diagnostics.AddDfltMsgDiagnostic(
-					general.DCQueryCannotProcess, 0, result.Error.Error())
-				return ans, http.StatusInternalServerError
+			fromResource.RscSetErrorAt(i, result.Error)
+			if !errors.Is(result.Error, mango.ErrRowsRangeOutOfConc) {
+				log.Error().
+					Err(result.Error).
+					Str("resource", ranges[i].Rsc).
+					Msg("failed to search resource, skipping it")
+				failedResources = append(
+					failedResources,
+					general.ResourceError{
+						ID:  ranges[i].Rsc,
+						PID: pidByID[ranges[i].Rsc],
+						Err: result.Error,
+					},
+				)
 			}
 		}
 		fromResource.SetRscLines(ranges[i].Rsc, result)
@@ -271,10 +283,18 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 		return ans, general.ConformantUnprocessableEntity
 
 	} else if fromResource.HasFatalError() {
+		// no resource was able to provide any data
 		ans.Diagnostics = schema.NewXMLDiagnostics()
 		ans.Diagnostics.AddDfltMsgDiagnostic(
-			general.DCQueryCannotProcess, 0, fromResource.GetFirstError().Error())
+			general.DCQueryCannotProcess, 0, failedResources[0].Err.Error())
 		return ans, general.ConformandGeneralServerError
+
+	} else if len(failedResources) > 0 {
+		ans.Diagnostics = schema.NewXMLDiagnostics()
+		for _, fr := range failedResources {
+			ans.Diagnostics.AddDiagnostic(
+				general.DCQueryCannotProcess, 0, fr.PID, fr.DiagnosticMessage())
+		}
 	}
 
 	// transform results

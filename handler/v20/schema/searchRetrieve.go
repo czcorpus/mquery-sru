@@ -37,11 +37,19 @@ type XMLSRResponse struct {
 	ResultCountPrecision string              `xml:"sruResponse:resultCountPrecision"`
 }
 
+const (
+	ResultCountPrecisionExact = "info:srw/vocabulary/resultCountPrecision/1/exact"
+
+	// ResultCountPrecisionMinimum is used e.g. when some resources
+	// failed to provide their results so the actual count is higher
+	ResultCountPrecisionMinimum = "info:srw/vocabulary/resultCountPrecision/1/minimum"
+)
+
 func NewXMLSRResponse() XMLSRResponse {
 	return XMLSRResponse{
 		XMLNSSRUResponse:     "http://docs.oasis-open.org/ns/search-ws/sruResponse",
 		Version:              "2.0",
-		ResultCountPrecision: "info:srw/vocabulary/resultCountPrecision/1/exact",
+		ResultCountPrecision: ResultCountPrecisionExact,
 		EchoedRequest:        &XMLSREchoedRequest{Version: "2.0"},
 	}
 }
