@@ -23,8 +23,22 @@
 #include "query/cqpeval.hh"
 #include "mango.h"
 #include <cmath>
+#include <cstdlib>
 
 using namespace std;
+
+/**
+ * Manatee's Concordance::shuffle() uses std::random_shuffle which is based
+ * on the global rand(). Without resetting its seed, each call (= each request)
+ * would produce a different order of lines which would make paging impossible
+ * (page N+1 would be a different random sample instead of a continuation
+ * of page N). With a fixed seed, the same query on the same corpus produces
+ * the same (randomly looking) order.
+ *
+ * Please note that this relies on each worker process performing at most one
+ * search at a time (which is the case) as rand() has a global state.
+ */
+const unsigned int SHUFFLE_SEED = 20261112;
 
 
 /**
@@ -70,17 +84,21 @@ KWICRowsRetval conc_examples(
             return ans;
         }
         if (conc->size() <= fromLine) {
+            // we still provide the concordance size as the caller
+            // may need it to calculate correct offsets
+            PosInt concSize = conc->size();
             delete conc;
             delete corp;
             KWICRowsRetval ans {
                 nullptr,
                 0,
-                0,
+                concSize,
                 strdup("line range out of result size"),
                 1
             };
             return ans;
         }
+        srand(SHUFFLE_SEED);
         conc->shuffle();
         PosInt concSize = conc->size();
         if (limit + fromLine > concSize) {

@@ -164,10 +164,11 @@ func (cs *CorpusSetup) GetBasicSearchAttrs() []string {
 }
 
 // GetLayerDefault provides default positional
-// attribute for a specified layer.
+// attribute for a specified layer. In case no such
+// attribute is found, an empty PosAttr is returned.
 func (cs *CorpusSetup) GetLayerDefault(ln LayerType) PosAttr {
 	for _, item := range cs.PosAttrs {
-		if item.IsLayerDefault {
+		if item.Layer == ln && item.IsLayerDefault {
 			return item
 		}
 	}

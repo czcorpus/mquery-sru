@@ -20,7 +20,6 @@
 package v12
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -34,11 +33,10 @@ import (
 	"github.com/czcorpus/mquery-sru/general"
 	"github.com/czcorpus/mquery-sru/handler/v12/schema"
 	"github.com/czcorpus/mquery-sru/mango"
-	"github.com/czcorpus/mquery-sru/query"
 	"github.com/czcorpus/mquery-sru/query/compiler"
 	"github.com/czcorpus/mquery-sru/query/parser/basic"
 	"github.com/czcorpus/mquery-sru/rdb"
-	"github.com/czcorpus/mquery-sru/result"
+	"github.com/czcorpus/mquery-sru/search"
 	"github.com/rs/zerolog/log"
 
 	"github.com/gin-gonic/gin"
@@ -194,14 +192,10 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 	log.Warn().Msg("Data views are not implemented yet!")
 	logArgs[SearchRetrArgFCSDataViews.String()] = ctx.Query(SearchRetrArgFCSDataViews.String())
 
-	ranges := query.CalculatePartialRanges(corpora, startRecord-1, maximumRecords)
-
-	// make searches
-	pidByID := make(map[string]string, len(ranges))
-	waits := make([]<-chan result.ConcResult, len(ranges))
-	for i, rng := range ranges {
-
-		ast, fcsErr := a.translateQuery(rng.Rsc, fcsQuery)
+	// prepare searches in individual resources
+	rscQueries := make([]search.ResourceQuery, 0, len(corpora))
+	for _, corpusID := range corpora {
+		ast, fcsErr := a.translateQuery(corpusID, fcsQuery)
 		if fcsErr != nil {
 			ans.Diagnostics = schema.NewXMLDiagnostics()
 			ans.Diagnostics.AddDiagnostic(fcsErr.Code, fcsErr.Type, fcsErr.Ident, fcsErr.Message)
@@ -215,83 +209,54 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 				general.DCQueryCannotProcess, 0, SearchRetrArgQuery.String(), ast.Errors()[0].Error())
 			return ans, general.ConformantUnprocessableEntity
 		}
-		rscConf, err := a.corporaConf.Resources.GetResource(rng.Rsc)
+		rscConf, err := a.corporaConf.Resources.GetResource(corpusID)
 		if err != nil {
 			ans.Diagnostics = schema.NewXMLDiagnostics()
 			ans.Diagnostics.AddDfltMsgDiagnostic(
 				general.DCGeneralSystemError, 0, err.Error())
 			return ans, general.ConformandGeneralServerError
 		}
-		pidByID[rng.Rsc] = rscConf.PID
-		wait, err := a.radapter.PublishQuery(rdb.Query{
-			Func: "concExample",
+		rscQueries = append(rscQueries, search.ResourceQuery{
+			ID:  corpusID,
+			PID: rscConf.PID,
 			Args: rdb.ConcQueryArgs{
-				CorpusPath:        a.corporaConf.GetRegistryPath(rng.Rsc),
+				CorpusPath:        a.corporaConf.GetRegistryPath(corpusID),
 				Query:             query,
 				Attrs:             retrieveAttrs,
-				StartLine:         rng.From,
-				MaxItems:          maximumRecords,
 				MaxContext:        a.corporaConf.MaximumContext,
 				ViewContextStruct: rscConf.ViewContextStruct,
 			},
 		})
-		if err != nil {
-			ans.Diagnostics = schema.NewXMLDiagnostics()
-			ans.Diagnostics.AddDfltMsgDiagnostic(
-				general.DCGeneralSystemError, 0, err.Error())
-			return ans, http.StatusInternalServerError
-		}
-		waits[i] = wait
-	}
-	// using fromResource, we will cycle through available resources' results and their lines
-	fromResource := result.NewRoundRobinLineSel(maximumRecords, ranges.PIDList()...)
-	usedQueries := make(map[string]string) // maps resource ID to Manatee CQL query
-	var totalConcSize int
-	// failures of individual resources are not fatal (unless all
-	// the resources fail) - we return what we have along with
-	// respective non-fatal diagnostics
-	failedResources := make([]general.ResourceError, 0, len(waits))
-	for i, wait := range waits {
-		result := <-wait
-		if result.Error != nil {
-			fromResource.RscSetErrorAt(i, result.Error)
-			if !errors.Is(result.Error, mango.ErrRowsRangeOutOfConc) {
-				log.Error().
-					Err(result.Error).
-					Str("resource", ranges[i].Rsc).
-					Msg("failed to search resource, skipping it")
-				failedResources = append(
-					failedResources,
-					general.ResourceError{
-						ID:  ranges[i].Rsc,
-						PID: pidByID[ranges[i].Rsc],
-						Err: result.Error,
-					},
-				)
-			}
-		}
-		fromResource.SetRscLines(ranges[i].Rsc, result)
-		usedQueries[ranges[i].Rsc] = result.Query
-		totalConcSize += result.ConcSize
 	}
 
-	ans.NumberOfRecords = totalConcSize
-	if fromResource.AllHasOutOfRangeError() {
+	// search and merge the results
+	srchResult, err := search.Search(a.radapter, rscQueries, startRecord-1, maximumRecords)
+	if err != nil {
 		ans.Diagnostics = schema.NewXMLDiagnostics()
 		ans.Diagnostics.AddDfltMsgDiagnostic(
-			general.DCFirstRecordPosOutOfRange, 0, fromResource.GetFirstError().Error())
-		return ans, general.ConformantUnprocessableEntity
+			general.DCGeneralSystemError, 0, err.Error())
+		return ans, http.StatusInternalServerError
+	}
 
-	} else if fromResource.HasFatalError() {
+	ans.NumberOfRecords = srchResult.Total
+	if srchResult.AllFailed(len(rscQueries)) {
 		// no resource was able to provide any data
 		ans.Diagnostics = schema.NewXMLDiagnostics()
 		ans.Diagnostics.AddDfltMsgDiagnostic(
-			general.DCQueryCannotProcess, 0, failedResources[0].Err.Error())
+			general.DCQueryCannotProcess, 0, srchResult.Failed[0].Err.Error())
 		return ans, general.ConformandGeneralServerError
 
-	} else if len(failedResources) > 0 {
+	} else if startRecord > 1 && startRecord > srchResult.Total {
 		ans.Diagnostics = schema.NewXMLDiagnostics()
-		for _, fr := range failedResources {
+		ans.Diagnostics.AddDfltMsgDiagnostic(
+			general.DCFirstRecordPosOutOfRange, 0, strconv.Itoa(startRecord))
+		return ans, general.ConformantUnprocessableEntity
+
+	} else if len(srchResult.Failed) > 0 {
+		// failures of individual resources are not fatal - we return
+		// what we have along with respective non-fatal diagnostics
+		ans.Diagnostics = schema.NewXMLDiagnostics()
+		for _, fr := range srchResult.Failed {
 			ans.Diagnostics.AddDiagnostic(
 				general.DCQueryCannotProcess, 0, fr.PID, fr.DiagnosticMessage())
 		}
@@ -299,20 +264,21 @@ func (a *FCSSubHandlerV12) searchRetrieve(ctx *gin.Context, fcsResponse *FCSRequ
 
 	// transform results
 	records := make([]schema.XMLSRRecord, 0, maximumRecords)
-	for len(records) < maximumRecords && fromResource.Next() {
-		res, err := a.corporaConf.Resources.GetResource(fromResource.CurrRscName())
+	for _, srchLine := range srchResult.Lines {
+		rscQuery := rscQueries[srchLine.ResourceIdx]
+		res, err := a.corporaConf.Resources.GetResource(rscQuery.ID)
 		if err != nil {
 			ans.Diagnostics = schema.NewXMLDiagnostics()
 			ans.Diagnostics.AddDfltMsgDiagnostic(
 				general.DCGeneralSystemError, 0, err.Error())
 			return ans, http.StatusInternalServerError
 		}
-		item := fromResource.CurrLine()
+		item := &srchLine.Line
 		var refURL string
 		if res.KontextBacklinkRootURL != "" {
 			var err error
 			refURL, err = backlink.GenerateForKonText(
-				res.KontextBacklinkRootURL, res.ID, usedQueries[res.ID], item.Ref)
+				res.KontextBacklinkRootURL, res.ID, rscQuery.Args.Query, item.Ref)
 			if err != nil {
 				log.Error().Err(err).Msg("failed to generate ResourceFragment URL")
 			}
